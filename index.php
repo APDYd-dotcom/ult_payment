@@ -1,53 +1,74 @@
-<!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ULT Payment System</title>
-  <link rel="stylesheet" href="styles.css">
+<title>ULT Payment System</title>
+  <style>
+
+    form{
+        display:flex;
+        flex-direction:column;
+    }
+
+    form label{
+        margin-top:10px;
+    }
+
+    form input{
+        padding:10px;
+        margin-top:5px;
+        border:1px solid #ccc;
+        border-radius:6px;
+    }
+
+    .buttons{
+        margin-top:20px;
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        gap:10px;
+    }
+
+    button{
+        padding:10px;
+        border:none;
+        border-radius:6px;
+        background:#2563eb;
+        color:white;
+        cursor:pointer;
+    }
+
+    button:hover{
+        background:#1d4ed8;
+    }
+    .main{
+        min-width: 70%;
+    }
+  </style>
 </head>
 
 <body>
 
+<?php
+
+?>
+
 <div class="container">
+    <main id="main-content" class="flex">
+        <section class="main">
+            <form>
+                <div class="action">
+                    <radio name="user" value="Admin">
+                    <radio name="user" value="student">
+                </div>
+                <label for="email">Email</label>
+                <input id="email" type="text" name="email">
+                <label for="password">Password</label>
+                <input id="password" type="password" name="password">
 
-  <aside id="sidebar" class="sidebar">
-    <?php include 'partials/sidebar.php'; ?>
-  </aside>
-
-  <main id="main-content" class="main-content">
-    <?php
-        $page = isset($_GET['page']) ? $_GET['page'] : 'dashboard';
-
-        switch ($page) {
-            case 'dashboard':
-                include 'partials/dashboard.php';
-                break;
-            case 'student':
-                include 'partials/student.php';
-                break;
-            case 'payment':
-                include 'partials/payment.php';
-                break;
-            case 'partial':
-                include 'partials/partial.php';
-                break;
-            case 'penalty':
-                include 'partials/penalty.php';
-                break;
-            case 'mailing':
-                include 'partials/mailing.php';
-                break;
-            default:
-                echo "<h1>Page not found</h1>";
-        }
-    ?>
-  </main>
+                <div class="buttons">
+                    <button type="submit" name="login">Login</button>
+                </div>
+            </form>
+        </section>
+    </main>
 
 </div>
 
