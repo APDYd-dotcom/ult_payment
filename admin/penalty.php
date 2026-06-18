@@ -57,35 +57,6 @@
 
         </div>
 
-        <div class="form-section">
-
-            <h3>Penalty Form</h3>
-
-            <form method="POST" action="penalty.php">
-
-                <label for="ID">Penalty Reference</label>
-                <input id="ID" type="text" name="ID">
-
-                <label for="fullName">Student Name</label>
-                <input id="fullName" type="text" name="fullName">
-
-                <label for="reason">Reason</label>
-                <input id="reason" type="text" name="reason">
-
-                <label for="amount" >Penalty Amount</label>
-                <input id="amount" type="number" name="amount">
-
-                <div class="buttons">
-                    <button type="submit" name="Create">Create</button>
-                    <button type="button">Update</button>
-                    <button type="button">Delete</button>
-                    <button type="reset">Clear</button>
-                </div>
-
-            </form>
-
-        </div>
-
     </div>
 
 </section>

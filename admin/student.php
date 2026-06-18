@@ -64,12 +64,6 @@ try {
         <section id="student" class="page active">
             <h1 class="page-title">Students</h1>
 
-            <!-- Message de succès / erreur -->
-            <?php if ($message): ?>
-                <div class="<?= $messageType === 'success' ? 'success-message' : 'error-message' ?>">
-                    <?= htmlspecialchars($message) ?>
-                </div>
-            <?php endif; ?>
 
             <div class="crud-container">
                 <div class="table-section">
@@ -116,6 +110,12 @@ try {
                             <button type="reset">Clear</button>
                         </div>
                     </form>
+                          <!-- Message de succès / erreur -->
+            <?php if ($message): ?>
+                <div class="<?= $messageType === 'success' ? 'success-message' : 'error-message' ?>">
+                    <?= htmlspecialchars($message) ?>
+                </div>
+            <?php endif; ?>
                 </div>
             </div>
         </section>

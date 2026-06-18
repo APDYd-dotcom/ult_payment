@@ -55,34 +55,6 @@
 
         </div>
 
-        <div class="form-section">
-
-            <h3>Partial Payment Form</h3>
-
-            <form method="POST" action="partial.php">
-
-                <label for="reference">Partial Payment</label>
-                <input id="reference" type="text" name="reference">
-
-                <label for="fullName">Student Name</label>
-                <input id="fullName" type="text" name="fullName">
-
-                <label for="Amount">Amount Paid</label>
-                <input id="Amount" type="number" name="Amount">
-
-                <label for="reason">Remaining Balance</label>
-                <input id="reason" type="number" name="reason">
-
-                <div class="buttons">
-                    <button type="submit" name="Create">Create</button>
-                    <button type="button">Update</button>
-                    <button type="button">Delete</button>
-                    <button type="reset">Clear</button>
-                </div>
-
-            </form>
-
-        </div>
 
     </div>
 
