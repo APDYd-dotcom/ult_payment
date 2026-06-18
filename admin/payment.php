@@ -94,6 +94,20 @@
 
 </div>
 
+
+<?php
+if(isset($_POST["Create"])){
+	 $getreference = $_POST["reference"];
+        $getfullName = $_POST["fullName"] ;
+        $getamount = $_POST["amount"];
+        $getdate = $_POST["date"];
+	$insertProf = "insert into professeurs(nom,prenom,Specialite,email) 
+value('$recupNom','$recupPrenom','$recupSpecialiste','$recupEmail')";
+$bdd->exec($insertProf);
+header("location:afficheprofesseur.php");
+}
+?>
+
 </body>
 </html>
 

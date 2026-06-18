@@ -1,3 +1,11 @@
+<?php 
+    session_start();
+
+    if (!isset($_SESSION['email'])) {
+    header('Location: /payment');
+    exit();
+}
+?>
 <div class="logo">
     <h2>ULT PAYMENT</h2>
 </div>
@@ -9,4 +17,10 @@
     <li><a href="partial.php">Partial Payments</a></li>
     <li><a href="penalty.php">Penalties</a></li>
     <li><a href="mailing.php">Mailing List</a></li>
+    <li>
+        <form method="POST" action="/payment/logout.php">
+            <input type="hidden" name="logout_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
+            <button type="submit">Logout</button>
+        </form>
+    </li>
 </ul>

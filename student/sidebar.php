@@ -1,3 +1,7 @@
+<?php
+$bdd=new PDO('mysql:host=localhost;dbname=ult_payment;charset=utf8','root','APDY!@apdy');
+
+?>
 <div class="logo">
     <h2>ULT PAYMENT</h2>
 </div>
