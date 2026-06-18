@@ -1,23 +1,49 @@
 <?php
 session_start();
 
-$admin = "admin@gmail.com";
-$motdepasse = "1234";
-$error = ""; 
+// Enable error display (for debugging – remove on production)
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+$error = '';
+
+try {
+    // Database connection
+    $bdd = new PDO('mysql:host=localhost;dbname=ult_payment;charset=utf8', 'app_user', 'secure_password_123');
+    $bdd->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch (PDOException $e) {
+    die('Database connection failed: ' . $e->getMessage());
+}
+
+// Check if form was submitted
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
+    $email = $_POST['email'];
+    $plainPassword = $_POST['password'];
+
+    try {
+        $stmt = $bdd->prepare("SELECT userId, email, password, role FROM user WHERE email = ?");
+        $stmt->execute([$email]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
 
-if (isset($_POST["email"])) {
-    $email = $_POST["email"];
-    $password = $_POST["password"];
 
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+        if ($user && password_verify($plainPassword, $user['password'])) {
+            $_SESSION['email'] = $user['email'];
+            $_SESSION['role'] = $user['role'];
+            $_SESSION['userId'] = $user['userId'];
+            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 
-    if ($email === $admin && $password === $motdepasse) {
-        $_SESSION["email"] = $email;
-        header("Location: /payment/admin/dashboard.php");
-        exit();
-    } else {
-        $error = "Nom d'utilisateur ou mot de passe incorrect.";
+            if ($user['role'] === 'admin') {
+                header('Location: /payment/admin/dashboard.php');
+            } else {
+                header('Location: /payment/student/dashboard.php');
+            }
+            exit();
+        } else {
+            $error = 'Email ou mot de passe incorrect.';
+        }
+    } catch (PDOException $e) {
+        die('Query error: ' . $e->getMessage());
     }
 }
 ?>
