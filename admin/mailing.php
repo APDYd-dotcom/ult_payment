@@ -1,19 +1,20 @@
 <?php
-define('REQUIRED_ROLE', 'admin'); 
-require 'auth_check.php';
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 
+define('REQUIRED_ROLE', 'admin');
 
+require __DIR__ . '/../auth_check.php';  
 
+// --- Récupération des données ---
 try {
     $stmtMailing = $bdd->query("SELECT * FROM mailing_list ORDER BY id");
-    $mailinglist = $stmtMailing->fetchAll(PDO::FETCH_ASSOC); 
+    $mailinglist = $stmtMailing->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     die('Erreur lors de la récupération de la mailing list : ' . $e->getMessage());
 }
-
 ?>
-
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -24,7 +25,7 @@ try {
 
 <div class="container">
     <aside id="sidebar" class="sidebar">
-        <?php include 'sidebar.php'; ?>
+        <?php include  'sidebar.php'; ?>  
     </aside>
 
     <main id="main-content" class="main-content">
@@ -47,9 +48,9 @@ try {
                                 <?php foreach ($mailinglist as $row): ?>
                                     <tr>
                                         <td><?= htmlspecialchars($row['id']) ?></td>
-                                        <td><?= htmlspecialchars($row['student_name'] ?? '') ?></td>
-                                        <td><?= htmlspecialchars($row['email_status'] ?? 'ACTIVE') ?></td>
-                                        <td><?= htmlspecialchars($row['created_at'] ?? '') ?></td>
+                                        <td><?= htmlspecialchars($row['student_name']) ?></td>
+                                        <td><?= htmlspecialchars($row['email_status']) ?></td>
+                                        <td><?= htmlspecialchars($row['created_at']) ?></td>
                                     </tr>
                                 <?php endforeach; ?>
                             <?php else: ?>

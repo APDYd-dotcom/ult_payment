@@ -1,7 +1,3 @@
-<?php 
-    define('REQUIRED_ROLE', 'admin');
-    require_once __DIR__ . '/../auth_check.php'; 
-?>
 <div class="logo">
     <h2>ULT PAYMENT</h2>
 </div>

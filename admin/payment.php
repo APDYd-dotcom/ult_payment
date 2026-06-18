@@ -1,6 +1,8 @@
 <?php 
-    define("REQUIRE_LORE","admin");
-    require "auth_check.php";  
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+    define('REQUIRED_ROLE', 'admin');
+    require __DIR__ . '/../auth_check.php';  
    
 
     $stmtPayments = $bdd->query("SELECT * FROM vw_payment_details ORDER BY payment_reference");
