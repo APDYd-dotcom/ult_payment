@@ -1,3 +1,13 @@
+<?php 
+    define("REQUIRE_LORE","admin");
+    require "auth_check.php";  
+   
+    $stmtMailing = $bdd->query("SELECT * FROM mailing_list ORDER BY id");
+
+    $mailinglist = $stmtMailing ->fetchAll(PDO::ASSOC);
+
+?>
+
 <html>
   <head>
     <title>ULT Payment System</title>
@@ -29,21 +39,18 @@
                     <th>Email</th>
                     <th>Status</th>
                 </tr>
-
-                <tr>
-                    <td>1</td>
-                    <td>Arakaza Prince</td>
-                    <td>prince@gmail.com</td>
-                    <td>Subscribed</td>
-                </tr>
-
-                <tr>
-                    <td>2</td>
-                    <td>Irakoze Yvan</td>
-                    <td>yvan@gmail.com</td>
-                    <td>Subscribed</td>
-                </tr>
-
+              <?php if ($mailinglist): ?>
+                    <?php foreach($mailinglist as $row): ?>
+                        <tr>
+                            <td><?= htmlspecialchars($row["id"]) ?></td>
+                            <td><?= htmlspecialchars($row["full_name"]) ?></td>
+                            <td><?= htmlspecialchars($row["email"]) ?></td>
+                            <td><?= htmlspecialchars($row["status"]) ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                    <?php else: ?>
+                        <tr><td colspan="6">No subscriber found.</td></tr>
+              <?php endif; ?> 
             </table>
 
         </div>

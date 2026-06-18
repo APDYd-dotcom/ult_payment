@@ -1,3 +1,13 @@
+<?php
+    define('REQUIRED_ROLE', 'admin');
+    require '../auth_check.php';    
+    
+    $stmtStudents = $bdd->query("SELECT * FROM vw_students_with_department ORDER BY matricule");
+    
+    $students = $stmtStudents->fetchAll(PDO::FETCH_ASSOC);
+
+?>
+
 <html>
 <head>
   <title>ULT Payment System</title>
@@ -27,21 +37,19 @@ if (isset($_POST["Create"])) {
                             <th>Name</th>
                             <th>Department</th>
                         </tr>
-                        <tr>
-                            <td><?php echo htmlspecialchars($getmatricul); ?></td>
-                            <td><?php echo $getName; ?></td>
-                            <td><?php echo $getDepartment; ?></td>
-                        </tr>
-                        <tr>
-                            <td>S002</td>
-                            <td>Irakoze Yvan</td>
-                            <td>IR</td>
-                        </tr>
-                        <tr>
-                            <td>S003</td>
-                            <td>Ndikumana Desin</td>
-                            <td>GL</td>
-                        </tr>
+                        
+                            <?php if ($students): ?>
+                                <?php foreach ($students as $row): ?>
+                                    <tr>
+                                        <td><?= htmlspecialchars($row['matricule']) ?></td>
+                                        <td><?= htmlspecialchars($row['student_name']) ?></td>
+                                        <td><?= htmlspecialchars($row['department_name']) ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <td colspan="3">No students found.</td>
+                            <?php endif; ?>
+                        
                     </table>
                 </div>
                 <div class="form-section">

@@ -1,3 +1,15 @@
+<?php 
+    define("REQUIRE_LORE","admin");
+    require "auth_check.php";  
+   
+
+    $stmtPayments = $bdd->query("SELECT * FROM vw_payment_details ORDER BY payment_reference");
+
+    $payments = $stmtPayments->fetchAll(PDO::FETCH_ASSOC);
+
+?>
+
+
 <html>
 <head>
   <title>ULT Payment System</title>
@@ -6,14 +18,7 @@
 
 <body>
 
-<?php
-    if (isset($_POST["Create"])) {
-        $getreference = $_POST["reference"];
-        $getfullName = $_POST["fullName"] ;
-        $getamount = $_POST["amount"];
-        $getdate = $_POST["date"];
-    }
-?>
+
 
 <div class="container">
 
@@ -40,18 +45,20 @@
                 </tr>
 
                 <tr>
-                    <td><?php echo $getreference ?></td>
-                    <td><?php echo $getfullName ?></td>
-                    <td><?php echo $getamount ?></td>
-                    <td><?php echo $getdate ?></td>
+                    
                 </tr>
-
-                <tr>
-                    <td>P002</td>
-                    <td>Irakoze Yvan</td>
-                    <td>70000</td>
-                    <td>2026-07-16</td>
-                </tr>
+                <?php if ($payments): ?>
+                    <?php foreach($payments as $row): ?>
+                        <tr>
+                            <td><?= htmlspecialchars($row["payment_reference"]) ?></td>
+                            <td><?= htmlspecialchars($row["student_name"]) ?></td>
+                            <td><?= htmlspecialchars($row["amount"]) ?></td>
+                            <td><?= htmlspecialchars($row["payment_date"]) ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                    <?php else: ?>
+                        <tr><td colspan="6">No payment found.</td></tr>
+                <?php endif; ?>
 
             </table>
 
@@ -96,16 +103,16 @@
 
 
 <?php
-if(isset($_POST["Create"])){
-	 $getreference = $_POST["reference"];
-        $getfullName = $_POST["fullName"] ;
-        $getamount = $_POST["amount"];
-        $getdate = $_POST["date"];
-	$insertProf = "insert into professeurs(nom,prenom,Specialite,email) 
-value('$recupNom','$recupPrenom','$recupSpecialiste','$recupEmail')";
-$bdd->exec($insertProf);
-header("location:afficheprofesseur.php");
-}
+// if(isset($_POST["Create"])){
+// 	 $getreference = $_POST["reference"];
+//         $getfullName = $_POST["fullName"] ;
+//         $getamount = $_POST["amount"];
+//         $getdate = $_POST["date"];
+// 	$insertProf = "insert into professeurs(nom,prenom,Specialite,email) 
+// value('$recupNom','$recupPrenom','$recupSpecialiste','$recupEmail')";
+// $bdd->exec($insertProf);
+// header("location:afficheprofesseur.php");
+// }
 ?>
 
 </body>
