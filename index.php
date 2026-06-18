@@ -3,10 +3,10 @@ session_start();
 
 $admin = "admin@gmail.com";
 $motdepasse = "1234";
-$error = ""; // will hold error message if any
+$error = ""; 
 
-// Check if form was submitted
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["email"])) {
+
+if (isset($_POST["email"])) {
     $email = $_POST["email"];
     $password = $_POST["password"];
 
@@ -21,6 +21,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["email"])) {
     }
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -32,7 +33,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["email"])) {
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet" />
     <style>
-        /* (all your existing styles – they are fine) */
+        
         *,
         *::before,
         *::after {
@@ -405,9 +406,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["email"])) {
             <div class="signup-row">
                 Don't have an account? <a href="#">Create one</a>
             </div>
-
-            <!-- Demo hint (optional) -->
-            <!-- <div class="demo-hint">⚡ Demo: <code>admin</code> / <code>1234</code></div> -->
 
         </div>
     </main>
