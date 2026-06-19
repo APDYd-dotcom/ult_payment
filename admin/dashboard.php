@@ -4,7 +4,7 @@
     require '../auth_check.php'; 
 
    // --- Fetch data from the view ---
-    $stmtStudents = $bdd->query("SELECT * FROM vw_students_with_department ORDER BY matricule");
+    $stmtStudents = $bdd->query("SELECT * FROM vw_students_with_department ORDER BY student_name ASC");
     $stmtPayements = $bdd->query("SELECT * FROM vw_payment_details");
     $stmtPenalites = $bdd->query("SELECT * FROM vw_penalites");
     $stmtPartialPayments = $bdd->query("SELECT * FROM vw_partial_payments");

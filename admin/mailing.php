@@ -9,7 +9,7 @@ require __DIR__ . '/../auth_check.php';
 
 // --- Récupération des données ---
 try {
-    $stmtMailing = $bdd->query("SELECT * FROM mailing_list ORDER BY id");
+    $stmtMailing = $bdd->query("SELECT * FROM mailing_list ORDER BY student_name ASC");
     $mailinglist = $stmtMailing->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     die('Erreur lors de la récupération de la mailing list : ' . $e->getMessage());

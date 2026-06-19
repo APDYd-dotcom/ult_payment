@@ -12,9 +12,9 @@ $success = false;
 // --- Traduction personnalisée des erreurs ---
 function translateError($message) {
     $translations = [
-        'Étudiant introuvable.' => '❌ L\'étudiant avec ce matricule n\'existe pas.',
-        'Tranche introuvable pour ce département.' => '❌ La tranche spécifiée n\'existe pas pour ce département.',
-        'Impossible de créer le paiement.' => '❌ Une erreur est survenue lors de la création du paiement. Vérifiez les données saisies.',
+        'Étudiant introuvable.' => ' L\'étudiant avec ce matricule n\'existe pas.',
+        'Tranche introuvable pour ce département.' => ' La tranche spécifiée n\'existe pas pour ce département.',
+        'Impossible de créer le paiement.' => ' Une erreur est survenue lors de la création du paiement. Vérifiez les données saisies.',
     ];
     foreach ($translations as $key => $value) {
         if (strpos($message, $key) !== false) {
@@ -50,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['Create'])) {
 
 // --- Récupération des paiements ---
 try {
-    $stmtPayments = $bdd->query("SELECT * FROM vw_payment_details ORDER BY payment_reference DESC");
+    $stmtPayments = $bdd->query("SELECT * FROM vw_payment_details ORDER BY student_name ASC");
     $payments = $stmtPayments->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     die('Erreur lors du chargement des paiements : ' . $e->getMessage());
@@ -106,13 +106,13 @@ if (isset($_GET['success'])) {
             <!-- Affichage des messages -->
             <?php if ($success): ?>
                 <div class="message message-success">
-                    <span class="message-icon">✅</span>
+                    <span class="message-icon"></span>
                     <span>Paiement créé avec succès.</span>
                 </div>
             <?php endif; ?>
             <?php if (!empty($error)): ?>
                 <div class="message message-error">
-                    <span class="message-icon">⚠️</span>
+                    <span class="message-icon"></span>
                     <span><?= htmlspecialchars($error) ?></span>
                 </div>
             <?php endif; ?>

@@ -4,6 +4,7 @@
 
 <ul>
     <li><a href="dashboard.php">Dashboard</a></li>
+    <li><a href="departement.php">Departement</a></li>
     <li><a href="student.php">Students</a></li>
     <li><a href="payment.php">Payments</a></li>
     <li><a href="partial.php">Partial Payments</a></li>
