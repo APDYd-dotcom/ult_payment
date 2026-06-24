@@ -95,40 +95,108 @@ foreach ($departments as $d) {
         .message-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
         .message-icon { font-size: 1.4rem; }
         .form-section select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 6px; }
-        .search-wrapper {
+        /* Custom Live Search Box Styling */
+        .search-container {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
-            margin-bottom: 1rem;
-            max-width: 640px;
-        }
-        .search-wrapper input {
-            flex: 1;
-            padding: 0.85rem 1rem;
-            font-size: 0.95rem;
-            border: 1px solid #d1d5db;
-            border-radius: 0.75rem;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
             background: #ffffff;
-            color: #0f172a;
+            padding: 0.75rem 1.25rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03), 0 1px 3px rgba(0, 0, 0, 0.02);
+            border: 1px solid #f1f5f9;
         }
-        .search-wrapper input:focus {
-            outline: none;
-            border-color: #2563eb;
-            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
-        }
-        .search-wrapper button {
-            border: none;
-            background: #e5e7eb;
-            color: #1f2937;
-            padding: 0.8rem 1rem;
+        .search-box {
+            position: relative;
+            display: flex;
+            align-items: center;
+            flex: 1;
+            min-width: 280px;
+            max-width: 600px;
+            background: #f8fafc;
+            border: 1.5px solid #e2e8f0;
             border-radius: 0.75rem;
-            cursor: pointer;
-            font-size: 1rem;
-            line-height: 1;
-            transition: background 0.2s ease;
+            padding: 0 0.85rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .search-wrapper button:hover {
-            background: #d1d5db;
+        .search-box:focus-within {
+            background: #ffffff;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.08);
+            transform: translateY(-1px);
+        }
+        .search-icon {
+            font-size: 1.1rem;
+            color: #64748b;
+            margin-right: 0.6rem;
+            user-select: none;
+            display: flex;
+            align-items: center;
+        }
+        .search-box input {
+            flex: 1;
+            border: none !important;
+            background: transparent !important;
+            padding: 0.75rem 0 !important;
+            font-size: 0.95rem;
+            color: #0f172a;
+            outline: none !important;
+            box-shadow: none !important;
+        }
+        .search-box input::placeholder {
+            color: #94a3b8;
+            font-weight: 400;
+        }
+        .clear-btn {
+            background: #e2e8f0;
+            border: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #475569;
+            transition: all 0.2s ease;
+            opacity: 0;
+            visibility: hidden;
+            padding: 0;
+            margin-left: 0.5rem;
+        }
+        .clear-btn:hover {
+            background: #cbd5e1;
+            color: #0f172a;
+            transform: scale(1.05);
+        }
+        .clear-btn.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+        .clear-icon {
+            font-size: 0.65rem;
+            font-weight: bold;
+            line-height: 1;
+        }
+        .search-results-counter {
+            font-size: 0.9rem;
+            color: #64748b;
+            background: #f1f5f9;
+            padding: 0.4rem 0.8rem;
+            border-radius: 2rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            border: 1px solid #e2e8f0;
+            user-select: none;
+        }
+        .search-results-counter strong {
+            color: #2563eb;
+            font-weight: 600;
         }
         .pagination-controls {
             display: flex;
@@ -198,14 +266,22 @@ foreach ($departments as $d) {
             <div class="crud-container">
                 <!-- Tableau -->
                 <div class="table-section">
-                    <div class="search-wrapper">
-                        <input
-                            id="payment-search"
-                            type="search"
-                            placeholder="Search by matricule, student name, or department"
-                            aria-label="Search payments"
-                        />
-                        <button type="button" id="clear-payment-search" aria-label="Clear search">×</button>
+                    <div class="search-container">
+                        <div class="search-box">
+                            <span class="search-icon">🔍</span>
+                            <input
+                                id="payment-search"
+                                type="text"
+                                placeholder="Search by matricule, name, or department..."
+                                aria-label="Search payments"
+                            />
+                            <button type="button" id="clear-payment-search" class="clear-btn" aria-label="Clear search">
+                                <span class="clear-icon">✕</span>
+                            </button>
+                        </div>
+                        <div class="search-results-counter" id="search-counter">
+                            Found <strong id="counter-match">0</strong> of <span id="counter-total">0</span> payments
+                        </div>
                     </div>
                     <table>
                         <thead>
@@ -362,6 +438,12 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // Set total count once
+    const totalCounter = document.getElementById('counter-total');
+    if (totalCounter) {
+        totalCounter.textContent = dataRows.length;
+    }
+
     function renderPage() {
         const visibleRows = getFilteredRows();
         const totalRows = visibleRows.length;
@@ -378,6 +460,12 @@ document.addEventListener('DOMContentLoaded', function () {
         prevButton.disabled = currentPage <= 1;
         nextButton.disabled = currentPage >= totalPages;
 
+        // Update match counter
+        const matchCounter = document.getElementById('counter-match');
+        if (matchCounter) {
+            matchCounter.textContent = totalRows;
+        }
+
         dataRows.forEach(row => {
             row.style.display = 'none';
         });
@@ -391,13 +479,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function updateView() {
         currentPage = 1;
+        clearButton.classList.toggle('visible', searchInput.value.trim().length > 0);
         renderPage();
     }
 
+    searchInput.addEventListener('input', updateView);
     searchInput.addEventListener('keyup', updateView);
 
     clearButton.addEventListener('click', function () {
         searchInput.value = '';
+        clearButton.classList.remove('visible');
         searchInput.focus();
         updateView();
     });
