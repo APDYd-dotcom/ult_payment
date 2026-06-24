@@ -95,6 +95,76 @@ foreach ($departments as $d) {
         .message-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
         .message-icon { font-size: 1.4rem; }
         .form-section select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 6px; }
+        .search-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            max-width: 640px;
+        }
+        .search-wrapper input {
+            flex: 1;
+            padding: 0.85rem 1rem;
+            font-size: 0.95rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.75rem;
+            background: #ffffff;
+            color: #0f172a;
+        }
+        .search-wrapper input:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+        }
+        .search-wrapper button {
+            border: none;
+            background: #e5e7eb;
+            color: #1f2937;
+            padding: 0.8rem 1rem;
+            border-radius: 0.75rem;
+            cursor: pointer;
+            font-size: 1rem;
+            line-height: 1;
+            transition: background 0.2s ease;
+        }
+        .search-wrapper button:hover {
+            background: #d1d5db;
+        }
+        .pagination-controls {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            margin-top: 1rem;
+            margin-bottom: 1rem;
+        }
+        .pagination-controls button {
+            border: 1px solid #cbd5e1;
+            background: #f8fafc;
+            color: #1f2937;
+            padding: 0.65rem 1rem;
+            border-radius: 0.75rem;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: background 0.2s ease, border-color 0.2s ease;
+        }
+        .pagination-controls button:hover:not(:disabled) {
+            background: #e2e8f0;
+            border-color: #94a3b8;
+        }
+        .pagination-controls button:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
+        .pagination-info {
+            font-size: 0.95rem;
+            color: #475569;
+            white-space: nowrap;
+        }
+        .pagination-controls.hidden {
+            display: none;
+        }
         /* Les styles responsive sont dans styles.css */
     </style>
 </head>
@@ -128,6 +198,15 @@ foreach ($departments as $d) {
             <div class="crud-container">
                 <!-- Tableau -->
                 <div class="table-section">
+                    <div class="search-wrapper">
+                        <input
+                            id="payment-search"
+                            type="search"
+                            placeholder="Search by matricule, student name, or department"
+                            aria-label="Search payments"
+                        />
+                        <button type="button" id="clear-payment-search" aria-label="Clear search">×</button>
+                    </div>
                     <table>
                         <thead>
                             <tr>
@@ -142,7 +221,7 @@ foreach ($departments as $d) {
                                 <th>Date</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="payment-table-body">
                             <?php if ($payments): ?>
                                 <?php foreach ($payments as $row): ?>
                                     <tr>
@@ -162,6 +241,12 @@ foreach ($departments as $d) {
                             <?php endif; ?>
                         </tbody>
                     </table>
+
+                    <div class="pagination-controls hidden" id="payment-pagination">
+                        <button type="button" id="payment-prev">Previous</button>
+                        <span class="pagination-info" id="payment-page-info">Page 1 of 1</span>
+                        <button type="button" id="payment-next">Next</button>
+                    </div>
                 </div>
 
                 <!-- Formulaire -->
@@ -240,6 +325,102 @@ document.addEventListener('DOMContentLoaded', function() {
 
     deptSelect.addEventListener('change', updateTranches);
     updateTranches();
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const searchInput = document.getElementById('payment-search');
+    const clearButton = document.getElementById('clear-payment-search');
+    const tableBody = document.getElementById('payment-table-body');
+    const paginationContainer = document.getElementById('payment-pagination');
+    const prevButton = document.getElementById('payment-prev');
+    const nextButton = document.getElementById('payment-next');
+    const pageInfo = document.getElementById('payment-page-info');
+
+    const rowsPerPage = 10;
+    let currentPage = 1;
+
+    const allRows = Array.from(tableBody.querySelectorAll('tr'));
+    const dataRows = allRows.filter(row => row.querySelectorAll('td').length >= 4);
+
+    function getFilteredRows() {
+        const query = searchInput.value.trim().toLowerCase();
+
+        return dataRows.filter(row => {
+            const cells = row.cells;
+            const studentName = cells[1]?.textContent.trim().toLowerCase() || '';
+            const matricule = cells[2]?.textContent.trim().toLowerCase() || '';
+            const department = cells[3]?.textContent.trim().toLowerCase() || '';
+            const matches = query === '' ||
+                studentName.includes(query) ||
+                matricule.includes(query) ||
+                department.includes(query);
+
+            row.dataset.matchesFilter = matches ? '1' : '0';
+            return matches;
+        });
+    }
+
+    function renderPage() {
+        const visibleRows = getFilteredRows();
+        const totalRows = visibleRows.length;
+        const totalPages = Math.max(1, Math.ceil(totalRows / rowsPerPage));
+
+        if (currentPage > totalPages) {
+            currentPage = totalPages;
+        }
+
+        const showPagination = totalRows > rowsPerPage;
+        paginationContainer.classList.toggle('hidden', !showPagination);
+
+        pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+        prevButton.disabled = currentPage <= 1;
+        nextButton.disabled = currentPage >= totalPages;
+
+        dataRows.forEach(row => {
+            row.style.display = 'none';
+        });
+
+        visibleRows.forEach((row, index) => {
+            const start = (currentPage - 1) * rowsPerPage;
+            const end = start + rowsPerPage;
+            row.style.display = index >= start && index < end ? '' : 'none';
+        });
+    }
+
+    function updateView() {
+        currentPage = 1;
+        renderPage();
+    }
+
+    searchInput.addEventListener('keyup', updateView);
+
+    clearButton.addEventListener('click', function () {
+        searchInput.value = '';
+        searchInput.focus();
+        updateView();
+    });
+
+    prevButton.addEventListener('click', function () {
+        if (currentPage > 1) {
+            currentPage -= 1;
+            renderPage();
+            document.querySelector('.table-section').scrollIntoView({ behavior: 'smooth' });
+        }
+    });
+
+    nextButton.addEventListener('click', function () {
+        const visibleRows = getFilteredRows();
+        const totalPages = Math.max(1, Math.ceil(visibleRows.length / rowsPerPage));
+        if (currentPage < totalPages) {
+            currentPage += 1;
+            renderPage();
+            document.querySelector('.table-section').scrollIntoView({ behavior: 'smooth' });
+        }
+    });
+
+    renderPage();
 });
 </script>
 
