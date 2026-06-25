@@ -4,12 +4,11 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 define('REQUIRED_ROLE', 'admin');
-require __DIR__ . '/../auth_check.php';   // $bdd est défini ici
+require __DIR__ . '/../auth_check.php';  
 
 $message = '';
-$messageType = ''; // success / error
+$messageType = '';
 
-// --- Traduction personnalisée des erreurs pour les départements ---
 function translateDepartmentError($message) {
     $translations = [
         'Duplicate entry' => ' Ce nom de département existe déjà. Veuillez en choisir un autre.',
@@ -22,11 +21,10 @@ function translateDepartmentError($message) {
             return $value;
         }
     }
-    // Si aucun message connu, on retourne le message original avec une icône
-    return '❌ ' . htmlspecialchars($message);
+
+    return 'X' . htmlspecialchars($message);
 }
 
-// --- Gestion du formulaire (INSERT, UPDATE, DELETE) ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['Create'])) {
         $Name     = trim($_POST['Name'] ?? '');
@@ -41,11 +39,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $messageType = 'error';
         } else {
             try {
-                // Insertion directe
+               
                 $stmt = $bdd->prepare("INSERT INTO department (name, minerval_total) VALUES (?, ?)");
                 $stmt->execute([$Name, $minerval]);
 
-                // Succès → redirection avec message
                 header('Location: departement.php?success=1');
                 exit();
             } catch (PDOException $e) {
@@ -62,7 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $minerval = floatval($_POST['minerval'] ?? 0);
 
         if (empty($id) || empty($Name) || $minerval <= 0) {
-            $message = '⚠️ Tous les champs sont obligatoires et doivent être valides.';
+            $message = 'Tous les champs sont obligatoires et doivent être valides.';
             $messageType = 'error';
         } else {
             try {
@@ -80,7 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['DeleteBulk'])) {
         $ids = $_POST['ids'] ?? [];
         if (empty($ids)) {
-            $message = '⚠️ Aucun département sélectionné.';
+            $message = 'Aucun département sélectionné.';
             $messageType = 'error';
         } else {
             try {
@@ -255,7 +252,6 @@ try {
 </main>
 </div>
 
-<!-- Floating Action Bar (YouTube Studio style) -->
 <div class="floating-bulk-bar" id="bulk-action-bar">
     <span class="selection-count"><span id="selected-count-badge">0</span> selected</span>
     <div class="bulk-actions">
@@ -425,9 +421,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     renderPage();
 
-    // ==========================================
-    // YouTube Studio Interactive Features JS
-    // ==========================================
 
     const selectAllCheckbox = document.getElementById('select-all-checkbox');
     const rowCheckboxes = document.querySelectorAll('.row-checkbox');

@@ -4,12 +4,11 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 define('REQUIRED_ROLE', 'admin');
-require __DIR__ . '/../auth_check.php';   // $bdd est défini ici
+require __DIR__ . '/../auth_check.php';
 
 $message = '';
-$messageType = ''; // success / error
+$messageType = '';
 
-// --- Traduction personnalisée des erreurs pour les étudiants ---
 function translateStudentError($message) {
     $translations = [
         'Département introuvable.' => ' Le département spécifié n\'existe pas.',
@@ -21,11 +20,11 @@ function translateStudentError($message) {
             return $value;
         }
     }
-    // Si aucun message connu, on retourne le message original avec une icône
-    return '❌ ' . htmlspecialchars($message);
+   
+    return 'X' . htmlspecialchars($message);
 }
 
-// --- Gestion du formulaire (INSERT, UPDATE, DELETE) ---
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['Create'])) {
         $fullName  = trim($_POST['fullName'] ?? '');
@@ -45,7 +44,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt = $bdd->prepare("CALL sp_student_create(?, ?, ?)");
                 $stmt->execute([$fullName, $age, $department]);
 
-                // Succès → redirection pour éviter la double soumission
                 header('Location: student.php?success=1');
                 exit();
             } catch (PDOException $e) {
@@ -64,7 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $department   = trim($_POST['department'] ?? '');
 
         if (empty($oldMatricule) || empty($newMatricule) || empty($fullName) || empty($age) || empty($department)) {
-            $message = '⚠️ Tous les champs sont obligatoires.';
+            $message = 'Tous les champs sont obligatoires.';
             $messageType = 'error';
         } else {
             try {
@@ -73,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 header('Location: student.php?success=2');
                 exit();
             } catch (PDOException $e) {
-                $message = '❌ ' . htmlspecialchars($e->getMessage());
+                $message = 'X' . htmlspecialchars($e->getMessage());
                 $messageType = 'error';
             }
         }
@@ -82,7 +80,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['DeleteBulk'])) {
         $matricules = $_POST['matricules'] ?? [];
         if (empty($matricules)) {
-            $message = '⚠️ Aucun étudiant sélectionné.';
+            $message = 'Aucun étudiant sélectionné.';
             $messageType = 'error';
         } else {
             try {
@@ -96,7 +94,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 exit();
             } catch (PDOException $e) {
                 $bdd->rollBack();
-                $message = '❌ ' . htmlspecialchars($e->getMessage());
+                $message = 'X' . htmlspecialchars($e->getMessage());
                 $messageType = 'error';
             }
         }
@@ -117,7 +115,7 @@ if (isset($_GET['success'])) {
     }
 }
 
-// --- Récupération des étudiants (via la vue) ---
+// --- Récupération des étudiants
 try {
     $stmtStudents = $bdd->query("SELECT * FROM vw_students_with_department ORDER BY student_name ASC");
     $students = $stmtStudents->fetchAll(PDO::FETCH_ASSOC);
@@ -208,7 +206,7 @@ try {
 <th>Full Name</th>
 <th>Age</th>
 <th>Department</th>
-<th></th>
+<th>Action</th>
 </tr>
 </thead>
 <tbody>
@@ -459,9 +457,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     renderPage();
 
-    // ==========================================
-    // YouTube Studio Interactive Features JS
-    // ==========================================
 
     const selectAllCheckbox = document.getElementById('select-all-checkbox');
     const rowCheckboxes = document.querySelectorAll('.row-checkbox');
