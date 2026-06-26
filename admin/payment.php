@@ -40,6 +40,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['Create'])) {
         try {
             $stmt = $bdd->prepare("CALL sp_payment_create_full(?, ?, ?, ?, ?, ?)");
             $stmt->execute([$matricule, $amount, $department, $tranche, $payment_method, $reference]);
+            // After creating payment, check for any partial payments for this student
+            $partialCheckStmt = $bdd->prepare("SELECT COUNT(*) FROM partial_payment WHERE student_id = (SELECT id FROM student WHERE matricule = ?)");
+            $partialCheckStmt->execute([$matricule]);
+            $hasPartial = $partialCheckStmt->fetchColumn() > 0;
+            // Store flag in session for later display
+            if ($hasPartial) {
+                $_SESSION['partial_notice'] = true;
+            }
             header('Location: payment.php?success=1');
             exit();
         } catch (PDOException $e) {
@@ -86,7 +94,7 @@ foreach ($departments as $d) {
 <html>
 <head>
     <title>ULT Payment System</title>
-    <link rel="stylesheet" href="./styles.css">
+    <link rel="stylesheet" href="./styles.css?v=1.1">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         /* Vos styles (ici ou dans styles.css) */
@@ -250,12 +258,12 @@ foreach ($departments as $d) {
         <section id="payment" class="page active">
             <h1 class="page-title">Payments</h1>
 
-            <?php if ($success): ?>
-                <div class="message message-success">
-                    <span class="message-icon">✅</span>
-                    <span>Paiement créé avec succès.</span>
-                </div>
-            <?php endif; ?>
+            <?php
+    if (isset($_SESSION['partial_notice'])) {
+        echo '<div class="message message-error"><span class="message-icon">⚠️</span><span>Le paiement est partiel. Veuillez régler le solde restant.</span></div>';
+        unset($_SESSION['partial_notice']);
+    }
+?>
             <?php if (!empty($error)): ?>
                 <div class="message message-error">
                     <span class="message-icon">⚠️</span>
