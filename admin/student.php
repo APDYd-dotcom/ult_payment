@@ -55,6 +55,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     "Nom: $fullName, Département: $department"
                 );
 
+                try {
+                    sendNewStudentAdminNotification($bdd, $fullName, $department);
+                } catch (Throwable $mailError) {
+                    error_log('New student notification error: ' . $mailError->getMessage());
+                }
+
                 header('Location: student.php?success=1');
                 exit();
             } catch (PDOException $e) {

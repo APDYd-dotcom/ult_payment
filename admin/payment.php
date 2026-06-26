@@ -52,6 +52,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['Create'])) {
                 "Matricule: $matricule, Montant: $amount, Tranche: $tranche"
             );
 
+            try {
+                sendPaymentCreatedNotification($bdd, $matricule, $reference);
+
+                $paymentStmt = $bdd->prepare("
+                    SELECT payment_reference
+                    FROM vw_payment_details
+                    WHERE matricule = ?
+                      AND reference_number = ?
+                    ORDER BY payment_date DESC
+                    LIMIT 1
+                ");
+                $paymentStmt->execute([$matricule, $reference]);
+                $createdPayment = $paymentStmt->fetch(PDO::FETCH_ASSOC);
+
+                if ($createdPayment) {
+                    sendPenaltyCreatedNotification($bdd, $createdPayment['payment_reference']);
+                }
+            } catch (Throwable $mailError) {
+                error_log('Payment notification error: ' . $mailError->getMessage());
+            }
+
             // After creating payment, check for any partial payments for this student
             $partialCheckStmt = $bdd->prepare("SELECT COUNT(*) FROM partial_payment WHERE student_id = (SELECT id FROM student WHERE matricule = ?)");
             $partialCheckStmt->execute([$matricule]);

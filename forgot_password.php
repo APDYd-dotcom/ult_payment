@@ -11,11 +11,7 @@ ini_set('pcre.jit', '0');
 $message = '';
 $messageType = '';
 
-$smtpHost = 'smtp.gmail.com';
-$smtpPort = 587;
-$smtpUsername = 'arakazaprincedestinyvan@gmail.com';
-$smtpPassword = 'nahnnpxmjwxcbaua';
-$smtpEncryption = 'tls';
+
 
 try {
     $bdd = new PDO('mysql:host=localhost;dbname=ult_payment;charset=utf8', 'app_user', 'secure_password_123');
