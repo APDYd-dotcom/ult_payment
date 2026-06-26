@@ -7,6 +7,7 @@ error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
 $error = '';
+$success = '';
 
 try {
     $bdd = new PDO('mysql:host=localhost;dbname=ult_payment;charset=utf8', 'app_user', 'secure_password_123');
@@ -46,6 +47,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
     } catch (PDOException $e) {
         die('Query error: ' . $e->getMessage());
     }
+}
+
+if (isset($_GET['reset']) && $_GET['reset'] === 'success') {
+    $success = 'Votre mot de passe a été réinitialisé. Vous pouvez maintenant vous connecter.';
 }
 ?>
 <!DOCTYPE html>
@@ -310,6 +315,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
             align-items: center;
             gap: 0.5rem;
         }
+        .success-message {
+            background: #dcfce7;
+            color: #166534;
+            padding: 0.75rem 1rem;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid #16a34a;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
         @media (max-width: 480px) {
             .login-card {
                 padding: 1.75rem 1.25rem 1.5rem;
@@ -365,6 +382,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
                 </div>
             <?php endif; ?>
 
+            <?php if (!empty($success)): ?>
+                <div class="success-message">
+                    <span>✓</span> <?= htmlspecialchars($success) ?>
+                </div>
+            <?php endif; ?>
+
             <form method="POST" action="">
                 <div class="form-group">
                     <label for="email">
@@ -401,7 +424,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
                         <input type="checkbox" name="remember" />
                         Remember me
                     </label>
-                    <a href="#" class="forgot-link">Forgot password?</a>
+                    <a href="forgot_password.php" class="forgot-link">Forgot password?</a>
                 </div>
 
                 <div class="buttons">
