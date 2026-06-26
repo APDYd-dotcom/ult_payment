@@ -5,6 +5,7 @@ error_reporting(E_ALL);
 
 define('REQUIRED_ROLE', 'admin');
 require __DIR__ . '/../auth_check.php';
+require_once __DIR__ . '/../functions.php';
 
 $message = '';
 $messageType = '';
@@ -43,6 +44,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Appel de la procédure stockée
                 $stmt = $bdd->prepare("CALL sp_student_create(?, ?, ?)");
                 $stmt->execute([$fullName, $age, $department]);
+                $stmt->closeCursor();
+
+                logActivity(
+                    $bdd,
+                    $_SESSION['userId'] ?? null,
+                    $_SESSION['fullname'] ?? '',
+                    $_SESSION['email'] ?? '',
+                    'student_created',
+                    "Nom: $fullName, Département: $department"
+                );
 
                 header('Location: student.php?success=1');
                 exit();
@@ -68,6 +79,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 $stmt = $bdd->prepare("CALL sp_student_update(?, ?, ?, ?, ?)");
                 $stmt->execute([$oldMatricule, $newMatricule, $fullName, $age, $department]);
+                $stmt->closeCursor();
+
+                logActivity(
+                    $bdd,
+                    $_SESSION['userId'] ?? null,
+                    $_SESSION['fullname'] ?? '',
+                    $_SESSION['email'] ?? '',
+                    'student_updated',
+                    "Matricule: $newMatricule, Nouveau nom: $fullName"
+                );
+
                 header('Location: student.php?success=2');
                 exit();
             } catch (PDOException $e) {
@@ -86,9 +108,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 $bdd->beginTransaction();
                 $stmt = $bdd->prepare("CALL sp_student_delete_matricule(?)");
+                $deletedMatricules = [];
                 foreach ($matricules as $mat) {
                     $stmt->execute([$mat]);
+                    $stmt->closeCursor();
+                    $deletedMatricules[] = $mat;
                 }
+
+                logActivity(
+                    $bdd,
+                    $_SESSION['userId'] ?? null,
+                    $_SESSION['fullname'] ?? '',
+                    $_SESSION['email'] ?? '',
+                    'student_deleted',
+                    'Matricule: ' . implode(', ', $deletedMatricules)
+                );
+
                 $bdd->commit();
                 header('Location: student.php?success=3');
                 exit();

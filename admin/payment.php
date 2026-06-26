@@ -6,22 +6,23 @@ ini_set('pcre.jit', '0');
 
 define('REQUIRED_ROLE', 'admin');
 require __DIR__ . '/../auth_check.php';
+require_once __DIR__ . '/../functions.php';
 
 $error = '';
 $success = false;
 
 function translatePaymentError($message) {
     $translations = [
-        'Étudiant introuvable.' => '❌ L\'étudiant avec ce matricule n\'existe pas.',
-        'Tranche introuvable pour ce département.' => '❌ La tranche spécifiée n\'existe pas pour ce département.',
-        'Impossible de créer le paiement.' => '❌ Une erreur est survenue lors de la création du paiement.',
+        'Étudiant introuvable.' => 'L\'étudiant avec ce matricule n\'existe pas.',
+        'Tranche introuvable pour ce département.' => 'La tranche spécifiée n\'existe pas pour ce département.',
+        'Impossible de créer le paiement.' => 'Une erreur est survenue lors de la création du paiement.',
     ];
     foreach ($translations as $key => $value) {
         if (strpos($message, $key) !== false) {
             return $value;
         }
     }
-    return '❌  ' . htmlspecialchars($message);
+    return 'X' . htmlspecialchars($message);
 }
 
 // --- Gestion du formulaire ---
@@ -35,11 +36,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['Create'])) {
 
     // Validation
     if (empty($matricule) || $amount <= 0 || empty($department) || empty($tranche) || empty($payment_method) || empty($reference)) {
-        $error = '⚠️ Tous les champs sont obligatoires et le montant doit être > 0.';
+        $error = 'Tous les champs sont obligatoires et le montant doit être > 0.';
     } else {
         try {
             $stmt = $bdd->prepare("CALL sp_payment_create_full(?, ?, ?, ?, ?, ?)");
             $stmt->execute([$matricule, $amount, $department, $tranche, $payment_method, $reference]);
+            $stmt->closeCursor();
+
+            logActivity(
+                $bdd,
+                $_SESSION['userId'] ?? null,
+                $_SESSION['fullname'] ?? '',
+                $_SESSION['email'] ?? '',
+                'payment_created',
+                "Matricule: $matricule, Montant: $amount, Tranche: $tranche"
+            );
+
             // After creating payment, check for any partial payments for this student
             $partialCheckStmt = $bdd->prepare("SELECT COUNT(*) FROM partial_payment WHERE student_id = (SELECT id FROM student WHERE matricule = ?)");
             $partialCheckStmt->execute([$matricule]);

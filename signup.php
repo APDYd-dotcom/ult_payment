@@ -1,12 +1,13 @@
 <?php
 session_start();
 
-require_once __DIR__ . '/functions.php';
-
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
+ini_set('pcre.jit', '0');
 
 $error = '';
+$success = '';
+$fullname = $email = $role = '';
 
 try {
     $bdd = new PDO('mysql:host=localhost;dbname=ult_payment;charset=utf8', 'app_user', 'secure_password_123');
@@ -15,50 +16,60 @@ try {
     die('Database connection failed: ' . $e->getMessage());
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
-    $email = $_POST['email'];
-    $plainPassword = $_POST['password'];
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['signup'])) {
+    $fullname = trim($_POST['fullname'] ?? '');
+    $email = trim($_POST['email'] ?? '');
+    $password = $_POST['password'] ?? '';
+    $confirm_password = $_POST['confirm_password'] ?? '';
+    $role = $_POST['role'] ?? 'student';
 
-    try {
-        $stmt = $bdd->prepare("SELECT userId, fullname, email, password, role FROM user WHERE email = ?");
-        $stmt->execute([$email]);
-        $user = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if ($user && password_verify($plainPassword, $user['password'])) {
-            $_SESSION['email'] = $user['email'];
-            $_SESSION['fullname'] = $user['fullname'];
-            $_SESSION['role'] = $user['role'];
-            $_SESSION['userId'] = $user['userId'];
-            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-
-            // ✅ ENREGISTRER L'HISTORIQUE DE CONNEXION
-            logLogin($bdd, $user['userId'], $user['email']);
-
-            if ($user['role'] === 'admin') {
-                header('Location: /payment/admin/dashboard.php');
+    // --- Validation ---
+    if (empty($fullname) || empty($email) || empty($password) || empty($confirm_password)) {
+        $error = 'Tous les champs sont obligatoires.';
+    } elseif (strlen($fullname) < 3) {
+        $error = 'Le nom complet doit contenir au moins 3 caractères.';
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $error = 'Veuillez entrer une adresse email valide.';
+    } elseif (strlen($password) < 6) {
+        $error = 'Le mot de passe doit contenir au moins 6 caractères.';
+    } elseif ($password !== $confirm_password) {
+        $error = 'Les mots de passe ne correspondent pas.';
+    } else {
+        try {
+            // Vérifier si l'email existe déjà
+            $stmt = $bdd->prepare("SELECT userId FROM user WHERE email = ?");
+            $stmt->execute([$email]);
+            if ($stmt->fetch()) {
+                $error = 'Cet email est déjà utilisé. Veuillez vous connecter.';
             } else {
-                header('Location: /payment/student/dashboard.php');
+                // Hasher le mot de passe
+                $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+
+                // Insérer l'utilisateur
+                $stmt = $bdd->prepare("INSERT INTO user (fullname, email, password, role) VALUES (?, ?, ?, ?)");
+                $stmt->execute([$fullname, $email, $hashedPassword, $role]);
+
+                $success = '✅ Inscription réussie ! Vous pouvez maintenant vous connecter.';
+                // Réinitialiser les champs
+                $fullname = $email = '';
             }
-            exit();
-        } else {
-            $error = 'Email ou mot de passe incorrect.';
+        } catch (PDOException $e) {
+            $error = 'X Une erreur est survenue lors de l\'inscription. Veuillez réessayer.';
         }
-    } catch (PDOException $e) {
-        die('Query error: ' . $e->getMessage());
     }
 }
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ULT Payment System</title>
+    <title>Inscription - ULT Payment System</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet" />
     <style>
-        /* ===== TES STYLES EXISTANTS ===== */
+        /* ===== MÊMES STYLES QUE LA PAGE DE CONNEXION ===== */
         *,
         *::before,
         *::after {
@@ -75,16 +86,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
             background: linear-gradient(145deg, #f1f5f9 0%, #e2e8f0 100%);
             padding: 1.5rem;
         }
-        .login-card {
+        .signup-card {
             width: 100%;
-            max-width: 420px;
+            max-width: 440px;
             background: #ffffff;
             border-radius: 2rem;
             padding: 2.5rem 2rem 2.25rem;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08), 0 8px 24px rgba(0, 0, 0, 0.04);
             transition: transform 0.25s ease, box-shadow 0.3s ease;
         }
-        .login-card:hover {
+        .signup-card:hover {
             transform: translateY(-2px);
             box-shadow: 0 30px 80px rgba(0, 0, 0, 0.10), 0 10px 30px rgba(0, 0, 0, 0.05);
         }
@@ -120,14 +131,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
         .subhead {
             font-size: 0.95rem;
             color: #64748b;
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
             font-weight: 400;
             letter-spacing: -0.2px;
         }
+
         form {
             display: flex;
             flex-direction: column;
-            gap: 0.25rem;
+            gap: 0.1rem;
         }
         .form-group {
             display: flex;
@@ -148,7 +160,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
             font-size: 1rem;
             opacity: 0.6;
         }
-        .form-group input {
+        .form-group input,
+        .form-group select {
             padding: 0.8rem 1rem;
             font-size: 0.95rem;
             font-family: 'Inter', sans-serif;
@@ -165,54 +178,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
             font-weight: 400;
             font-size: 0.9rem;
         }
-        .form-group input:focus {
+        .form-group input:focus,
+        .form-group select:focus {
             border-color: #2563eb;
             background: #ffffff;
             box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.10);
         }
-        .form-group input:hover {
+        .form-group input:hover,
+        .form-group select:hover {
             border-color: #94a3b8;
         }
-        .form-options {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 0.75rem;
-            margin-bottom: 0.25rem;
-        }
-        .remember-me {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.85rem;
-            color: #475569;
-            cursor: pointer;
-        }
-        .remember-me input[type="checkbox"] {
-            width: 17px;
-            height: 17px;
-            accent-color: #2563eb;
-            border-radius: 4px;
-            cursor: pointer;
-            flex-shrink: 0;
-        }
-        .forgot-link {
-            font-size: 0.85rem;
-            font-weight: 500;
-            color: #2563eb;
-            text-decoration: none;
-            transition: color 0.2s ease;
-        }
-        .forgot-link:hover {
-            color: #1d4ed8;
-            text-decoration: underline;
-        }
-        .buttons {
-            margin-top: 1.75rem;
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-        }
+
         .btn-primary {
             padding: 0.9rem 1.5rem;
             font-family: 'Inter', sans-serif;
@@ -231,6 +207,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
             align-items: center;
             justify-content: center;
             gap: 0.5rem;
+            margin-top: 1rem;
         }
         .btn-primary:hover {
             background: linear-gradient(135deg, #1d4ed8, #1e40af);
@@ -241,31 +218,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
             transform: translateY(0px);
             box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
         }
-        .btn-primary .btn-icon {
-            font-size: 1.1rem;
-            line-height: 1;
-        }
-        .signup-row {
-            margin-top: 1.5rem;
-            text-align: center;
+
+        .error-message {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 0.75rem 1rem;
+            border-radius: 10px;
             font-size: 0.9rem;
-            color: #64748b;
+            margin-bottom: 1rem;
+            border-left: 4px solid #dc2626;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
-        .signup-row a {
-            color: #2563eb;
-            font-weight: 600;
-            text-decoration: none;
-            transition: color 0.2s ease;
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 0.75rem 1rem;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid #28a745;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
-        .signup-row a:hover {
-            color: #1d4ed8;
-            text-decoration: underline;
-        }
+
         .divider {
             display: flex;
             align-items: center;
             gap: 1rem;
-            margin: 0.5rem 0 0.25rem;
+            margin: 1.25rem 0 0.5rem;
         }
         .divider-line {
             flex: 1;
@@ -280,38 +263,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
             letter-spacing: 0.4px;
             white-space: nowrap;
         }
-        .demo-hint {
-            margin-top: 1.25rem;
-            padding: 0.7rem 1rem;
-            background: #f1f5f9;
-            border-radius: 10px;
-            font-size: 0.8rem;
-            color: #475569;
+
+        .login-row {
             text-align: center;
-            border: 1px dashed #cbd5e1;
-        }
-        .demo-hint code {
-            background: #e2e8f0;
-            padding: 0.15rem 0.5rem;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: #1e293b;
-        }
-        .error-message {
-            background: #fee2e2;
-            color: #991b1b;
-            padding: 0.75rem 1rem;
-            border-radius: 10px;
             font-size: 0.9rem;
-            margin-bottom: 1rem;
-            border-left: 4px solid #dc2626;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
+            color: #64748b;
+            margin-top: 0.75rem;
         }
+        .login-row a {
+            color: #2563eb;
+            font-weight: 600;
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+        .login-row a:hover {
+            color: #1d4ed8;
+            text-decoration: underline;
+        }
+
         @media (max-width: 480px) {
-            .login-card {
+            .signup-card {
                 padding: 1.75rem 1.25rem 1.5rem;
                 border-radius: 1.5rem;
             }
@@ -323,7 +294,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
                 height: 38px;
                 font-size: 1rem;
             }
-            .form-group input {
+            .form-group input,
+            .form-group select {
                 padding: 0.7rem 0.9rem;
                 font-size: 0.9rem;
             }
@@ -331,51 +303,59 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
                 padding: 0.8rem 1.25rem;
                 font-size: 0.95rem;
             }
-            .form-options {
-                flex-wrap: wrap;
-                gap: 0.5rem;
-            }
-        }
-        .sr-only {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            padding: 0;
-            margin: -1px;
-            overflow: hidden;
-            clip: rect(0, 0, 0, 0);
-            border: 0;
         }
     </style>
 </head>
 <body>
 
     <main>
-        <div class="login-card">
+        <div class="signup-card">
 
             <div class="brand">
                 <div class="brand-icon" aria-hidden="true">ULT</div>
                 <div class="brand-text">ULT<span>Pay</span></div>
             </div>
-            <p class="subhead">Secure access to your payment dashboard</p>
+            <p class="subhead">Créez votre compte</p>
 
             <?php if (!empty($error)): ?>
                 <div class="error-message">
-                    <span>⚠️</span> <?= htmlspecialchars($error) ?>
+                    <span></span> <?= htmlspecialchars($error) ?>
                 </div>
             <?php endif; ?>
 
-            <form method="POST" action="">
+            <?php if (!empty($success)): ?>
+                <div class="success-message">
+                    <span></span> <?= htmlspecialchars($success) ?>
+                </div>
+            <?php endif; ?>
+
+            <form method="POST" action="signup.php">
+                <div class="form-group">
+                    <label for="fullname">
+                        <span class="label-icon" aria-hidden="true">👤</span>
+                        Nom complet
+                    </label>
+                    <input
+                        id="fullname"
+                        type="text"
+                        name="fullname"
+                        placeholder="Jean Dupont"
+                        value="<?= htmlspecialchars($fullname) ?>"
+                        required
+                    />
+                </div>
+
                 <div class="form-group">
                     <label for="email">
                         <span class="label-icon" aria-hidden="true">✉</span>
-                        Email address
+                        Email
                     </label>
                     <input
                         id="email"
                         type="email"
                         name="email"
-                        placeholder="you@example.com"
+                        placeholder="vous@exemple.com"
+                        value="<?= htmlspecialchars($email) ?>"
                         autocomplete="email"
                         required
                     />
@@ -384,42 +364,58 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
                 <div class="form-group">
                     <label for="password">
                         <span class="label-icon" aria-hidden="true">🔒</span>
-                        Password
+                        Mot de passe (6 caractères minimum)
                     </label>
                     <input
                         id="password"
                         type="password"
                         name="password"
-                        placeholder="Enter your password"
-                        autocomplete="current-password"
+                        placeholder="••••••••"
+                        autocomplete="new-password"
                         required
                     />
                 </div>
 
-                <div class="form-options">
-                    <label class="remember-me">
-                        <input type="checkbox" name="remember" />
-                        Remember me
+                <div class="form-group">
+                    <label for="confirm_password">
+                        <span class="label-icon" aria-hidden="true">✓</span>
+                        Confirmer le mot de passe
                     </label>
-                    <a href="#" class="forgot-link">Forgot password?</a>
+                    <input
+                        id="confirm_password"
+                        type="password"
+                        name="confirm_password"
+                        placeholder="••••••••"
+                        autocomplete="new-password"
+                        required
+                    />
                 </div>
 
-                <div class="buttons">
-                    <button type="submit" name="login" class="btn-primary">
-                        <span class="btn-icon" aria-hidden="true">→</span>
-                        Sign in
-                    </button>
+                <div class="form-group">
+                    <label for="role">
+                        <span class="label-icon" aria-hidden="true">🎓</span>
+                        Rôle
+                    </label>
+                    <select id="role" name="role">
+                        <option value="student" <?= $role === 'student' ? 'selected' : '' ?>>Étudiant</option>
+                        <option value="admin" <?= $role === 'admin' ? 'selected' : '' ?>>Administrateur</option>
+                    </select>
                 </div>
+
+                <button type="submit" name="signup" class="btn-primary">
+                    <span aria-hidden="true">✨</span>
+                    S'inscrire
+                </button>
             </form>
 
             <div class="divider">
                 <span class="divider-line"></span>
-                <span class="divider-text">or</span>
+                <span class="divider-text">ou</span>
                 <span class="divider-line"></span>
             </div>
 
-            <div class="signup-row">
-                Don't have an account? <a href="signup.php">Create one</a>
+            <div class="login-row">
+                Vous avez déjà un compte ? <a href="index.php">Se connecter</a>
             </div>
 
         </div>

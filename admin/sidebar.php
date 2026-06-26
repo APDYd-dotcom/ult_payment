@@ -9,7 +9,9 @@
     <li><a href="payment.php">Payments</a></li>
     <li><a href="partial.php">Partial Payments</a></li>
     <li><a href="penalty.php">Penalties</a></li>
+    <li><a href="login_history.php">Login History</a></li>
     <li><a href="mailing.php">Mailing List</a></li>
+    <li><a href="activity_log.php">Activity Log</a></li>
     <li>
         <form method="POST" action="/payment/logout.php">
             <input type="hidden" name="logout_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">

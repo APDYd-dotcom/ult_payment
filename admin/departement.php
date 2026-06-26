@@ -5,6 +5,7 @@ error_reporting(E_ALL);
 
 define('REQUIRED_ROLE', 'admin');
 require __DIR__ . '/../auth_check.php';   // $bdd est défini ici
+require_once __DIR__ . '/../functions.php';
 
 $message = '';
 $messageType = ''; // success / error
@@ -66,6 +67,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $trancheName = $Name . " - Tranche " . ($idx + 1);
                         $trancheStmt->execute([$departmentId, $trancheName, $dates['date_debut'], $dates['date_fin']]);
                     }
+
+                    logActivity(
+                        $bdd,
+                        $_SESSION['userId'] ?? null,
+                        $_SESSION['fullname'] ?? '',
+                        $_SESSION['email'] ?? '',
+                        'department_created',
+                        "Nom: $Name, Minerval: $minerval"
+                    );
+
                     // Commit transaction
                     $bdd->commit();
                     // Succès → redirection avec message
@@ -89,12 +100,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $minerval = floatval($_POST['minerval'] ?? 0);
 
         if (empty($id) || empty($Name) || $minerval <= 0) {
-            $message = '⚠️ Tous les champs sont obligatoires et doivent être valides.';
+            $message = 'Tous les champs sont obligatoires et doivent être valides.';
             $messageType = 'error';
         } else {
             try {
                 $stmt = $bdd->prepare("UPDATE department SET name = ?, minerval_total = ? WHERE id = ?");
                 $stmt->execute([$Name, $minerval, $id]);
+
+                logActivity(
+                    $bdd,
+                    $_SESSION['userId'] ?? null,
+                    $_SESSION['fullname'] ?? '',
+                    $_SESSION['email'] ?? '',
+                    'department_updated',
+                    "ID: $id, Nouveau nom: $Name"
+                );
+
                 header('Location: departement.php?success=2');
                 exit();
             } catch (PDOException $e) {
@@ -112,10 +133,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             try {
                 $bdd->beginTransaction();
+                $nameStmt = $bdd->prepare("SELECT name FROM department WHERE id = ?");
                 $stmt = $bdd->prepare("DELETE FROM department WHERE id = ?");
+                $deletedDepartmentNames = [];
+
                 foreach ($ids as $id) {
+                    $nameStmt->execute([$id]);
+                    $deptName = $nameStmt->fetchColumn();
+                    if ($deptName !== false) {
+                        $deletedDepartmentNames[] = $deptName;
+                    }
+
                     $stmt->execute([$id]);
                 }
+
+                logActivity(
+                    $bdd,
+                    $_SESSION['userId'] ?? null,
+                    $_SESSION['fullname'] ?? '',
+                    $_SESSION['email'] ?? '',
+                    'department_deleted',
+                    'Nom: ' . implode(', ', $deletedDepartmentNames)
+                );
+
                 $bdd->commit();
                 header('Location: departement.php?success=3');
                 exit();
