@@ -2,12 +2,16 @@
 session_start();
 
 require_once __DIR__ . '/functions.php';
+ini_set('pcre.jit', '0');
 
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
 $error = '';
 $success = '';
+const MAX_FAILED_LOGIN_ATTEMPTS = 3;
+const FAILED_LOGIN_WINDOW_MINUTES = 15;
+const INVALID_LOGIN_MESSAGE = 'Identifiants invalides. Votre compte sera verrouillé après 3 tentatives échouées.';
 
 try {
     $bdd = new PDO('mysql:host=localhost;dbname=ult_payment;charset=utf8', 'app_user', 'secure_password_123');
@@ -17,22 +21,47 @@ try {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
-    $email = $_POST['email'];
-    $plainPassword = $_POST['password'];
+    $email = trim($_POST['email'] ?? '');
+    $plainPassword = $_POST['password'] ?? '';
 
     try {
-        $stmt = $bdd->prepare("SELECT userId, fullname, email, password, role FROM user WHERE email = ?");
+        $bdd->beginTransaction();
+
+        $stmt = $bdd->prepare("
+            SELECT userId, fullname, email, password, role, failed_attempts, is_locked, last_failed_attempt
+            FROM user
+            WHERE email = ?
+            LIMIT 1
+            FOR UPDATE
+        ");
         $stmt->execute([$email]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if ($user && password_verify($plainPassword, $user['password'])) {
+        if (!$user) {
+            $bdd->commit();
+            $error = INVALID_LOGIN_MESSAGE;
+        } elseif ((int) $user['is_locked'] === 1) {
+            $bdd->commit();
+            $error = 'Votre compte est verrouillé. Veuillez contacter l\'administrateur.';
+        } elseif (password_verify($plainPassword, $user['password'])) {
+            $resetStmt = $bdd->prepare("
+                UPDATE user
+                SET failed_attempts = 0,
+                    is_locked = 0,
+                    last_failed_attempt = NULL,
+                    unlock_time = NULL
+                WHERE userId = ?
+            ");
+            $resetStmt->execute([$user['userId']]);
+            $bdd->commit();
+
+            session_regenerate_id(true);
             $_SESSION['email'] = $user['email'];
             $_SESSION['fullname'] = $user['fullname'];
             $_SESSION['role'] = $user['role'];
             $_SESSION['userId'] = $user['userId'];
             $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 
-            // ✅ ENREGISTRER L'HISTORIQUE DE CONNEXION
             logLogin($bdd, $user['userId'], $user['email']);
 
             if ($user['role'] === 'admin') {
@@ -42,15 +71,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
             }
             exit();
         } else {
-            $error = 'Email ou mot de passe incorrect.';
+            $lastFailedAt = $user['last_failed_attempt'] ? strtotime($user['last_failed_attempt']) : null;
+            $windowStartedAt = strtotime('-' . FAILED_LOGIN_WINDOW_MINUTES . ' minutes');
+            $failedAttempts = ($lastFailedAt && $lastFailedAt >= $windowStartedAt)
+                ? ((int) $user['failed_attempts'] + 1)
+                : 1;
+            $shouldLock = $failedAttempts >= MAX_FAILED_LOGIN_ATTEMPTS;
+
+            $updateStmt = $bdd->prepare("
+                UPDATE user
+                SET failed_attempts = ?,
+                    is_locked = ?,
+                    last_failed_attempt = NOW()
+                WHERE userId = ?
+            ");
+            $updateStmt->execute([
+                $failedAttempts,
+                $shouldLock ? 1 : 0,
+                $user['userId'],
+            ]);
+
+            $bdd->commit();
+
+            if ($shouldLock) {
+                sendAccountLockedAdminNotification($bdd, (int) $user['userId']);
+                $error = 'Votre compte est verrouillé après 3 tentatives échouées. Veuillez contacter l\'administrateur.';
+            } else {
+                $error = INVALID_LOGIN_MESSAGE;
+            }
         }
     } catch (PDOException $e) {
+        if ($bdd->inTransaction()) {
+            $bdd->rollBack();
+        }
         die('Query error: ' . $e->getMessage());
     }
 }
 
 if (isset($_GET['reset']) && $_GET['reset'] === 'success') {
     $success = 'Votre mot de passe a été réinitialisé. Vous pouvez maintenant vous connecter.';
+}
+
+if (isset($_GET['locked']) && $_GET['locked'] === '1') {
+    $error = 'Votre compte est verrouillé. Veuillez contacter l\'administrateur.';
 }
 ?>
 <!DOCTYPE html>

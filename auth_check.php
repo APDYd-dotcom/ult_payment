@@ -17,6 +17,23 @@ if (!isset($_SESSION['email'])) {
     exit();
 }
 
+// Defense supplementaire : si un compte est verrouille pendant qu'une session existe,
+// on coupe l'acces aux pages protegees.
+$lockStmt = $bdd->prepare("SELECT is_locked FROM user WHERE userId = ? LIMIT 1");
+$lockStmt->execute([$_SESSION['userId'] ?? 0]);
+$isLocked = $lockStmt->fetchColumn();
+
+if ($isLocked === false || (int) $isLocked === 1) {
+    $_SESSION = [];
+    if (ini_get('session.use_cookies')) {
+        $params = session_get_cookie_params();
+        setcookie(session_name(), '', time() - 42000, $params['path'], $params['domain'], $params['secure'], $params['httponly']);
+    }
+    session_destroy();
+    header('Location: /payment?locked=1');
+    exit();
+}
+
 // 2. The role required for this page must be defined as a constant
 if (!defined('REQUIRED_ROLE')) {
     die('Required role not defined');

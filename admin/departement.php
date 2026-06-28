@@ -128,7 +128,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['DeleteBulk'])) {
         $ids = $_POST['ids'] ?? [];
         if (empty($ids)) {
-            $message = '⚠️ Aucun département sélectionné.';
+            $message = 'Aucun département sélectionné.';
             $messageType = 'error';
         } else {
             try {

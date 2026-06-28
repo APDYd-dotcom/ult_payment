@@ -213,6 +213,56 @@ function sendNewStudentAdminNotification(PDO $bdd, string $fullName, string $dep
     }
 }
 
+function sendAccountLockedAdminNotification(PDO $bdd, int $lockedUserId): void {
+    $userStmt = $bdd->prepare("
+        SELECT userId, fullname, email, failed_attempts, last_failed_attempt
+        FROM user
+        WHERE userId = ?
+        LIMIT 1
+    ");
+    $userStmt->execute([$lockedUserId]);
+    $lockedUser = $userStmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$lockedUser) {
+        return;
+    }
+
+    $adminStmt = $bdd->prepare("
+        SELECT fullname, email
+        FROM user
+        WHERE role = ?
+          AND is_locked = 0
+          AND email IS NOT NULL
+          AND email <> ''
+    ");
+    $adminStmt->execute(['admin']);
+    $admins = $adminStmt->fetchAll(PDO::FETCH_ASSOC);
+
+    if (!$admins) {
+        error_log("Account lock email skipped: no active admin email found for user {$lockedUserId}");
+        return;
+    }
+
+    $subject = 'Compte verrouillé - ULT Payment System';
+    $body = '
+        <p>Bonjour,</p>
+        <p>Un compte utilisateur a été verrouillé automatiquement après plusieurs tentatives de connexion infructueuses.</p>
+        <ul>
+            <li><strong>Nom :</strong> ' . htmlspecialchars($lockedUser['fullname'], ENT_QUOTES, 'UTF-8') . '</li>
+            <li><strong>Email :</strong> ' . htmlspecialchars($lockedUser['email'], ENT_QUOTES, 'UTF-8') . '</li>
+            <li><strong>Tentatives échouées :</strong> ' . (int) $lockedUser['failed_attempts'] . '</li>
+            <li><strong>Dernière tentative :</strong> ' . htmlspecialchars((string) $lockedUser['last_failed_attempt'], ENT_QUOTES, 'UTF-8') . '</li>
+        </ul>
+        <p>Vous pouvez déverrouiller ce compte depuis l\'interface d\'administration.</p>
+    ';
+
+    foreach ($admins as $admin) {
+        if (!sendEmail($admin['email'], $admin['fullname'], $subject, $body)) {
+            error_log("Account lock email failed for admin {$admin['email']} - user {$lockedUserId}");
+        }
+    }
+}
+
 /**
  * Récupère l'adresse IP du client
  */

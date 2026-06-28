@@ -10,6 +10,7 @@
     <li><a href="partial.php">Partial Payments</a></li>
     <li><a href="penalty.php">Penalties</a></li>
     <li><a href="login_history.php">Login History</a></li>
+    <li><a href="manage_users.php">Manage Users</a></li>
     <li><a href="mailing.php">Mailing List</a></li>
     <li><a href="activity_log.php">Activity Log</a></li>
     <li><a href="profile.php">Profile</a></li>
