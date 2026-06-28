@@ -70,6 +70,75 @@ function createNotification(PDO $bdd, int $userId, string $title, string $messag
     return $stmt->execute([$userId, $title, $message, $link]);
 }
 
+function tableColumnExists(PDO $bdd, string $table, string $column): bool {
+    $stmt = $bdd->prepare("
+        SELECT COUNT(*)
+        FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = ?
+          AND COLUMN_NAME = ?
+    ");
+    $stmt->execute([$table, $column]);
+
+    return (int) $stmt->fetchColumn() > 0;
+}
+
+function getStudentByNameAndDepartment(PDO $bdd, string $fullName, string $department): ?array {
+    $stmt = $bdd->prepare("
+        SELECT matricule, student_name, department_name
+        FROM vw_students_with_department
+        WHERE LOWER(TRIM(student_name)) = LOWER(TRIM(?))
+          AND LOWER(TRIM(department_name)) = LOWER(TRIM(?))
+        ORDER BY matricule DESC
+        LIMIT 1
+    ");
+    $stmt->execute([$fullName, $department]);
+    $student = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    return $student ?: null;
+}
+
+function createStudentUserAccount(PDO $bdd, string $fullName, string $department): ?array {
+    $student = getStudentByNameAndDepartment($bdd, $fullName, $department);
+    if (!$student || empty($student['matricule'])) {
+        return null;
+    }
+
+    $matricule = trim((string) $student['matricule']);
+    $hasMatriculeColumn = tableColumnExists($bdd, 'user', 'matricule');
+
+    if ($hasMatriculeColumn) {
+        $existingStmt = $bdd->prepare("SELECT userId FROM user WHERE matricule = ? LIMIT 1");
+        $existingStmt->execute([$matricule]);
+    } else {
+        $existingStmt = $bdd->prepare("SELECT userId FROM user WHERE email = ? LIMIT 1");
+        $existingStmt->execute([$matricule]);
+    }
+
+    if ($existingStmt->fetch()) {
+        return $student;
+    }
+
+    $hashedPassword = password_hash($matricule, PASSWORD_DEFAULT);
+
+    if ($hasMatriculeColumn) {
+        $email = $matricule . '@student.local';
+        $stmt = $bdd->prepare("
+            INSERT INTO user (fullname, email, password, role, matricule)
+            VALUES (?, ?, ?, 'student', ?)
+        ");
+        $stmt->execute([$student['student_name'], $email, $hashedPassword, $matricule]);
+    } else {
+        $stmt = $bdd->prepare("
+            INSERT INTO user (fullname, email, password, role)
+            VALUES (?, ?, ?, 'student')
+        ");
+        $stmt->execute([$student['student_name'], $matricule, $hashedPassword]);
+    }
+
+    return $student;
+}
+
 function getAdminUsers(PDO $bdd): array {
     $stmt = $bdd->prepare("
         SELECT userId, fullname, email

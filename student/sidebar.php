@@ -1,5 +1,7 @@
 <?php 
-    define('REQUIRED_ROLE', 'student');
+    if (!defined('REQUIRED_ROLE')) {
+        define('REQUIRED_ROLE', 'student');
+    }
     require_once __DIR__ . '/../auth_check.php';
 ?>
 
@@ -13,6 +15,7 @@
     <li><a href="payment.php">Payments</a></li>
     <li><a href="partial.php">Partial Payments</a></li>
     <li><a href="penalty.php">Penalties</a></li>
+    <li><a href="profile.php">Profile</a></li>
 
     <li>
         <form method="POST" action="/payment/logout.php">

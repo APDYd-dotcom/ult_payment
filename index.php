@@ -21,20 +21,27 @@ try {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
-    $email = trim($_POST['email'] ?? '');
+    $identifier = trim($_POST['email'] ?? '');
     $plainPassword = $_POST['password'] ?? '';
 
     try {
         $bdd->beginTransaction();
 
-        $stmt = $bdd->prepare("
-            SELECT userId, fullname, email, password, role, failed_attempts, is_locked, last_failed_attempt
-            FROM user
-            WHERE email = ?
-            LIMIT 1
-            FOR UPDATE
-        ");
-        $stmt->execute([$email]);
+        $hasMatriculeColumn = tableColumnExists($bdd, 'user', 'matricule');
+        $loginSql = $hasMatriculeColumn
+            ? "SELECT userId, fullname, email, password, role, failed_attempts, is_locked, last_failed_attempt
+               FROM user
+               WHERE email = ? OR matricule = ?
+               LIMIT 1
+               FOR UPDATE"
+            : "SELECT userId, fullname, email, password, role, failed_attempts, is_locked, last_failed_attempt
+               FROM user
+               WHERE email = ?
+               LIMIT 1
+               FOR UPDATE";
+
+        $stmt = $bdd->prepare($loginSql);
+        $stmt->execute($hasMatriculeColumn ? [$identifier, $identifier] : [$identifier]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$user) {
@@ -460,14 +467,14 @@ if (isset($_GET['expired']) && $_GET['expired'] === '1') {
                 <div class="form-group">
                     <label for="email">
                         <span class="label-icon" aria-hidden="true">✉</span>
-                        Email address
+                        Email or matricule
                     </label>
                     <input
                         id="email"
-                        type="email"
+                        type="text"
                         name="email"
-                        placeholder="you@example.com"
-                        autocomplete="email"
+                        placeholder="you@example.com or S001"
+                        autocomplete="username"
                         required
                     />
                 </div>

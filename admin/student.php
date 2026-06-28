@@ -46,13 +46,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->execute([$fullName, $age, $department]);
                 $stmt->closeCursor();
 
+                $studentAccount = createStudentUserAccount($bdd, $fullName, $department);
+
                 logActivity(
                     $bdd,
                     $_SESSION['userId'] ?? null,
                     $_SESSION['fullname'] ?? '',
                     $_SESSION['email'] ?? '',
                     'student_created',
-                    "Nom: $fullName, Département: $department"
+                    "Nom: $fullName, Département: $department" . ($studentAccount ? ", Matricule: {$studentAccount['matricule']}" : '')
                 );
 
                 try {
