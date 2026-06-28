@@ -57,8 +57,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 try {
                     sendNewStudentAdminNotification($bdd, $fullName, $department);
-                } catch (Throwable $mailError) {
-                    error_log('New student notification error: ' . $mailError->getMessage());
+                    createNewStudentAdminInAppNotifications($bdd, $fullName, $department);
+                } catch (Throwable $notificationError) {
+                    error_log('New student notification error: ' . $notificationError->getMessage());
                 }
 
                 header('Location: student.php?success=1');

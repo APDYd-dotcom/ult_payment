@@ -64,6 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['Create'])) {
 
             try {
                 sendPaymentCreatedNotification($bdd, $matricule, $reference);
+                createPaymentInAppNotification($bdd, $matricule, $reference);
 
                 $paymentStmt = $bdd->prepare("
                     SELECT payment_reference
@@ -78,9 +79,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['Create'])) {
 
                 if ($createdPayment) {
                     sendPenaltyCreatedNotification($bdd, $createdPayment['payment_reference']);
+                    createPenaltyInAppNotification($bdd, $createdPayment['payment_reference']);
                 }
-            } catch (Throwable $mailError) {
-                error_log('Payment notification error: ' . $mailError->getMessage());
+            } catch (Throwable $notificationError) {
+                error_log('Payment notification error: ' . $notificationError->getMessage());
             }
 
             // After creating payment, check for any partial payments for this student

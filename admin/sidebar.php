@@ -22,4 +22,5 @@
     </li>
 </ul>
 
+<?php include_once __DIR__ . '/../notification_assets.php'; ?>
 <?php include_once __DIR__ . '/../session_timeout_assets.php'; ?>

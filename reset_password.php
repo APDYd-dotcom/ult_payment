@@ -1,6 +1,8 @@
 <?php
 session_start();
 
+require_once __DIR__ . '/functions.php';
+
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 ini_set('pcre.jit', '0');
@@ -76,6 +78,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $markToken->execute([$tokenRow['id']]);
 
             $bdd->commit();
+
+            try {
+                createPasswordResetAdminNotifications($bdd, (int) $tokenRow['user_id']);
+            } catch (Throwable $notificationError) {
+                error_log('Password reset in-app notification error: ' . $notificationError->getMessage());
+            }
 
             header('Location: index.php?reset=success');
             exit();

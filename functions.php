@@ -57,9 +57,35 @@ function sendEmail($toEmail, $toName, $subject, $bodyHTML, $altBody = '') {
     }
 }
 
+function createNotification(PDO $bdd, int $userId, string $title, string $message, ?string $link = null): bool {
+    if ($userId <= 0 || trim($title) === '' || trim($message) === '') {
+        return false;
+    }
+
+    $stmt = $bdd->prepare("
+        INSERT INTO notifications (user_id, title, message, link, is_read, created_at)
+        VALUES (?, ?, ?, ?, 0, NOW())
+    ");
+
+    return $stmt->execute([$userId, $title, $message, $link]);
+}
+
+function getAdminUsers(PDO $bdd): array {
+    $stmt = $bdd->prepare("
+        SELECT userId, fullname, email
+        FROM user
+        WHERE role = ?
+          AND is_locked = 0
+          AND email IS NOT NULL
+          AND email <> ''
+    ");
+    $stmt->execute(['admin']);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
 function findUserEmailByFullname(PDO $bdd, string $fullname): ?array {
     $stmt = $bdd->prepare("
-        SELECT fullname, email
+        SELECT userId, fullname, email
         FROM user
         WHERE LOWER(TRIM(fullname)) = LOWER(TRIM(?))
           AND email IS NOT NULL
@@ -70,6 +96,115 @@ function findUserEmailByFullname(PDO $bdd, string $fullname): ?array {
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
     return $user ?: null;
+}
+
+function createPaymentInAppNotification(PDO $bdd, string $matricule, string $referenceNumber): void {
+    $stmt = $bdd->prepare("
+        SELECT payment_reference, student_name, matricule, tranche_name, amount, reference_number
+        FROM vw_payment_details
+        WHERE matricule = ?
+          AND reference_number = ?
+        ORDER BY payment_date DESC
+        LIMIT 1
+    ");
+    $stmt->execute([$matricule, $referenceNumber]);
+    $payment = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$payment) {
+        return;
+    }
+
+    $studentUser = findUserEmailByFullname($bdd, $payment['student_name']);
+    if (!$studentUser) {
+        return;
+    }
+
+    $amount = number_format((float) $payment['amount'], 2, ',', ' ');
+    createNotification(
+        $bdd,
+        (int) $studentUser['userId'],
+        'Paiement enregistré',
+        "Votre paiement {$payment['payment_reference']} de {$amount} BIF pour {$payment['tranche_name']} a été enregistré.",
+        '/payment/student/payment.php'
+    );
+}
+
+function createPenaltyInAppNotification(PDO $bdd, string $paymentReference): void {
+    $stmt = $bdd->prepare("
+        SELECT penalite_reference, payment_reference, matricule, student_name,
+               retard_jours, montant_penalite
+        FROM vw_penalites
+        WHERE payment_reference = ?
+        ORDER BY penalite_created_at DESC
+        LIMIT 1
+    ");
+    $stmt->execute([$paymentReference]);
+    $penalty = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$penalty) {
+        return;
+    }
+
+    $studentUser = findUserEmailByFullname($bdd, $penalty['student_name']);
+    if (!$studentUser) {
+        return;
+    }
+
+    $amount = number_format((float) $penalty['montant_penalite'], 2, ',', ' ');
+    createNotification(
+        $bdd,
+        (int) $studentUser['userId'],
+        'Pénalité appliquée',
+        "Une pénalité de {$amount} BIF a été appliquée à votre paiement {$penalty['payment_reference']} après {$penalty['retard_jours']} jours de retard.",
+        '/payment/student/penalty.php'
+    );
+}
+
+function createNewStudentAdminInAppNotifications(PDO $bdd, string $fullName, string $department): void {
+    $studentStmt = $bdd->prepare("
+        SELECT matricule, student_name, department_name
+        FROM vw_students_with_department
+        WHERE LOWER(TRIM(student_name)) = LOWER(TRIM(?))
+          AND LOWER(TRIM(department_name)) = LOWER(TRIM(?))
+        ORDER BY matricule DESC
+        LIMIT 1
+    ");
+    $studentStmt->execute([$fullName, $department]);
+    $student = $studentStmt->fetch(PDO::FETCH_ASSOC) ?: [
+        'matricule' => 'N/A',
+        'student_name' => $fullName,
+        'department_name' => $department,
+    ];
+
+    foreach (getAdminUsers($bdd) as $admin) {
+        createNotification(
+            $bdd,
+            (int) $admin['userId'],
+            'Nouvel étudiant',
+            "{$student['student_name']} ({$student['matricule']}) a été ajouté dans {$student['department_name']}.",
+            '/payment/admin/student.php'
+        );
+    }
+}
+
+function createPasswordResetAdminNotifications(PDO $bdd, int $resetUserId): void {
+    $userStmt = $bdd->prepare("SELECT fullname, email FROM user WHERE userId = ? LIMIT 1");
+    $userStmt->execute([$resetUserId]);
+    $user = $userStmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$user) {
+        return;
+    }
+
+    foreach (getAdminUsers($bdd) as $admin) {
+        createNotification(
+            $bdd,
+            (int) $admin['userId'],
+            'Mot de passe réinitialisé',
+            "Le mot de passe du compte {$user['fullname']} ({$user['email']}) a été réinitialisé.",
+            '/payment/admin/activity_log.php'
+        );
+    }
 }
 
 function sendPaymentCreatedNotification(PDO $bdd, string $matricule, string $referenceNumber): void {
