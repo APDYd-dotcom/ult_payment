@@ -13,6 +13,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit();
 }
 
+$isExpiredLogout = isset($_POST['expired']) && $_POST['expired'] === '1';
+
 // --- Vérifier le token CSRF ---
 if (!isset($_POST['logout_token']) || !isset($_SESSION['csrf_token']) ||
     !hash_equals($_SESSION['csrf_token'], $_POST['logout_token'])) {
@@ -55,5 +57,5 @@ if (ini_get("session.use_cookies")) {
 session_destroy();
 
 // --- Rediriger vers la page de connexion ---
-header("Location: /payment");
+header('Location: /payment' . ($isExpiredLogout ? '?expired=1' : ''));
 exit();

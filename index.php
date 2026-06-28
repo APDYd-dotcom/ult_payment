@@ -61,6 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
             $_SESSION['role'] = $user['role'];
             $_SESSION['userId'] = $user['userId'];
             $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+            $_SESSION['last_activity'] = time();
 
             logLogin($bdd, $user['userId'], $user['email']);
 
@@ -114,6 +115,10 @@ if (isset($_GET['reset']) && $_GET['reset'] === 'success') {
 
 if (isset($_GET['locked']) && $_GET['locked'] === '1') {
     $error = 'Votre compte est verrouillé. Veuillez contacter l\'administrateur.';
+}
+
+if (isset($_GET['expired']) && $_GET['expired'] === '1') {
+    $error = 'Votre session a expiré pour cause d\'inactivité.';
 }
 ?>
 <!DOCTYPE html>
