@@ -10,6 +10,16 @@ require_once __DIR__ . '/../functions.php';
 
 $error = '';
 $success = false;
+$filterDepartment = trim($_GET['department'] ?? '');
+$filterTranche = trim($_GET['tranche'] ?? '');
+$filterDateStart = trim($_GET['date_start'] ?? '');
+$filterDateEnd = trim($_GET['date_end'] ?? '');
+$activeFilterCount = count(array_filter([
+    $filterDepartment,
+    $filterTranche,
+    $filterDateStart,
+    $filterDateEnd,
+], fn($value) => $value !== ''));
 
 function translatePaymentError($message) {
     $translations = [
@@ -89,17 +99,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['Create'])) {
     }
 }
 
-// --- Récupération des paiements via la vue ---
+// --- Récupération des données pour les listes déroulantes ---
+$departments = $bdd->query("SELECT id, name FROM department ORDER BY name")->fetchAll(PDO::FETCH_ASSOC);
+$tranches = $bdd->query("SELECT id, name, department_id FROM tranche ORDER BY name")->fetchAll(PDO::FETCH_ASSOC);
+
+// --- Récupération des paiements via la vue avec filtres avancés ---
 try {
-    $stmtPayments = $bdd->query("SELECT * FROM vw_payment_details ORDER BY payment_reference DESC");
+    $sql = "SELECT payment_reference, student_name, matricule, department_name, tranche_name,
+                   amount, payment_method, reference_number, payment_date
+            FROM vw_payment_details";
+    $where = [];
+    $params = [];
+
+    if ($filterDepartment !== '') {
+        $where[] = 'department_name = ?';
+        $params[] = $filterDepartment;
+    }
+
+    if ($filterTranche !== '') {
+        $where[] = 'tranche_name = ?';
+        $params[] = $filterTranche;
+    }
+
+    if ($filterDateStart !== '') {
+        $where[] = 'payment_date >= ?';
+        $params[] = $filterDateStart . ' 00:00:00';
+    }
+
+    if ($filterDateEnd !== '') {
+        $where[] = 'payment_date <= ?';
+        $params[] = $filterDateEnd . ' 23:59:59';
+    }
+
+    if ($where) {
+        $sql .= ' WHERE ' . implode(' AND ', $where);
+    }
+
+    $sql .= ' ORDER BY payment_date DESC, payment_reference DESC';
+
+    $stmtPayments = $bdd->prepare($sql);
+    $stmtPayments->execute($params);
     $payments = $stmtPayments->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     die('Erreur lors du chargement des paiements : ' . $e->getMessage());
 }
-
-// --- Récupération des données pour les listes déroulantes ---
-$departments = $bdd->query("SELECT id, name FROM department ORDER BY name")->fetchAll(PDO::FETCH_ASSOC);
-$tranches = $bdd->query("SELECT id, name, department_id FROM tranche ORDER BY name")->fetchAll(PDO::FETCH_ASSOC);
 
 // Récupération des méthodes de paiement depuis l'énumération
 $paymentMethods = [];
@@ -304,6 +347,74 @@ foreach ($departments as $d) {
                 </div>
             <?php endif; ?>
 
+            <form class="advanced-filters" method="GET" action="payment.php">
+                <div class="filters-header">
+                    <div>
+                        <h2>Filtres avancés</h2>
+                        <p><?= count($payments) ?> paiement<?= count($payments) > 1 ? 's' : '' ?> trouvé<?= count($payments) > 1 ? 's' : '' ?></p>
+                    </div>
+                    <?php if ($activeFilterCount > 0): ?>
+                        <span class="filters-badge"><?= $activeFilterCount ?> filtre<?= $activeFilterCount > 1 ? 's' : '' ?> actif<?= $activeFilterCount > 1 ? 's' : '' ?></span>
+                    <?php endif; ?>
+                </div>
+
+                <div class="filter-field">
+                    <label for="filter_department">Département</label>
+                    <select id="filter_department" name="department">
+                        <option value="">Tous les départements</option>
+                        <?php foreach ($departments as $dept): ?>
+                            <option
+                                value="<?= htmlspecialchars($dept['name'], ENT_QUOTES, 'UTF-8') ?>"
+                                <?= $filterDepartment === $dept['name'] ? 'selected' : '' ?>
+                            >
+                                <?= htmlspecialchars($dept['name'], ENT_QUOTES, 'UTF-8') ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <div class="filter-field">
+                    <label for="filter_tranche">Tranche</label>
+                    <select id="filter_tranche" name="tranche">
+                        <option value="">Toutes les tranches</option>
+                        <?php foreach ($tranches as $t): ?>
+                            <option
+                                value="<?= htmlspecialchars($t['name'], ENT_QUOTES, 'UTF-8') ?>"
+                                data-dept="<?= (int) $t['department_id'] ?>"
+                                <?= $filterTranche === $t['name'] ? 'selected' : '' ?>
+                            >
+                                <?= htmlspecialchars($t['name'], ENT_QUOTES, 'UTF-8') ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <div class="filter-field">
+                    <label for="date_start">Date de début</label>
+                    <input
+                        id="date_start"
+                        type="date"
+                        name="date_start"
+                        value="<?= htmlspecialchars($filterDateStart, ENT_QUOTES, 'UTF-8') ?>"
+                    >
+                </div>
+
+                <div class="filter-field">
+                    <label for="date_end">Date de fin</label>
+                    <input
+                        id="date_end"
+                        type="date"
+                        name="date_end"
+                        value="<?= htmlspecialchars($filterDateEnd, ENT_QUOTES, 'UTF-8') ?>"
+                    >
+                </div>
+
+                <div class="filter-actions">
+                    <button type="submit" class="btn btn-primary">Appliquer</button>
+                    <a href="payment.php" class="btn btn-secondary">Réinitialiser</a>
+                </div>
+            </form>
+
             <div class="crud-container">
                 <!-- Tableau -->
                 <div class="table-section">
@@ -419,29 +530,43 @@ foreach ($departments as $d) {
 <!-- JavaScript pour filtrer les tranches selon le département -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const deptSelect = document.getElementById('department');
-    const trancheSelect = document.getElementById('tranche');
-    const allOptions = Array.from(trancheSelect.querySelectorAll('option[data-dept]'));
     const deptMap = <?= json_encode($deptMap) ?>;
 
-    function updateTranches() {
-        const selectedDept = deptSelect.value;
-        const deptId = deptMap[selectedDept] || null;
+    function setupTrancheFilter(departmentSelectId, trancheSelectId, showAllWhenNoDepartment) {
+        const deptSelect = document.getElementById(departmentSelectId);
+        const trancheSelect = document.getElementById(trancheSelectId);
 
-        allOptions.forEach(opt => {
-            const optDept = parseInt(opt.dataset.dept, 10);
-            if (deptId && optDept === deptId) {
-                opt.style.display = '';
-            } else {
-                opt.style.display = 'none';
+        if (!deptSelect || !trancheSelect) {
+            return;
+        }
+
+        const trancheOptions = Array.from(trancheSelect.querySelectorAll('option[data-dept]'));
+
+        function updateTranches() {
+            const selectedDept = deptSelect.value;
+            const deptId = deptMap[selectedDept] || null;
+
+            trancheOptions.forEach(opt => {
+                const optDept = parseInt(opt.dataset.dept, 10);
+                if ((showAllWhenNoDepartment && !deptId) || optDept === deptId) {
+                    opt.style.display = '';
+                } else {
+                    opt.style.display = 'none';
+                }
+            });
+
+            const selectedOption = trancheSelect.selectedOptions[0];
+            if (selectedOption && selectedOption.dataset.dept && selectedOption.style.display === 'none') {
+                trancheSelect.value = '';
             }
-        });
-        // Réinitialiser la sélection
-        trancheSelect.value = '';
+        }
+
+        deptSelect.addEventListener('change', updateTranches);
+        updateTranches();
     }
 
-    deptSelect.addEventListener('change', updateTranches);
-    updateTranches();
+    setupTrancheFilter('filter_department', 'filter_tranche', true);
+    setupTrancheFilter('department', 'tranche', false);
 });
 </script>
 
