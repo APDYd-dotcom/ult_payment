@@ -221,6 +221,39 @@ table th {
     color: white;
 }
 
+.sortable-header {
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+    padding-right: 28px;
+    transition: background 0.2s ease;
+}
+
+.sortable-header:hover,
+.sortable-header.sort-active {
+    background: #2563eb;
+}
+
+.sortable-header::after {
+    content: "↕";
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 0.8rem;
+}
+
+.sortable-header.sort-asc::after {
+    content: "▲";
+    color: #ffffff;
+}
+
+.sortable-header.sort-desc::after {
+    content: "▼";
+    color: #ffffff;
+}
+
 /* ===== Formulaire ===== */
 form {
     display: flex;

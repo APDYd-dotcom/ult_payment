@@ -438,15 +438,15 @@ foreach ($departments as $d) {
                     <table>
                         <thead>
                             <tr>
-                                <th>Référence</th>
-                                <th>Étudiant</th>
-                                <th>Matricule</th>
-                                <th>Département</th>
-                                <th>Tranche</th>
-                                <th>Montant</th>
-                                <th>Méthode</th>
-                                <th>Réf. externe</th>
-                                <th>Date</th>
+                                <th data-sort-index="0" data-sort-type="text">Référence</th>
+                                <th data-sort-index="1" data-sort-type="text">Étudiant</th>
+                                <th data-sort-index="2" data-sort-type="text">Matricule</th>
+                                <th data-sort-index="3" data-sort-type="text">Département</th>
+                                <th data-sort-index="4" data-sort-type="text">Tranche</th>
+                                <th data-sort-index="5" data-sort-type="number">Montant</th>
+                                <th data-sort-index="6" data-sort-type="text">Méthode</th>
+                                <th data-sort-index="7" data-sort-type="text">Réf. externe</th>
+                                <th data-sort-index="8" data-sort-type="date">Date</th>
                             </tr>
                         </thead>
                         <tbody id="payment-table-body">
@@ -570,6 +570,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
+<script src="./table-sort.js?v=1.0"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const searchInput = document.getElementById('payment-search');
@@ -585,11 +586,19 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const allRows = Array.from(tableBody.querySelectorAll('tr'));
     const dataRows = allRows.filter(row => row.querySelectorAll('td').length >= 4);
+    const tableSorter = window.createTableSorter(
+        tableBody.closest('table'),
+        dataRows,
+        function () {
+            currentPage = 1;
+            renderPage();
+        }
+    );
 
     function getFilteredRows() {
         const query = searchInput.value.trim().toLowerCase();
 
-        return dataRows.filter(row => {
+        const filteredRows = dataRows.filter(row => {
             const cells = row.cells;
             const studentName = cells[1]?.textContent.trim().toLowerCase() || '';
             const matricule = cells[2]?.textContent.trim().toLowerCase() || '';
@@ -602,6 +611,8 @@ document.addEventListener('DOMContentLoaded', function () {
             row.dataset.matchesFilter = matches ? '1' : '0';
             return matches;
         });
+
+        return tableSorter.apply(filteredRows);
     }
 
     // Set total count once

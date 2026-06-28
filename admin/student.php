@@ -243,10 +243,10 @@ try {
 <thead>
 <tr>
 <th><input type="checkbox" id="select-all-checkbox"></th>
-<th>Matricule</th>
-<th>Full Name</th>
-<th>Age</th>
-<th>Department</th>
+<th data-sort-index="1" data-sort-type="text">Matricule</th>
+<th data-sort-index="2" data-sort-type="text">Full Name</th>
+<th data-sort-index="3" data-sort-type="number">Age</th>
+<th data-sort-index="4" data-sort-type="text">Department</th>
 <th>Action</th>
 </tr>
 </thead>
@@ -382,6 +382,7 @@ try {
     </div>
 </div>
 
+<script src="./table-sort.js?v=1.0"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const searchInput = document.getElementById('payment-search');
@@ -400,15 +401,25 @@ document.addEventListener('DOMContentLoaded', function () {
         const cells = row.querySelectorAll('td');
         return cells.length > 0 && cells[0].getAttribute('colspan') === null;
     });
+    const tableSorter = window.createTableSorter(
+        tableBody.closest('table'),
+        dataRows,
+        function () {
+            currentPage = 1;
+            renderPage();
+        }
+    );
 
     function getFilteredRows() {
         const query = searchInput.value.trim().toLowerCase();
 
-        return dataRows.filter(row => {
+        const filteredRows = dataRows.filter(row => {
             const cells = Array.from(row.cells);
             const textContent = cells.map(cell => cell.textContent.trim().toLowerCase()).join(' ');
             return query === '' || textContent.includes(query);
         });
+
+        return tableSorter.apply(filteredRows);
     }
 
     const totalCounter = document.getElementById('counter-total');

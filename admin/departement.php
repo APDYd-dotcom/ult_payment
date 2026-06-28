@@ -264,8 +264,8 @@ try {
                             <thead>
                                 <tr>
                                     <th><input type="checkbox" id="select-all-checkbox"></th>
-                                    <th>Nom du département</th>
-                                    <th>Minerval total</th>
+                                    <th data-sort-index="1" data-sort-type="text">Nom du département</th>
+                                    <th data-sort-index="2" data-sort-type="number">Minerval total</th>
                                     <th></th>
                                 </tr>
                             </thead>
@@ -387,6 +387,7 @@ try {
         </div>
     </div>
 
+    <script src="./table-sort.js?v=1.0"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const searchInput = document.getElementById('payment-search');
@@ -405,15 +406,25 @@ try {
                 const cells = row.querySelectorAll('td');
                 return cells.length > 0 && cells[0].getAttribute('colspan') === null;
             });
+            const tableSorter = window.createTableSorter(
+                tableBody.closest('table'),
+                dataRows,
+                function () {
+                    currentPage = 1;
+                    renderPage();
+                }
+            );
 
             function getFilteredRows() {
                 const query = searchInput.value.trim().toLowerCase();
 
-                return dataRows.filter(row => {
+                const filteredRows = dataRows.filter(row => {
                     const cells = Array.from(row.cells);
                     const textContent = cells.map(cell => cell.textContent.trim().toLowerCase()).join(' ');
                     return query === '' || textContent.includes(query);
                 });
+
+                return tableSorter.apply(filteredRows);
             }
 
             const totalCounter = document.getElementById('counter-total');
