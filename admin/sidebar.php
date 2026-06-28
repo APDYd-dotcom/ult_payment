@@ -12,6 +12,7 @@
     <li><a href="login_history.php">Login History</a></li>
     <li><a href="mailing.php">Mailing List</a></li>
     <li><a href="activity_log.php">Activity Log</a></li>
+    <li><a href="profile.php">Profile</a></li>
     <li>
         <form method="POST" action="/payment/logout.php">
             <input type="hidden" name="logout_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">

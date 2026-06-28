@@ -18,7 +18,7 @@
 <div class="container">
 
   <aside id="sidebar" class="sidebar">
-    <?php include 'sidebar.php'; ?>
+    <?php include 'admin/sidebar.php'; ?>
   </aside>
 
   <main id="main-content" class="main-content">

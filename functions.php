@@ -4,7 +4,12 @@
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
-
+// --- Configuration SMTP (à centraliser) ---
+$smtpHost = 'smtp.gmail.com';
+$smtpPort = 587;
+$smtpUsername = 'arakazaprincedestinyvan@gmail.com';
+$smtpPassword = 'nahnnpxmjwxcbaua';
+$smtpEncryption = 'tls';
 
 /**
  * Envoie un email générique
