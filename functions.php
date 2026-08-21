@@ -139,6 +139,286 @@ function createStudentUserAccount(PDO $bdd, string $fullName, string $department
     return $student;
 }
 
+function createAlert(
+    PDO $bdd,
+    ?int $userId,
+    string $type,
+    string $title,
+    string $message,
+    string $severity,
+    ?string $link = null,
+    ?string $sourceKey = null
+): bool {
+    $validSeverities = ['info', 'warning', 'important', 'danger'];
+    if (!in_array($severity, $validSeverities, true)) {
+        $severity = 'info';
+    }
+
+    if ($sourceKey !== null && $sourceKey !== '') {
+        $duplicateSql = "
+            SELECT id
+            FROM alerts
+            WHERE type = ?
+              AND source_key = ?
+              AND is_resolved = 0
+              AND " . ($userId === null ? 'user_id IS NULL' : 'user_id = ?') . "
+            LIMIT 1
+        ";
+        $duplicateParams = $userId === null ? [$type, $sourceKey] : [$type, $sourceKey, $userId];
+    } else {
+        $duplicateSql = "
+            SELECT id
+            FROM alerts
+            WHERE type = ?
+              AND is_resolved = 0
+              AND " . ($userId === null ? 'user_id IS NULL' : 'user_id = ?') . "
+            LIMIT 1
+        ";
+        $duplicateParams = $userId === null ? [$type] : [$type, $userId];
+    }
+
+    $duplicateStmt = $bdd->prepare($duplicateSql);
+    $duplicateStmt->execute($duplicateParams);
+    if ($duplicateStmt->fetchColumn()) {
+        return false;
+    }
+
+    $stmt = $bdd->prepare("
+        INSERT INTO alerts (user_id, source_key, type, title, message, severity, link, is_resolved, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 0, NOW())
+    ");
+
+    return $stmt->execute([$userId, $sourceKey, $type, $title, $message, $severity, $link]);
+}
+
+function resolveMissingAlertSources(PDO $bdd, string $type, array $activeSourceKeys): void {
+    $activeSourceKeys = array_values(array_unique(array_filter($activeSourceKeys, static function ($key) {
+        return is_string($key) && $key !== '';
+    })));
+
+    if (!$activeSourceKeys) {
+        $stmt = $bdd->prepare("
+            UPDATE alerts
+            SET is_resolved = 1, resolved_at = NOW()
+            WHERE type = ?
+              AND is_resolved = 0
+        ");
+        $stmt->execute([$type]);
+        return;
+    }
+
+    $placeholders = implode(',', array_fill(0, count($activeSourceKeys), '?'));
+    $stmt = $bdd->prepare("
+        UPDATE alerts
+        SET is_resolved = 1, resolved_at = NOW()
+        WHERE type = ?
+          AND is_resolved = 0
+          AND source_key IS NOT NULL
+          AND source_key NOT IN ($placeholders)
+    ");
+    $stmt->execute(array_merge([$type], $activeSourceKeys));
+}
+
+function getSystemAlertSummary(PDO $bdd, ?int $userId = null, bool $includeGlobal = false): array {
+    $sql = "
+        SELECT severity, COUNT(*) AS total
+        FROM alerts
+        WHERE is_resolved = 0
+    ";
+    $params = [];
+
+    if ($userId !== null && $includeGlobal) {
+        $sql .= " AND (user_id = ? OR user_id IS NULL)";
+        $params[] = $userId;
+    } elseif ($userId !== null) {
+        $sql .= " AND user_id = ?";
+        $params[] = $userId;
+    }
+
+    $sql .= " GROUP BY severity";
+    $stmt = $bdd->prepare($sql);
+    $stmt->execute($params);
+
+    $summary = ['info' => 0, 'warning' => 0, 'important' => 0, 'danger' => 0, 'total' => 0];
+    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        $severity = $row['severity'];
+        $count = (int) $row['total'];
+        $summary[$severity] = $count;
+        $summary['total'] += $count;
+    }
+
+    return $summary;
+}
+
+function getSystemAlerts(PDO $bdd, ?int $userId = null, bool $includeGlobal = false, int $limit = 5): array {
+    $sql = "
+        SELECT id, user_id, type, title, message, severity, link, is_resolved, created_at, resolved_at
+        FROM alerts
+        WHERE is_resolved = 0
+    ";
+    $params = [];
+
+    if ($userId !== null && $includeGlobal) {
+        $sql .= " AND (user_id = ? OR user_id IS NULL)";
+        $params[] = $userId;
+    } elseif ($userId !== null) {
+        $sql .= " AND user_id = ?";
+        $params[] = $userId;
+    }
+
+    $sql .= "
+        ORDER BY FIELD(severity, 'danger', 'important', 'warning', 'info'), created_at DESC
+        LIMIT " . max(1, $limit);
+
+    $stmt = $bdd->prepare($sql);
+    $stmt->execute($params);
+
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+function checkAlerts(PDO $bdd): void {
+    $adminUsers = getAdminUsers($bdd);
+    $adminIds = array_map(static fn (array $admin): int => (int) $admin['userId'], $adminUsers);
+
+    $lateSources = [];
+    $stmt = $bdd->query("
+        SELECT p.id AS penalty_id, p.due_date, p.retard_jours,
+               s.name AS student_name, s.matricule, u.userId AS student_user_id
+        FROM penalite p
+        JOIN student s ON s.id = p.student_id
+        LEFT JOIN user u ON u.matricule = s.matricule AND u.role = 'student'
+        WHERE DATEDIFF(CURDATE(), p.due_date) > 15
+    ");
+    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        $sourceKey = 'late_payment:penalty:' . $row['penalty_id'];
+        $lateSources[] = $sourceKey;
+        $message = "Le paiement de {$row['student_name']} ({$row['matricule']}) dépasse l'échéance depuis {$row['retard_jours']} jours.";
+
+        if (!empty($row['student_user_id'])) {
+            createAlert($bdd, (int) $row['student_user_id'], 'late_payment', 'Paiement en retard', $message, 'danger', '/payment/student/payment.php', $sourceKey);
+        }
+        foreach ($adminIds as $adminId) {
+            createAlert($bdd, $adminId, 'late_payment', 'Paiement en retard', $message, 'danger', '/payment/admin/penalty.php', $sourceKey);
+        }
+    }
+    resolveMissingAlertSources($bdd, 'late_payment', $lateSources);
+
+    $upcomingSources = [];
+    $stmt = $bdd->query("
+        SELECT s.id AS student_id, s.name AS student_name, s.matricule,
+               t.id AS tranche_id, t.name AS tranche_name, t.date_fin, u.userId AS student_user_id
+        FROM student s
+        JOIN tranche t ON t.department_id = s.department_id
+        LEFT JOIN payment p ON p.student_id = s.id AND p.tranche_id = t.id
+        LEFT JOIN user u ON u.matricule = s.matricule AND u.role = 'student'
+        WHERE p.id IS NULL
+          AND DATEDIFF(t.date_fin, CURDATE()) BETWEEN 1 AND 5
+    ");
+    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        if (empty($row['student_user_id'])) {
+            continue;
+        }
+
+        $sourceKey = 'upcoming_due:student:' . $row['student_id'] . ':tranche:' . $row['tranche_id'];
+        $upcomingSources[] = $sourceKey;
+        $message = "La tranche {$row['tranche_name']} arrive à échéance le {$row['date_fin']}.";
+        createAlert($bdd, (int) $row['student_user_id'], 'upcoming_due', 'Échéance approchante', $message, 'warning', '/payment/student/payment.php', $sourceKey);
+    }
+    resolveMissingAlertSources($bdd, 'upcoming_due', $upcomingSources);
+
+    $examSources = [];
+    $stmt = $bdd->query("
+        SELECT p.id AS penalty_id, p.retard_jours,
+               s.name AS student_name, s.matricule, u.userId AS student_user_id
+        FROM penalite p
+        JOIN student s ON s.id = p.student_id
+        LEFT JOIN user u ON u.matricule = s.matricule AND u.role = 'student'
+        WHERE p.retard_jours > 60 OR p.exam_acces = 0
+    ");
+    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        $sourceKey = 'exam_access_lost:penalty:' . $row['penalty_id'];
+        $examSources[] = $sourceKey;
+        $message = "{$row['student_name']} ({$row['matricule']}) a perdu l'accès aux examens après {$row['retard_jours']} jours de retard.";
+
+        if (!empty($row['student_user_id'])) {
+            createAlert($bdd, (int) $row['student_user_id'], 'exam_access_lost', 'Accès aux examens perdu', $message, 'danger', '/payment/student/penalty.php', $sourceKey);
+        }
+        foreach ($adminIds as $adminId) {
+            createAlert($bdd, $adminId, 'exam_access_lost', 'Accès aux examens perdu', $message, 'danger', '/payment/admin/penalty.php', $sourceKey);
+        }
+    }
+    resolveMissingAlertSources($bdd, 'exam_access_lost', $examSources);
+
+    $highPenaltySources = [];
+    $stmt = $bdd->query("
+        SELECT p.id AS penalty_id, p.montant_penalite, d.minerval_total,
+               s.name AS student_name, s.matricule
+        FROM penalite p
+        JOIN student s ON s.id = p.student_id
+        JOIN department d ON d.id = s.department_id
+        WHERE p.montant_penalite > (d.minerval_total * 0.2)
+    ");
+    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        $sourceKey = 'high_penalty:penalty:' . $row['penalty_id'];
+        $highPenaltySources[] = $sourceKey;
+        $amount = number_format((float) $row['montant_penalite'], 2, ',', ' ');
+        $message = "La pénalité de {$row['student_name']} ({$row['matricule']}) atteint {$amount} BIF, soit plus de 20% du minerval.";
+
+        foreach ($adminIds as $adminId) {
+            createAlert($bdd, $adminId, 'high_penalty', 'Pénalité élevée', $message, 'warning', '/payment/admin/penalty.php', $sourceKey);
+        }
+    }
+    resolveMissingAlertSources($bdd, 'high_penalty', $highPenaltySources);
+
+    $unpaidTrancheSources = [];
+    $stmt = $bdd->query("
+        SELECT t.id AS tranche_id, t.name AS tranche_name, t.date_fin, d.name AS department_name
+        FROM tranche t
+        JOIN department d ON d.id = t.department_id
+        WHERE t.date_fin <= CURDATE()
+          AND NOT EXISTS (
+              SELECT 1
+              FROM payment p
+              WHERE p.tranche_id = t.id
+              LIMIT 1
+          )
+    ");
+    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        $sourceKey = 'unpaid_tranche:tranche:' . $row['tranche_id'];
+        $unpaidTrancheSources[] = $sourceKey;
+        $message = "La tranche {$row['tranche_name']} du département {$row['department_name']} n'a aucun paiement enregistré après l'échéance du {$row['date_fin']}.";
+
+        foreach ($adminIds as $adminId) {
+            createAlert($bdd, $adminId, 'unpaid_tranche', 'Tranche non payée', $message, 'important', '/payment/admin/payment.php', $sourceKey);
+        }
+    }
+    resolveMissingAlertSources($bdd, 'unpaid_tranche', $unpaidTrancheSources);
+
+    $minervalSources = [];
+    $stmt = $bdd->query("
+        SELECT s.id AS student_id, s.name AS student_name, s.matricule,
+               d.name AS department_name, d.minerval_total,
+               COALESCE(SUM(p.amount), 0) AS paid_total
+        FROM student s
+        JOIN department d ON d.id = s.department_id
+        LEFT JOIN payment p ON p.student_id = s.id
+        GROUP BY s.id, s.name, s.matricule, d.name, d.minerval_total
+        HAVING paid_total < d.minerval_total
+    ");
+    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        $sourceKey = 'minerval_not_reached:student:' . $row['student_id'];
+        $minervalSources[] = $sourceKey;
+        $paid = number_format((float) $row['paid_total'], 2, ',', ' ');
+        $expected = number_format((float) $row['minerval_total'], 2, ',', ' ');
+        $message = "{$row['student_name']} ({$row['matricule']}) a payé {$paid} BIF sur {$expected} BIF pour {$row['department_name']}.";
+
+        foreach ($adminIds as $adminId) {
+            createAlert($bdd, $adminId, 'minerval_not_reached', 'Minerval non atteint', $message, 'warning', '/payment/admin/payment.php', $sourceKey);
+        }
+    }
+    resolveMissingAlertSources($bdd, 'minerval_not_reached', $minervalSources);
+}
+
 function getAdminUsers(PDO $bdd): array {
     $stmt = $bdd->prepare("
         SELECT userId, fullname, email

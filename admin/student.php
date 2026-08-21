@@ -320,7 +320,7 @@ try {
 </main>
 </div>
 
-<!-- Floating Action Bar (YouTube Studio style) -->
+<!-- Floating Action Bar -->
 <div class="floating-bulk-bar" id="bulk-action-bar">
     <span class="selection-count"><span id="selected-count-badge">0</span> selected</span>
     <div class="bulk-actions">

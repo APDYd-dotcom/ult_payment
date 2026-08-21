@@ -3,6 +3,7 @@
 session_start();
 
 require_once __DIR__ . '/functions.php';
+require_once __DIR__ . '/check_alerts.php';
 
 if (!defined('SESSION_TIMEOUT')) {
     define('SESSION_TIMEOUT', 900);
@@ -52,6 +53,15 @@ if (($now - $lastActivity) > SESSION_TIMEOUT) {
 
 $_SESSION['last_activity'] = $now;
 
+if (($now - (int) ($_SESSION['last_alert_check'] ?? 0)) >= 60) {
+    try {
+        runSystemAlertChecks($bdd);
+        $_SESSION['last_alert_check'] = $now;
+    } catch (Throwable $alertError) {
+        error_log('System alert check failed: ' . $alertError->getMessage());
+    }
+}
+
 // Defense supplementaire : si un compte est verrouille pendant qu'une session existe,
 // on coupe l'acces aux pages protegees.
 $lockStmt = $bdd->prepare("SELECT is_locked FROM user WHERE userId = ? LIMIT 1");
@@ -70,7 +80,7 @@ if (!defined('REQUIRED_ROLE')) {
 }
 
 // 4. Check if the user's role matches the required role
-if ($_SESSION['role'] !== REQUIRED_ROLE) {
+if (REQUIRED_ROLE !== 'any' && $_SESSION['role'] !== REQUIRED_ROLE) {
     // Redirect to the correct dashboard
     if ($_SESSION['role'] === 'admin') {
         header('Location: /payment/admin/dashboard.php');
