@@ -3,9 +3,7 @@ ini_set('display_errors', 1);
 error_reporting(E_ALL);
 ini_set('pcre.jit', '0');
 
-define('REQUIRED_ROLE', 'student');
-
-require_once __DIR__ . '/../auth_check.php';
+require_once __DIR__ . '/auth_check.php';
 
 $error = '';
 $success = '';
@@ -29,6 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stmt->execute([$newEmail, $_SESSION['userId']]);
 
                     $_SESSION['email'] = $newEmail;
+                    logActivity($bdd, $_SESSION['userId'] ?? null, $_SESSION['fullname'] ?? '', $_SESSION['email'] ?? '', 'student_account_email_updated', 'Email du compte etudiant mis a jour.');
                     $success = 'Votre email a été mis à jour avec succès.';
                 }
             } catch (PDOException $e) {
@@ -60,6 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
                     $stmt = $bdd->prepare("UPDATE user SET password = ? WHERE userId = ?");
                     $stmt->execute([$hashedPassword, $_SESSION['userId']]);
+                    logActivity($bdd, $_SESSION['userId'] ?? null, $_SESSION['fullname'] ?? '', $_SESSION['email'] ?? '', 'student_account_password_updated', 'Mot de passe du compte etudiant mis a jour.');
                     $success = 'Votre mot de passe a été changé avec succès.';
                 }
             } catch (PDOException $e) {
@@ -218,6 +218,21 @@ if (substr($displayEmail, -strlen($studentEmailSuffix)) === $studentEmailSuffix)
                         <span class="profile-label">Rôle</span>
                         <span class="profile-value">Étudiant</span>
                     </div>
+                    <?php if ($currentStudent): ?>
+                        <div class="profile-row">
+                            <span class="profile-label">Dossier</span>
+                            <span class="profile-value">
+                                <?= htmlspecialchars($currentStudent['name'], ENT_QUOTES, 'UTF-8') ?>
+                                -
+                                <?= htmlspecialchars($currentStudent['department_name'] ?? 'Departement non defini', ENT_QUOTES, 'UTF-8') ?>
+                            </span>
+                        </div>
+                    <?php else: ?>
+                        <div class="profile-row">
+                            <span class="profile-label">Dossier</span>
+                            <span class="profile-value">A completer dans Mon dossier</span>
+                        </div>
+                    <?php endif; ?>
                 </div>
 
                 <div class="grid-2">

@@ -75,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
             if ($user['role'] === 'admin') {
                 header('Location: /payment/admin/dashboard.php');
             } else {
-                header('Location: /payment/student/dashboard.php');
+                header('Location: /payment/student/profile.php');
             }
             exit();
         } else {
