@@ -54,12 +54,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vérification 2FA - ULT Payment System</title>
+    <?php loadTheme($bdd); ?>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', sans-serif;
+            font-family: var(--font-family, 'Segoe UI', sans-serif);
         }
         body {
             min-height: 100vh;
@@ -67,7 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             align-items: center;
             justify-content: center;
             padding: 1.5rem;
-            background: #f4f6f9;
+            background: var(--background-color, #f4f6f9);
         }
         .verify-card {
             width: 100%;
@@ -78,7 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
         h1 {
-            color: #1e3a8a;
+            color: var(--primary-color, #1e3a8a);
             font-size: 1.65rem;
             margin-bottom: 0.75rem;
         }
@@ -102,7 +103,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             margin-bottom: 1rem;
         }
         input:focus {
-            border-color: #2563eb;
+            border-color: var(--secondary-color, #2563eb);
             outline: none;
             box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
         }
@@ -111,7 +112,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             padding: 0.8rem 1rem;
             border: none;
             border-radius: 8px;
-            background: #2563eb;
+            background: var(--secondary-color, #2563eb);
             color: #ffffff;
             cursor: pointer;
             font-weight: 700;

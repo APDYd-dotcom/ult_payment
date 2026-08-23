@@ -1,6 +1,8 @@
 <?php
 session_start();
 
+require_once __DIR__ . '/functions.php';
+
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 ini_set('pcre.jit', '0');
@@ -65,6 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['signup'])) {
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Inscription - ULT Payment System</title>
+    <?php loadTheme($bdd); ?>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet" />
@@ -78,7 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['signup'])) {
             box-sizing: border-box;
         }
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: var(--font-family, 'Inter', -apple-system, BlinkMacSystemFont, sans-serif);
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -108,7 +111,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['signup'])) {
         .brand-icon {
             width: 44px;
             height: 44px;
-            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            background: linear-gradient(135deg, var(--secondary-color, #2563eb), #1d4ed8);
             border-radius: 14px;
             display: flex;
             align-items: center;
@@ -126,7 +129,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['signup'])) {
             color: #0f172a;
         }
         .brand-text span {
-            color: #2563eb;
+            color: var(--secondary-color, #2563eb);
         }
         .subhead {
             font-size: 0.95rem;
@@ -164,7 +167,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['signup'])) {
         .form-group select {
             padding: 0.8rem 1rem;
             font-size: 0.95rem;
-            font-family: 'Inter', sans-serif;
+            font-family: var(--font-family, 'Inter', sans-serif);
             border: 1.5px solid #e2e8f0;
             border-radius: 12px;
             background: #f8fafc;
@@ -180,7 +183,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['signup'])) {
         }
         .form-group input:focus,
         .form-group select:focus {
-            border-color: #2563eb;
+            border-color: var(--secondary-color, #2563eb);
             background: #ffffff;
             box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.10);
         }
@@ -191,12 +194,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['signup'])) {
 
         .btn-primary {
             padding: 0.9rem 1.5rem;
-            font-family: 'Inter', sans-serif;
+            font-family: var(--font-family, 'Inter', sans-serif);
             font-size: 1rem;
             font-weight: 600;
             border: none;
             border-radius: 12px;
-            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            background: linear-gradient(135deg, var(--secondary-color, #2563eb), #1d4ed8);
             color: #ffffff;
             cursor: pointer;
             transition: transform 0.15s ease, box-shadow 0.25s ease, background 0.25s ease;
@@ -271,7 +274,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['signup'])) {
             margin-top: 0.75rem;
         }
         .login-row a {
-            color: #2563eb;
+            color: var(--secondary-color, #2563eb);
             font-weight: 600;
             text-decoration: none;
             transition: color 0.2s ease;

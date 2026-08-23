@@ -111,30 +111,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Réinitialiser le mot de passe - ULT Payment System</title>
+    <?php loadTheme($bdd); ?>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet" />
     <style>
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(145deg, #f1f5f9 0%, #e2e8f0 100%); padding: 1.5rem; }
+        body { font-family: var(--font-family, 'Inter', sans-serif); min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(145deg, #f1f5f9 0%, #e2e8f0 100%); padding: 1.5rem; }
         .login-card { width: 100%; max-width: 420px; background: #fff; border-radius: 2rem; padding: 2.5rem 2rem 2.25rem; box-shadow: 0 20px 60px rgba(0,0,0,.08), 0 8px 24px rgba(0,0,0,.04); }
         .brand { display: flex; align-items: center; gap: .6rem; margin-bottom: .5rem; }
-        .brand-icon { width: 44px; height: 44px; background: linear-gradient(135deg, #2563eb, #1d4ed8); border-radius: 14px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 1.25rem; box-shadow: 0 6px 16px rgba(37,99,235,.25); }
+        .brand-icon { width: 44px; height: 44px; background: linear-gradient(135deg, var(--secondary-color, #2563eb), #1d4ed8); border-radius: 14px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 1.25rem; box-shadow: 0 6px 16px rgba(37,99,235,.25); }
         .brand-text { font-size: 1.5rem; font-weight: 700; color: #0f172a; }
-        .brand-text span { color: #2563eb; }
+        .brand-text span { color: var(--secondary-color, #2563eb); }
         .subhead { font-size: .95rem; color: #64748b; margin-bottom: 2rem; line-height: 1.5; }
         form { display: flex; flex-direction: column; gap: .75rem; }
         .form-group { display: flex; flex-direction: column; }
         .form-group label { font-size: .85rem; font-weight: 600; color: #1e293b; margin-bottom: .4rem; }
-        .form-group input { padding: .8rem 1rem; font-size: .95rem; font-family: 'Inter', sans-serif; border: 1.5px solid #e2e8f0; border-radius: 12px; background: #f8fafc; color: #0f172a; outline: none; width: 100%; }
-        .form-group input:focus { border-color: #2563eb; background: #fff; box-shadow: 0 0 0 4px rgba(37,99,235,.10); }
+        .form-group input { padding: .8rem 1rem; font-size: .95rem; font-family: var(--font-family, 'Inter', sans-serif); border: 1.5px solid #e2e8f0; border-radius: 12px; background: #f8fafc; color: #0f172a; outline: none; width: 100%; }
+        .form-group input:focus { border-color: var(--secondary-color, #2563eb); background: #fff; box-shadow: 0 0 0 4px rgba(37,99,235,.10); }
         .buttons { margin-top: 1rem; }
-        .btn-primary { padding: .9rem 1.5rem; font-family: 'Inter', sans-serif; font-size: 1rem; font-weight: 600; border: none; border-radius: 12px; background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff; cursor: pointer; width: 100%; }
+        .btn-primary { padding: .9rem 1.5rem; font-family: var(--font-family, 'Inter', sans-serif); font-size: 1rem; font-weight: 600; border: none; border-radius: 12px; background: linear-gradient(135deg, var(--secondary-color, #2563eb), #1d4ed8); color: #fff; cursor: pointer; width: 100%; }
         .message { padding: .75rem 1rem; border-radius: 10px; font-size: .9rem; margin-bottom: 1rem; line-height: 1.4; }
         .message-error { background: #fee2e2; color: #991b1b; border-left: 4px solid #dc2626; }
         .message-success { background: #dcfce7; color: #166534; border-left: 4px solid #16a34a; }
         .back-link { margin-top: 1.5rem; text-align: center; font-size: .9rem; }
-        .back-link a { color: #2563eb; font-weight: 600; text-decoration: none; }
+        .back-link a { color: var(--secondary-color, #2563eb); font-weight: 600; text-decoration: none; }
         .back-link a:hover { text-decoration: underline; }
     </style>
 </head>

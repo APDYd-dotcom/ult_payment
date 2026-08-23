@@ -818,3 +818,211 @@ function logLogout($bdd, $userId) {
         $update->execute([$logoutTime, $duration, $session['id']]);
     }
 }
+
+function getDefaultThemeSettings(): array
+{
+    return [
+        'primary_color' => '#1e3a8a',
+        'secondary_color' => '#2563eb',
+        'background_color' => '#f4f6f9',
+        'font_family' => "'Segoe UI', sans-serif",
+        'logo_url' => '',
+        'favicon_url' => '',
+        'theme_name' => 'ULT Payment',
+    ];
+}
+
+function getAllowedThemeFonts(): array
+{
+    return [
+        "'Segoe UI', sans-serif" => 'Segoe UI',
+        "'Inter', sans-serif" => 'Inter',
+        "'Arial', sans-serif" => 'Arial',
+        "'Roboto', sans-serif" => 'Roboto',
+        "'Tahoma', sans-serif" => 'Tahoma',
+        "'Georgia', serif" => 'Georgia',
+    ];
+}
+
+function normalizeThemeFont(string $font): string
+{
+    $font = trim($font);
+    return array_key_exists($font, getAllowedThemeFonts()) ? $font : getDefaultThemeSettings()['font_family'];
+}
+
+function isValidThemeColor(string $color): bool
+{
+    return (bool) preg_match('/^#[0-9a-fA-F]{6}$/', $color);
+}
+
+function uploadThemeImage(array $file, string $fieldLabel): string
+{
+    if (($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+        return '';
+    }
+
+    if (($file['error'] ?? UPLOAD_ERR_OK) !== UPLOAD_ERR_OK) {
+        throw new RuntimeException("Le fichier {$fieldLabel} n'a pas pu etre envoye.");
+    }
+
+    if (($file['size'] ?? 0) > 2 * 1024 * 1024) {
+        throw new RuntimeException("Le fichier {$fieldLabel} ne doit pas depasser 2 Mo.");
+    }
+
+    $tmpPath = (string) ($file['tmp_name'] ?? '');
+    $finfo = new finfo(FILEINFO_MIME_TYPE);
+    $mime = $finfo->file($tmpPath);
+    $extensions = [
+        'image/png' => 'png',
+        'image/jpeg' => 'jpg',
+        'image/gif' => 'gif',
+        'image/webp' => 'webp',
+        'image/x-icon' => 'ico',
+        'image/vnd.microsoft.icon' => 'ico',
+    ];
+
+    if (!isset($extensions[$mime])) {
+        throw new RuntimeException("Le fichier {$fieldLabel} doit etre une image PNG, JPG, GIF, WEBP ou ICO.");
+    }
+
+    $uploadDir = __DIR__ . '/uploads/themes';
+    if (!is_dir($uploadDir) && !mkdir($uploadDir, 0755, true)) {
+        throw new RuntimeException("Le dossier uploads/themes n'a pas pu etre cree.");
+    }
+
+    $fileName = $fieldLabel . '-' . date('YmdHis') . '-' . bin2hex(random_bytes(6)) . '.' . $extensions[$mime];
+    $destination = $uploadDir . '/' . $fileName;
+
+    if (!move_uploaded_file($tmpPath, $destination)) {
+        throw new RuntimeException("Le fichier {$fieldLabel} n'a pas pu etre enregistre.");
+    }
+
+    return '/payment/uploads/themes/' . $fileName;
+}
+
+function getAllSettings(PDO $bdd, bool $refresh = false): array
+{
+    static $cache = null;
+
+    if ($refresh) {
+        $cache = null;
+    }
+
+    if ($cache !== null) {
+        return $cache;
+    }
+
+    $cache = [];
+
+    try {
+        $stmt = $bdd->prepare('SELECT setting_key, setting_value FROM settings');
+        $stmt->execute();
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $cache[(string) $row['setting_key']] = (string) $row['setting_value'];
+        }
+    } catch (Throwable $e) {
+        // La table peut ne pas encore exister pendant l'installation.
+        $cache = [];
+    }
+
+    return $cache;
+}
+
+function clearSettingsCache(): void
+{
+    global $bdd;
+    if ($bdd instanceof PDO) {
+        getAllSettings($bdd, true);
+    }
+}
+
+function getSetting(PDO $bdd, string $key, ?string $default = null): ?string
+{
+    $settings = getAllSettings($bdd);
+    return array_key_exists($key, $settings) ? $settings[$key] : $default;
+}
+
+function setSetting(PDO $bdd, string $key, string $value, string $category = 'theme'): bool
+{
+    $stmt = $bdd->prepare("
+        INSERT INTO settings (setting_key, setting_value, category, updated_at)
+        VALUES (?, ?, ?, NOW())
+        ON DUPLICATE KEY UPDATE
+            setting_value = VALUES(setting_value),
+            category = VALUES(category),
+            updated_at = NOW()
+    ");
+
+    $saved = $stmt->execute([$key, $value, $category]);
+    getAllSettings($bdd, true);
+
+    return $saved;
+}
+
+function getThemeSettings(PDO $bdd): array
+{
+    $theme = getDefaultThemeSettings();
+    $settings = getAllSettings($bdd);
+
+    foreach ($theme as $key => $defaultValue) {
+        if (array_key_exists($key, $settings) && $settings[$key] !== '') {
+            $theme[$key] = $settings[$key];
+        }
+    }
+
+    foreach (['primary_color', 'secondary_color', 'background_color'] as $colorKey) {
+        if (!isValidThemeColor((string) $theme[$colorKey])) {
+            $theme[$colorKey] = getDefaultThemeSettings()[$colorKey];
+        }
+    }
+    $theme['font_family'] = normalizeThemeFont((string) $theme['font_family']);
+
+    return $theme;
+}
+
+function themeCssValue(string $value): string
+{
+    return str_replace(["\n", "\r", '<', '>'], '', $value);
+}
+
+function loadTheme(PDO $bdd): void
+{
+    $theme = getThemeSettings($bdd);
+    $primary = themeCssValue($theme['primary_color']);
+    $secondary = themeCssValue($theme['secondary_color']);
+    $background = themeCssValue($theme['background_color']);
+    $font = themeCssValue($theme['font_family']);
+    $themeName = htmlspecialchars($theme['theme_name'], ENT_QUOTES, 'UTF-8');
+
+    echo "\n<style id=\"ult-theme-vars\">\n";
+    echo ":root{\n";
+    echo "  --primary-color: {$primary};\n";
+    echo "  --secondary-color: {$secondary};\n";
+    echo "  --background-color: {$background};\n";
+    echo "  --font-family: {$font};\n";
+    echo "}\n";
+    echo "</style>\n";
+
+    if (!empty($theme['favicon_url'])) {
+        $favicon = htmlspecialchars($theme['favicon_url'], ENT_QUOTES, 'UTF-8');
+        echo "<link rel=\"icon\" href=\"{$favicon}\">\n";
+    }
+
+    echo "<meta name=\"theme-name\" content=\"{$themeName}\">\n";
+}
+
+function renderThemeLogo(PDO $bdd): void
+{
+    $theme = getThemeSettings($bdd);
+    $themeName = trim((string) ($theme['theme_name'] ?? 'ULT Payment'));
+    $safeThemeName = htmlspecialchars($themeName !== '' ? $themeName : 'ULT Payment', ENT_QUOTES, 'UTF-8');
+
+    echo '<div class="logo">';
+    if (!empty($theme['logo_url'])) {
+        $logoUrl = htmlspecialchars($theme['logo_url'], ENT_QUOTES, 'UTF-8');
+        echo '<img class="theme-logo" src="' . $logoUrl . '" alt="' . $safeThemeName . '">';
+    } else {
+        echo '<h2>' . $safeThemeName . '</h2>';
+    }
+    echo '</div>';
+}

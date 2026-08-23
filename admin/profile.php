@@ -110,6 +110,7 @@ $twoFactorState = ultTwoFactorProfileState($bdd);
 <head>
     <title>Mon profil - ULT Payment</title>
     <link rel="stylesheet" href="./styles.css">
+    <?php loadTheme($bdd); ?>
     <style>
         .profile-container {
             display: flex;

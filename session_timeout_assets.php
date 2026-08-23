@@ -40,7 +40,7 @@ $logoutToken = $_SESSION['csrf_token'] ?? '';
     }
     .session-timeout-header h2 {
         margin: 0;
-        color: #1e3a8a;
+        color: var(--primary-color, #1e3a8a);
         font-size: 1.2rem;
         line-height: 1.3;
     }
@@ -76,8 +76,8 @@ $logoutToken = $_SESSION['csrf_token'] ?? '';
         background: #f1f5f9;
     }
     .session-timeout-btn-primary {
-        border-color: #2563eb;
-        background: #2563eb;
+        border-color: var(--secondary-color, #2563eb);
+        background: var(--secondary-color, #2563eb);
         color: #ffffff;
     }
     .session-timeout-btn-primary:hover {

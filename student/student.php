@@ -143,7 +143,8 @@ $formData = [
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mon dossier - ULT Payment System</title>
-    <link rel="stylesheet" href="./styles.css?v=1.2">
+    <link rel="stylesheet" href="./styles.css?v=1.4">
+    <?php loadTheme($bdd); ?>
     <style>
         .message{padding:12px 20px;border-radius:8px;margin-bottom:20px;font-weight:500}
         .message-success{background:#d4edda;color:#155724;border:1px solid #c3e6cb}

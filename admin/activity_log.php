@@ -28,6 +28,7 @@ $logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <head>
     <title>Journal des activités - ULT Payment</title>
     <link rel="stylesheet" href="./styles.css">
+    <?php loadTheme($bdd); ?>
     <style>
         .log-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
         .log-table th, .log-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }

@@ -173,6 +173,7 @@ foreach ($departments as $d) {
 <head>
     <title>ULT Payment System</title>
     <link rel="stylesheet" href="./styles.css?v=1.1">
+    <?php loadTheme($bdd); ?>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         /* Vos styles (ici ou dans styles.css) */

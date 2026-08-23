@@ -98,7 +98,8 @@ if (substr($displayEmail, -strlen($studentEmailSuffix)) === $studentEmailSuffix)
 <html>
 <head>
     <title>Mon profil - ULT Payment</title>
-    <link rel="stylesheet" href="./styles.css">
+    <link rel="stylesheet" href="./styles.css?v=1.4">
+    <?php loadTheme($bdd); ?>
     <style>
         .profile-container {
             display: flex;
@@ -112,7 +113,7 @@ if (substr($displayEmail, -strlen($studentEmailSuffix)) === $studentEmailSuffix)
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
         .profile-card h3 {
-            color: #1e3a8a;
+            color: var(--primary-color, #1e3a8a);
             margin-bottom: 1.5rem;
             border-bottom: 2px solid #e2e8f0;
             padding-bottom: 0.75rem;
@@ -154,7 +155,7 @@ if (substr($displayEmail, -strlen($studentEmailSuffix)) === $studentEmailSuffix)
             font-weight: 600;
         }
         .btn-primary {
-            background: #2563eb;
+            background: var(--secondary-color, #2563eb);
             color: white;
         }
         .message {

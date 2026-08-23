@@ -286,7 +286,8 @@ foreach ($departments as $d) {
 <head>
     <meta charset="UTF-8">
     <title>ULT Payment System</title>
-    <link rel="stylesheet" href="./styles.css?v=1.3">
+    <link rel="stylesheet" href="./styles.css?v=1.4">
+    <?php loadTheme($bdd); ?>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         .message { padding: 12px 20px; border-radius: 8px; margin-bottom: 20px; font-weight: 500; display: flex; align-items: center; gap: 10px; }

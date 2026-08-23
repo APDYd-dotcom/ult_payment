@@ -23,7 +23,8 @@ try {
 <html>
 <head>
     <title>ULT Payment System</title>
-    <link rel="stylesheet" href="../admin/styles.css?v=1.1">
+    <link rel="stylesheet" href="./styles.css?v=1.4">
+    <?php loadTheme($bdd); ?>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>

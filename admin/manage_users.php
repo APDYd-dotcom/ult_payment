@@ -62,6 +62,7 @@ try {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestion des utilisateurs - ULT Payment</title>
     <link rel="stylesheet" href="./styles.css?v=1.2">
+    <?php loadTheme($bdd); ?>
     <style>
         .status-badge {
             display: inline-flex;

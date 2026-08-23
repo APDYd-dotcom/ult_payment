@@ -82,12 +82,12 @@ $notificationCsrfToken = $_SESSION['csrf_token'] ?? '';
     .notification-menu-title {
         font-size: 0.98rem;
         font-weight: 800;
-        color: #1e3a8a;
+        color: var(--primary-color, #1e3a8a);
     }
     .notification-mark-all {
         border: 0;
         background: transparent;
-        color: #2563eb;
+        color: var(--secondary-color, #2563eb);
         cursor: pointer;
         font-size: 0.82rem;
         font-weight: 700;
@@ -126,7 +126,7 @@ $notificationCsrfToken = $_SESSION['csrf_token'] ?? '';
         width: 8px;
         height: 8px;
         border-radius: 999px;
-        background: #2563eb;
+        background: var(--secondary-color, #2563eb);
         flex: 0 0 auto;
     }
     .notification-item-message {

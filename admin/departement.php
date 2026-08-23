@@ -196,6 +196,7 @@ try {
 <head>
     <title>ULT Payment System</title>
     <link rel="stylesheet" href="./styles.css?v=1.1">
+    <?php loadTheme($bdd); ?>
     <style>
         /* Styles pour les messages */
         .message {

@@ -128,6 +128,7 @@ $chartData = [
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ULT Payment System</title>
     <link rel="stylesheet" href="./styles.css?v=1.2">
+    <?php loadTheme($bdd); ?>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>

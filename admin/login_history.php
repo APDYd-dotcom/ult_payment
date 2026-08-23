@@ -19,6 +19,7 @@ $history = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <head>
     <title>Historique des connexions - ULT Payment</title>
     <link rel="stylesheet" href="./styles.css">
+    <?php loadTheme($bdd); ?>
 </head>
 <body>
 <div class="container">
