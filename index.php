@@ -2,6 +2,7 @@
 session_start();
 
 require_once __DIR__ . '/functions.php';
+require_once __DIR__ . '/two_factor.php';
 ini_set('pcre.jit', '0');
 
 error_reporting(E_ALL);
@@ -29,12 +30,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
 
         $hasMatriculeColumn = tableColumnExists($bdd, 'user', 'matricule');
         $loginSql = $hasMatriculeColumn
-            ? "SELECT userId, fullname, email, password, role, failed_attempts, is_locked, last_failed_attempt
+            ? "SELECT userId, fullname, email, password, role, failed_attempts, is_locked, last_failed_attempt,
+                      two_factor_enabled, two_factor_secret
                FROM user
                WHERE email = ? OR matricule = ?
                LIMIT 1
                FOR UPDATE"
-            : "SELECT userId, fullname, email, password, role, failed_attempts, is_locked, last_failed_attempt
+            : "SELECT userId, fullname, email, password, role, failed_attempts, is_locked, last_failed_attempt,
+                      two_factor_enabled, two_factor_secret
                FROM user
                WHERE email = ?
                LIMIT 1
@@ -61,6 +64,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
             ");
             $resetStmt->execute([$user['userId']]);
             $bdd->commit();
+
+            if ((int) ($user['two_factor_enabled'] ?? 0) === 1 && !empty($user['two_factor_secret'])) {
+                session_regenerate_id(true);
+                $_SESSION['2fa_pending_user'] = [
+                    'userId' => (int) $user['userId'],
+                    'email' => $user['email'],
+                    'fullname' => $user['fullname'],
+                    'role' => $user['role'],
+                ];
+                $_SESSION['2fa_pending_started'] = time();
+                $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+
+                header('Location: /payment/verify_2fa.php');
+                exit();
+            }
 
             session_regenerate_id(true);
             $_SESSION['email'] = $user['email'];

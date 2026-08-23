@@ -8,6 +8,7 @@ define('REQUIRED_ROLE', 'admin');
 
 require_once __DIR__ . '/../auth_check.php';
 require_once __DIR__ . '/../functions.php';
+require_once __DIR__ . '/../two_factor.php';
 
 $error = '';
 $success = '';
@@ -88,6 +89,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    ultTwoFactorHandleProfilePost($bdd, $error, $success);
+}
+
 // --- Récupérer les informations complètes de l'utilisateur (pour affichage) ---
 $stmt = $bdd->prepare("SELECT fullname, email, role, created_at FROM user WHERE userId = ?");
 $stmt->execute([$_SESSION['userId']]);
@@ -97,6 +102,8 @@ if (!$userData) {
     header('Location: /payment');
     exit();
 }
+
+$twoFactorState = ultTwoFactorProfileState($bdd);
 ?>
 <!DOCTYPE html>
 <html>
@@ -251,6 +258,8 @@ if (!$userData) {
                         <span class="profile-value"><?= date('d/m/Y', strtotime($userData['created_at'])) ?></span>
                     </div>
                 </div>
+
+                <?php include __DIR__ . '/../two_factor_profile_section.php'; ?>
 
                 <!-- Formulaire de mise à jour des informations -->
                 <div class="profile-card">

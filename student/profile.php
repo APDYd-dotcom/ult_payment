@@ -4,6 +4,7 @@ error_reporting(E_ALL);
 ini_set('pcre.jit', '0');
 
 require_once __DIR__ . '/auth_check.php';
+require_once __DIR__ . '/../two_factor.php';
 
 $error = '';
 $success = '';
@@ -69,6 +70,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    ultTwoFactorHandleProfilePost($bdd, $error, $success);
+}
+
 $selectFields = $hasMatriculeColumn
     ? 'fullname, email, role, matricule, created_at'
     : 'fullname, email, role, created_at';
@@ -80,6 +85,8 @@ if (!$userData) {
     header('Location: /payment');
     exit();
 }
+
+$twoFactorState = ultTwoFactorProfileState($bdd);
 
 $displayEmail = (string) ($userData['email'] ?? '');
 $studentEmailSuffix = '@student.local';
@@ -234,6 +241,8 @@ if (substr($displayEmail, -strlen($studentEmailSuffix)) === $studentEmailSuffix)
                         </div>
                     <?php endif; ?>
                 </div>
+
+                <?php include __DIR__ . '/../two_factor_profile_section.php'; ?>
 
                 <div class="grid-2">
                     <div class="profile-card">
