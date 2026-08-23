@@ -5,10 +5,6 @@ session_start();
 require_once __DIR__ . '/functions.php';
 require_once __DIR__ . '/check_alerts.php';
 
-if (!defined('SESSION_TIMEOUT')) {
-    define('SESSION_TIMEOUT', 900);
-}
-
 if (!function_exists('ultDestroyCurrentSession')) {
     function ultDestroyCurrentSession(): void
     {
@@ -27,6 +23,9 @@ if (!function_exists('ultDestroyCurrentSession')) {
         // Database connection
         $bdd = new PDO('mysql:host=localhost;dbname=ult_payment;charset=utf8', 'app_user', 'secure_password_123');
         $bdd->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        if (!defined('SESSION_TIMEOUT')) {
+            define('SESSION_TIMEOUT', getSessionTimeoutSeconds($bdd));
+        }
     } catch (PDOException $e) {
         die('Database connection failed: ' . $e->getMessage());
     }

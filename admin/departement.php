@@ -54,13 +54,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stmt->execute([$Name, $minerval]);
                     // Retrieve the newly inserted department ID
                     $departmentId = $bdd->lastInsertId();
-                    // Automatically create four tranches for the department
-                    // Dates for the 4 tranches as defined in the university policy (2026)
+                    // Automatically create four tranches for the department from system settings.
                     $trancheDates = [
-                        ['date_debut' => '2026-04-10', 'date_fin' => '2026-04-10'], // 25% tranche
-                        ['date_debut' => '2026-06-30', 'date_fin' => '2026-06-30'], // 50% tranche
-                        ['date_debut' => '2026-09-15', 'date_fin' => '2026-09-15'], // 75% tranche
-                        ['date_debut' => '2026-11-15', 'date_fin' => '2026-11-15']  // 100% tranche
+                        ['date_debut' => getSystemSetting($bdd, 'tranche_1_derogation_deadline'), 'date_fin' => getSystemSetting($bdd, 'tranche_1_due_date')],
+                        ['date_debut' => getSystemSetting($bdd, 'tranche_2_derogation_deadline'), 'date_fin' => getSystemSetting($bdd, 'tranche_2_due_date')],
+                        ['date_debut' => getSystemSetting($bdd, 'tranche_3_derogation_deadline'), 'date_fin' => getSystemSetting($bdd, 'tranche_3_due_date')],
+                        ['date_debut' => getSystemSetting($bdd, 'tranche_4_derogation_deadline'), 'date_fin' => getSystemSetting($bdd, 'tranche_4_due_date')],
                     ];
                     $trancheStmt = $bdd->prepare("INSERT INTO tranche (department_id, name, date_debut, date_fin) VALUES (?, ?, ?, ?)");
                     foreach ($trancheDates as $idx => $dates) {

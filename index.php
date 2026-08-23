@@ -10,9 +10,7 @@ ini_set('display_errors', 1);
 
 $error = '';
 $success = '';
-const MAX_FAILED_LOGIN_ATTEMPTS = 3;
 const FAILED_LOGIN_WINDOW_MINUTES = 15;
-const INVALID_LOGIN_MESSAGE = 'Identifiants invalides. Votre compte sera verrouillé après 3 tentatives échouées.';
 
 try {
     $bdd = new PDO('mysql:host=localhost;dbname=ult_payment;charset=utf8', 'app_user', 'secure_password_123');
@@ -20,6 +18,9 @@ try {
 } catch (PDOException $e) {
     die('Database connection failed: ' . $e->getMessage());
 }
+
+$maxFailedLoginAttempts = max(1, (int) getSystemSetting($bdd, 'max_login_attempts', '5'));
+$invalidLoginMessage = "Identifiants invalides. Votre compte sera verrouille apres {$maxFailedLoginAttempts} tentatives echouees.";
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
     $identifier = trim($_POST['email'] ?? '');
@@ -49,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
 
         if (!$user) {
             $bdd->commit();
-            $error = INVALID_LOGIN_MESSAGE;
+            $error = $invalidLoginMessage;
         } elseif ((int) $user['is_locked'] === 1) {
             $bdd->commit();
             $error = 'Votre compte est verrouillé. Veuillez contacter l\'administrateur.';
@@ -102,7 +103,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
             $failedAttempts = ($lastFailedAt && $lastFailedAt >= $windowStartedAt)
                 ? ((int) $user['failed_attempts'] + 1)
                 : 1;
-            $shouldLock = $failedAttempts >= MAX_FAILED_LOGIN_ATTEMPTS;
+            $shouldLock = $failedAttempts >= $maxFailedLoginAttempts;
 
             $updateStmt = $bdd->prepare("
                 UPDATE user
@@ -121,9 +122,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
 
             if ($shouldLock) {
                 sendAccountLockedAdminNotification($bdd, (int) $user['userId']);
-                $error = 'Votre compte est verrouillé après 3 tentatives échouées. Veuillez contacter l\'administrateur.';
+                $error = "Votre compte est verrouille apres {$maxFailedLoginAttempts} tentatives echouees. Veuillez contacter l'administrateur.";
             } else {
-                $error = INVALID_LOGIN_MESSAGE;
+                $error = $invalidLoginMessage;
             }
         }
     } catch (PDOException $e) {

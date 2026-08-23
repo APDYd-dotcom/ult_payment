@@ -5,11 +5,20 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-if (!defined('SESSION_TIMEOUT')) {
-    define('SESSION_TIMEOUT', 900);
-}
-
 header('Content-Type: application/json; charset=utf-8');
+
+try {
+    $bdd = new PDO('mysql:host=localhost;dbname=ult_payment;charset=utf8', 'app_user', 'secure_password_123');
+    $bdd->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    if (!defined('SESSION_TIMEOUT')) {
+        define('SESSION_TIMEOUT', getSessionTimeoutSeconds($bdd));
+    }
+} catch (PDOException $e) {
+    if (!defined('SESSION_TIMEOUT')) {
+        define('SESSION_TIMEOUT', 900);
+    }
+    $bdd = null;
+}
 
 if (!function_exists('ultDestroySessionForJson')) {
     function ultDestroySessionForJson(): void
@@ -42,10 +51,11 @@ $lastActivity = (int) ($_SESSION['last_activity'] ?? $now);
 
 if (($now - $lastActivity) > SESSION_TIMEOUT) {
     try {
-        $bdd = new PDO('mysql:host=localhost;dbname=ult_payment;charset=utf8', 'app_user', 'secure_password_123');
-        $bdd->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        if (!$bdd instanceof PDO) {
+            throw new RuntimeException('Database unavailable');
+        }
         logLogout($bdd, $_SESSION['userId']);
-    } catch (PDOException $e) {
+    } catch (Throwable $e) {
         // La session doit quand meme expirer meme si l'historique echoue.
     }
 

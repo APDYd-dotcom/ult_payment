@@ -279,16 +279,20 @@ function getSystemAlerts(PDO $bdd, ?int $userId = null, bool $includeGlobal = fa
 function checkAlerts(PDO $bdd): void {
     $adminUsers = getAdminUsers($bdd);
     $adminIds = array_map(static fn (array $admin): int => (int) $admin['userId'], $adminUsers);
+    $penaltyGracePeriod = max(0, (int) getSystemSetting($bdd, 'penalty_grace_period', '15'));
+    $examLossDays = max(1, (int) getSystemSetting($bdd, 'penalty_days_level3', '61'));
+    $highPenaltyPercent = max(0, (float) getSystemSetting($bdd, 'penalty_percent_level3', '20'));
 
     $lateSources = [];
-    $stmt = $bdd->query("
+    $stmt = $bdd->prepare("
         SELECT p.id AS penalty_id, p.due_date, p.retard_jours,
                s.name AS student_name, s.matricule, u.userId AS student_user_id
         FROM penalite p
         JOIN student s ON s.id = p.student_id
         LEFT JOIN user u ON u.matricule = s.matricule AND u.role = 'student'
-        WHERE DATEDIFF(CURDATE(), p.due_date) > 15
+        WHERE DATEDIFF(CURDATE(), p.due_date) > ?
     ");
+    $stmt->execute([$penaltyGracePeriod]);
     foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
         $sourceKey = 'late_payment:penalty:' . $row['penalty_id'];
         $lateSources[] = $sourceKey;
@@ -327,14 +331,15 @@ function checkAlerts(PDO $bdd): void {
     resolveMissingAlertSources($bdd, 'upcoming_due', $upcomingSources);
 
     $examSources = [];
-    $stmt = $bdd->query("
+    $stmt = $bdd->prepare("
         SELECT p.id AS penalty_id, p.retard_jours,
                s.name AS student_name, s.matricule, u.userId AS student_user_id
         FROM penalite p
         JOIN student s ON s.id = p.student_id
         LEFT JOIN user u ON u.matricule = s.matricule AND u.role = 'student'
-        WHERE p.retard_jours > 60 OR p.exam_acces = 0
+        WHERE p.retard_jours >= ? OR p.exam_acces = 0
     ");
+    $stmt->execute([$examLossDays]);
     foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
         $sourceKey = 'exam_access_lost:penalty:' . $row['penalty_id'];
         $examSources[] = $sourceKey;
@@ -350,14 +355,15 @@ function checkAlerts(PDO $bdd): void {
     resolveMissingAlertSources($bdd, 'exam_access_lost', $examSources);
 
     $highPenaltySources = [];
-    $stmt = $bdd->query("
+    $stmt = $bdd->prepare("
         SELECT p.id AS penalty_id, p.montant_penalite, d.minerval_total,
                s.name AS student_name, s.matricule
         FROM penalite p
         JOIN student s ON s.id = p.student_id
         JOIN department d ON d.id = s.department_id
-        WHERE p.montant_penalite > (d.minerval_total * 0.2)
+        WHERE p.montant_penalite > (d.minerval_total * ?)
     ");
+    $stmt->execute([$highPenaltyPercent / 100]);
     foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
         $sourceKey = 'high_penalty:penalty:' . $row['penalty_id'];
         $highPenaltySources[] = $sourceKey;
@@ -1025,4 +1031,137 @@ function renderThemeLogo(PDO $bdd): void
         echo '<h2>' . $safeThemeName . '</h2>';
     }
     echo '</div>';
+}
+
+function getDefaultSystemSettings(): array
+{
+    return [
+        'tranche_1_due_date' => ['label' => "Date d'echeance tranche 1 (25%)", 'category' => 'Tranches', 'type' => 'date', 'default' => '2026-04-10'],
+        'tranche_1_derogation_deadline' => ['label' => 'Date de derogation tranche 1', 'category' => 'Tranches', 'type' => 'date', 'default' => '2026-03-25'],
+        'tranche_2_due_date' => ['label' => "Date d'echeance tranche 2 (50%)", 'category' => 'Tranches', 'type' => 'date', 'default' => '2026-06-30'],
+        'tranche_2_derogation_deadline' => ['label' => 'Date de derogation tranche 2', 'category' => 'Tranches', 'type' => 'date', 'default' => '2026-06-15'],
+        'tranche_3_due_date' => ['label' => "Date d'echeance tranche 3 (75%)", 'category' => 'Tranches', 'type' => 'date', 'default' => '2026-09-15'],
+        'tranche_3_derogation_deadline' => ['label' => 'Date de derogation tranche 3', 'category' => 'Tranches', 'type' => 'date', 'default' => '2026-08-31'],
+        'tranche_4_due_date' => ['label' => "Date d'echeance tranche 4 (100%)", 'category' => 'Tranches', 'type' => 'date', 'default' => '2026-11-15'],
+        'tranche_4_derogation_deadline' => ['label' => 'Date de derogation tranche 4', 'category' => 'Tranches', 'type' => 'date', 'default' => '2026-11-10'],
+        'penalty_grace_period' => ['label' => 'Delai de grace avant penalite', 'category' => 'Penalites', 'type' => 'number', 'default' => '15', 'min' => 0],
+        'penalty_percent_level1' => ['label' => 'Pourcentage niveau 1', 'category' => 'Penalites', 'type' => 'percent', 'default' => '10', 'min' => 0, 'max' => 100],
+        'penalty_days_level1' => ['label' => 'Seuil jours niveau 1', 'category' => 'Penalites', 'type' => 'number', 'default' => '16', 'min' => 0],
+        'penalty_percent_level2' => ['label' => 'Pourcentage niveau 2', 'category' => 'Penalites', 'type' => 'percent', 'default' => '15', 'min' => 0, 'max' => 100],
+        'penalty_days_level2' => ['label' => 'Seuil jours niveau 2', 'category' => 'Penalites', 'type' => 'number', 'default' => '31', 'min' => 0],
+        'penalty_percent_level3' => ['label' => 'Pourcentage niveau 3', 'category' => 'Penalites', 'type' => 'percent', 'default' => '20', 'min' => 0, 'max' => 100],
+        'penalty_days_level3' => ['label' => 'Seuil jours niveau 3', 'category' => 'Penalites', 'type' => 'number', 'default' => '61', 'min' => 0],
+        'school_name' => ['label' => "Nom de l'etablissement", 'category' => 'Etablissement', 'type' => 'text', 'default' => 'Universite du Lac Tanganyika ASBL'],
+        'school_address' => ['label' => 'Adresse', 'category' => 'Etablissement', 'type' => 'text', 'default' => 'Q. Kigobe, B.P. 5403 Mutanga'],
+        'school_phone' => ['label' => 'Telephone', 'category' => 'Etablissement', 'type' => 'text', 'default' => '22 243645 / 22 246843'],
+        'school_nif' => ['label' => 'NIF', 'category' => 'Etablissement', 'type' => 'text', 'default' => '2281591484'],
+        'academic_year_start' => ['label' => "Debut de l'annee academique", 'category' => 'General', 'type' => 'date', 'default' => '2026-01-01'],
+        'academic_year_end' => ['label' => "Fin de l'annee academique", 'category' => 'General', 'type' => 'date', 'default' => '2026-12-31'],
+        'max_login_attempts' => ['label' => 'Tentatives de connexion max', 'category' => 'General', 'type' => 'number', 'default' => '5', 'min' => 1],
+        'session_timeout_minutes' => ['label' => 'Duree de session (minutes)', 'category' => 'General', 'type' => 'number', 'default' => '15', 'min' => 1],
+        'enable_2fa' => ['label' => 'Activer la 2FA par defaut', 'category' => 'General', 'type' => 'boolean', 'default' => '0'],
+    ];
+}
+
+function getSystemSetting(PDO $bdd, string $key, ?string $default = null): ?string
+{
+    $definitions = getDefaultSystemSettings();
+    $fallback = $default ?? ($definitions[$key]['default'] ?? null);
+    $settings = getAllSettings($bdd);
+
+    return array_key_exists($key, $settings) && $settings[$key] !== '' ? $settings[$key] : $fallback;
+}
+
+function setSystemSetting(PDO $bdd, string $key, string $value): bool
+{
+    if (!array_key_exists($key, getDefaultSystemSettings())) {
+        throw new InvalidArgumentException('Parametre systeme inconnu: ' . $key);
+    }
+
+    return setSetting($bdd, $key, $value, 'system');
+}
+
+function resetSystemSettings(PDO $bdd): void
+{
+    foreach (getDefaultSystemSettings() as $key => $definition) {
+        setSystemSetting($bdd, $key, (string) $definition['default']);
+    }
+}
+
+function getSystemSettings(PDO $bdd): array
+{
+    $values = [];
+    foreach (getDefaultSystemSettings() as $key => $definition) {
+        $values[$key] = getSystemSetting($bdd, $key, (string) $definition['default']);
+    }
+
+    return $values;
+}
+
+function getSessionTimeoutSeconds(PDO $bdd): int
+{
+    return max(60, (int) getSystemSetting($bdd, 'session_timeout_minutes', '15') * 60);
+}
+
+function validateSystemSettingsInput(array $input): array
+{
+    $definitions = getDefaultSystemSettings();
+    $values = [];
+    $errors = [];
+
+    foreach ($definitions as $key => $definition) {
+        $type = $definition['type'];
+        $raw = $type === 'boolean' ? (isset($input[$key]) ? '1' : '0') : trim((string) ($input[$key] ?? ''));
+
+        if ($type !== 'boolean' && $raw === '') {
+            $errors[] = $definition['label'] . ' est obligatoire.';
+            $values[$key] = (string) $definition['default'];
+            continue;
+        }
+
+        if ($type === 'date') {
+            $date = DateTimeImmutable::createFromFormat('Y-m-d', $raw);
+            if (!$date || $date->format('Y-m-d') !== $raw) {
+                $errors[] = $definition['label'] . ' doit etre une date valide.';
+            }
+        } elseif (in_array($type, ['number', 'percent'], true)) {
+            if (!is_numeric($raw)) {
+                $errors[] = $definition['label'] . ' doit etre un nombre.';
+            } else {
+                $number = (float) $raw;
+                if (isset($definition['min']) && $number < (float) $definition['min']) {
+                    $errors[] = $definition['label'] . ' doit etre superieur ou egal a ' . $definition['min'] . '.';
+                }
+                if (isset($definition['max']) && $number > (float) $definition['max']) {
+                    $errors[] = $definition['label'] . ' doit etre inferieur ou egal a ' . $definition['max'] . '.';
+                }
+                $raw = (string) (int) $number;
+            }
+        } elseif ($type === 'text' && strlen($raw) > 255) {
+            $errors[] = $definition['label'] . ' est limite a 255 caracteres.';
+        }
+
+        $values[$key] = $raw;
+    }
+
+    for ($i = 1; $i <= 4; $i++) {
+        $dueKey = "tranche_{$i}_due_date";
+        $derogationKey = "tranche_{$i}_derogation_deadline";
+        if (($values[$dueKey] ?? '') < ($values[$derogationKey] ?? '')) {
+            $errors[] = "La date d'echeance de la tranche {$i} doit etre apres ou egale a sa date de derogation.";
+        }
+    }
+
+    if (($values['academic_year_end'] ?? '') < ($values['academic_year_start'] ?? '')) {
+        $errors[] = "La fin de l'annee academique doit etre apres ou egale au debut.";
+    }
+
+    if ((int) ($values['penalty_days_level2'] ?? 0) <= (int) ($values['penalty_days_level1'] ?? 0)) {
+        $errors[] = 'Le seuil de retard niveau 2 doit etre superieur au niveau 1.';
+    }
+    if ((int) ($values['penalty_days_level3'] ?? 0) <= (int) ($values['penalty_days_level2'] ?? 0)) {
+        $errors[] = 'Le seuil de retard niveau 3 doit etre superieur au niveau 2.';
+    }
+
+    return [$values, $errors];
 }

@@ -9,6 +9,7 @@
     <li><a href="penalty.php">Penalties</a></li>
     <li><a href="login_history.php">Login History</a></li>
     <li><a href="manage_users.php">Manage Users</a></li>
+    <li><a href="system_settings.php">System Settings</a></li>
     <li><a href="theme_settings.php">Theme Settings</a></li>
     <li><a href="mailing.php">Mailing List</a></li>
     <li><a href="activity_log.php">Activity Log</a></li>
