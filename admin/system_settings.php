@@ -97,7 +97,6 @@ function renderSystemSettingField(string $key, array $definition, array $values)
         echo '<input type="text" name="' . $safeKey . '" value="' . $safeValue . '" maxlength="255" required>';
     }
 
-    echo '<small>' . $safeKey . '</small>';
     echo '</label>';
 }
 ?>
@@ -114,15 +113,15 @@ function renderSystemSettingField(string $key, array $definition, array $values)
         .settings-header { background: #fff; border-radius: 12px; padding: 18px 20px; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
         .settings-header p { color: #64748b; margin-top: 6px; line-height: 1.5; }
         .settings-section { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
-        .settings-section h2 { color: var(--primary-color, #1e3a8a); font-size: 1.1rem; margin-bottom: 14px; }
+        .settings-section h2 { color: var(--primary-color, #1e3a8a); font-size: 1.1rem; margin-bottom: 14px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; }
         .settings-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
-        .settings-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-        .settings-field span:first-child { color: #334155; font-weight: 700; }
+        .settings-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; padding: 12px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; }
+        .settings-field span:first-child { color: #334155; font-weight: 700; font-size: 0.9rem; }
         .settings-field input[type="text"],
         .settings-field input[type="number"],
-        .settings-field input[type="date"] { min-height: 42px; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; }
+        .settings-field input[type="date"] { min-height: 42px; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 1rem; }
         .settings-field input:focus { outline: none; border-color: var(--secondary-color, #2563eb); box-shadow: 0 0 0 4px rgba(37,99,235,.1); }
-        .settings-field small { color: #64748b; font-size: .82rem; }
+        .settings-field small { color: #94a3b8; font-size: .75rem; }
         .settings-toggle { display: inline-flex; align-items: center; gap: 10px; min-height: 42px; }
         .settings-toggle input { width: 18px; height: 18px; accent-color: var(--secondary-color, #2563eb); }
         .settings-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; background: #fff; border-radius: 12px; padding: 16px 20px; box-shadow: 0 2px 8px rgba(0,0,0,.08); }

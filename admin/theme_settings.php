@@ -46,8 +46,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             throw new RuntimeException('Le nom du theme est obligatoire et limite a 80 caracteres.');
         }
 
-        $logoUrl = uploadThemeImage($_FILES['logo_file'] ?? [], 'logo');
-        $faviconUrl = uploadThemeImage($_FILES['favicon_file'] ?? [], 'favicon');
+        $logoUrl = '';
+        $faviconUrl = '';
 
         $values = [
             'primary_color' => $primaryColor,
@@ -141,7 +141,7 @@ $fontOptions = getAllowedThemeFonts();
 
             <div class="theme-layout">
                 <div class="form-section">
-                    <form method="POST" enctype="multipart/form-data" id="theme-form">
+                    <form method="POST" id="theme-form">
                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
 
                         <div class="theme-form-grid">
@@ -175,23 +175,6 @@ $fontOptions = getAllowedThemeFonts();
                                 Couleur de fond
                                 <input class="theme-swatch" type="color" name="background_color" id="background_color" value="<?= htmlspecialchars($theme['background_color'], ENT_QUOTES, 'UTF-8') ?>">
                             </label>
-
-                            <label>
-                                Logo
-                                <input type="file" name="logo_file" accept="image/png,image/jpeg,image/gif,image/webp,image/x-icon">
-                                <span class="asset-preview">
-                                    Actuel: <?= $theme['logo_url'] ? htmlspecialchars($theme['logo_url'], ENT_QUOTES, 'UTF-8') : 'logo texte par defaut' ?>
-                                    <?php if ($theme['logo_url']): ?>
-                                        <img src="<?= htmlspecialchars($theme['logo_url'], ENT_QUOTES, 'UTF-8') ?>" alt="Logo actuel">
-                                    <?php endif; ?>
-                                </span>
-                            </label>
-
-                            <label class="theme-field-full">
-                                Favicon
-                                <input type="file" name="favicon_file" accept="image/png,image/jpeg,image/gif,image/webp,image/x-icon">
-                                <span class="asset-preview">Actuel: <?= $theme['favicon_url'] ? htmlspecialchars($theme['favicon_url'], ENT_QUOTES, 'UTF-8') : 'aucun favicon personnalise' ?></span>
-                            </label>
                         </div>
 
                         <div class="theme-actions">
@@ -208,10 +191,6 @@ $fontOptions = getAllowedThemeFonts();
                     <div class="theme-preview-body">
                         <h3>Apercu du theme</h3>
                         <p>Les couleurs et la police selectionnees seront appliquees aux pages admin et etudiant.</p>
-                        <div class="theme-preview-actions">
-                            <button class="theme-preview-primary" type="button">Action principale</button>
-                            <button class="theme-preview-secondary" type="button">Action secondaire</button>
-                        </div>
                     </div>
                 </div>
             </div>
