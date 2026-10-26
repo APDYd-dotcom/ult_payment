@@ -41,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['Create'])) {
     $amount          = floatval($_POST['amount'] ?? 0);
     $department      = trim($_POST['department'] ?? '');
     $tranche         = trim($_POST['tranche'] ?? '');
-    $payment_method  = $_POST['payment_method'] ?? '';
+    $payment_method  = trim($_POST['payment_method'] ?? '');
     $reference       = trim($_POST['reference_number'] ?? '');
 
     // Validation
@@ -81,17 +81,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['Create'])) {
                     sendPenaltyCreatedNotification($bdd, $createdPayment['payment_reference']);
                     createPenaltyInAppNotification($bdd, $createdPayment['payment_reference']);
                 }
+
+                // After creating payment, check for any partial payments for this student
+                $partialCheckStmt = $bdd->prepare("SELECT COUNT(*) FROM partial_payment WHERE student_id = (SELECT id FROM student WHERE matricule = ?)");
+                $partialCheckStmt->execute([$matricule]);
+                $hasPartial = $partialCheckStmt->fetchColumn() > 0;
+                // Store flag in session for later display
+                if ($hasPartial) {
+                    $_SESSION['partial_notice'] = true;
+                }
             } catch (Throwable $notificationError) {
                 error_log('Payment notification error: ' . $notificationError->getMessage());
-            }
-
-            // After creating payment, check for any partial payments for this student
-            $partialCheckStmt = $bdd->prepare("SELECT COUNT(*) FROM partial_payment WHERE student_id = (SELECT id FROM student WHERE matricule = ?)");
-            $partialCheckStmt->execute([$matricule]);
-            $hasPartial = $partialCheckStmt->fetchColumn() > 0;
-            // Store flag in session for later display
-            if ($hasPartial) {
-                $_SESSION['partial_notice'] = true;
             }
             header('Location: payment.php?success=1');
             exit();
