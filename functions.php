@@ -490,7 +490,7 @@ function createPenaltyInAppNotification(PDO $bdd, string $paymentReference): voi
                retard_jours, montant_penalite
         FROM vw_penalites
         WHERE payment_reference = ?
-        ORDER BY penalite_created_at DESC
+        ORDER BY created_at DESC
         LIMIT 1
     ");
     $stmt->execute([$paymentReference]);
@@ -612,10 +612,10 @@ function sendPenaltyCreatedNotification(PDO $bdd, string $paymentReference): voi
     $stmt = $bdd->prepare("
         SELECT penalite_reference, payment_reference, matricule, student_name,
                payment_amount, retard_jours, pourcentage_penalite,
-               montant_penalite, penalite_created_at
+               montant_penalite, created_at
         FROM vw_penalites
         WHERE payment_reference = ?
-        ORDER BY penalite_created_at DESC
+        ORDER BY created_at DESC
         LIMIT 1
     ");
     $stmt->execute([$paymentReference]);
@@ -801,8 +801,8 @@ function logLogin($bdd, $userId, $email) {
 
 function logActivity($bdd, $userId, $fullname, $email, $action, $details = null) {
     $ip = getClientIP();
-    $stmt = $bdd->prepare("INSERT INTO activity_logs (userId, action, details, ip, created_at) VALUES (?, ?, ?, ?, NOW())");
-    $stmt->execute([$userId, $action, $details, $ip]);
+    $stmt = $bdd->prepare("INSERT INTO activity_logs (user_id, fullname, email, action, details, ip, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())");
+    $stmt->execute([$userId, $fullname, $email, $action, $details, $ip]);
 }
 
 /**

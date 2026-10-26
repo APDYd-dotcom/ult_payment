@@ -17,7 +17,7 @@ $stmt = $bdd->query("
         COALESCE(u.fullname, 'Inconnu') AS fullname,
         COALESCE(u.email, '') AS email
     FROM activity_logs al
-    LEFT JOIN user u ON u.userId = al.userId
+    LEFT JOIN user u ON u.userId = al.user_id
     ORDER BY al.created_at DESC
     LIMIT 100
 ");

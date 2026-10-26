@@ -11,7 +11,7 @@ try {
         FROM vw_penalites vp
         JOIN student s ON s.matricule = vp.matricule
         WHERE s.id = ?
-        ORDER BY vp.penalite_created_at DESC
+        ORDER BY vp.created_at DESC
     ");
     $stmt->execute([$studentId]);
     $penalties = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -83,7 +83,7 @@ try {
                                         <td><?= htmlspecialchars($row['retard_jours'], ENT_QUOTES, 'UTF-8') ?> jours</td>
                                         <td><?= number_format((float) $row['pourcentage_penalite'], 2) ?>%</td>
                                         <td style="color: #dc2626; font-weight: 600;"><?= number_format((float) $row['montant_penalite'], 2) ?> BIF</td>
-                                        <td><?= date('Y-m-d H:i', strtotime($row['penalite_created_at'])) ?></td>
+                                        <td><?= date('Y-m-d H:i', strtotime($row['created_at'])) ?></td>
                                     </tr>
                                 <?php endforeach; ?>
                             <?php else: ?>

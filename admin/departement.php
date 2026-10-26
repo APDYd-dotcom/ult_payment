@@ -61,10 +61,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         ['date_debut' => getSystemSetting($bdd, 'tranche_3_derogation_deadline'), 'date_fin' => getSystemSetting($bdd, 'tranche_3_due_date')],
                         ['date_debut' => getSystemSetting($bdd, 'tranche_4_derogation_deadline'), 'date_fin' => getSystemSetting($bdd, 'tranche_4_due_date')],
                     ];
-                    $trancheStmt = $bdd->prepare("INSERT INTO tranche (department_id, name, date_debut, date_fin) VALUES (?, ?, ?, ?)");
+                    $trancheStmt = $bdd->prepare("INSERT INTO tranche (department_id, name, date_debut, date_fin, due_date, derogation_deadline) VALUES (?, ?, ?, ?, ?, ?)");
                     foreach ($trancheDates as $idx => $dates) {
                         $trancheName = $Name . " - Tranche " . ($idx + 1);
-                        $trancheStmt->execute([$departmentId, $trancheName, $dates['date_debut'], $dates['date_fin']]);
+                        $trancheStmt->execute([$departmentId, $trancheName, $dates['date_debut'], $dates['date_fin'], $dates['date_fin'], $dates['date_debut']]);
                     }
 
                     logActivity(

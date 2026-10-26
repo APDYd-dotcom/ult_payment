@@ -7,7 +7,7 @@ define('REQUIRED_ROLE', 'admin');
 require __DIR__ . '/../auth_check.php';
 
 try {
-    $stmt = $bdd->query("SELECT * FROM vw_penalites ORDER BY penalite_created_at DESC");
+    $stmt = $bdd->query("SELECT * FROM vw_penalites ORDER BY created_at DESC");
     $penalties = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     die('Erreur lors de la récupération des pénalités : ' . $e->getMessage());
@@ -77,7 +77,7 @@ try {
                                         <td><?= htmlspecialchars($row['retard_jours']) ?> jours</td>
                                         <td><?= number_format($row['pourcentage_penalite'], 2) ?>%</td>
                                         <td style="color: #dc2626; font-weight: 600;"><?= number_format($row['montant_penalite'], 2) ?> BIF</td>
-                                        <td><?= date('Y-m-d H:i', strtotime($row['penalite_created_at'])) ?></td>
+                                        <td><?= date('Y-m-d H:i', strtotime($row['created_at'])) ?></td>
                                     </tr>
                                 <?php endforeach; ?>
                             <?php else: ?>
