@@ -83,6 +83,46 @@ function tableColumnExists(PDO $bdd, string $table, string $column): bool {
     return (int) $stmt->fetchColumn() > 0;
 }
 
+function createStudentUserAccountDirect(PDO $bdd, string $fullName, string $matricule): ?array {
+    $matricule = trim($matricule);
+    if (empty($matricule)) {
+        return null;
+    }
+
+    $hasMatriculeColumn = tableColumnExists($bdd, 'user', 'matricule');
+
+    if ($hasMatriculeColumn) {
+        $existingStmt = $bdd->prepare("SELECT userId FROM user WHERE matricule = ? LIMIT 1");
+        $existingStmt->execute([$matricule]);
+    } else {
+        $existingStmt = $bdd->prepare("SELECT userId FROM user WHERE email = ? LIMIT 1");
+        $existingStmt->execute([$matricule]);
+    }
+
+    if ($existingStmt->fetch()) {
+        return ['matricule' => $matricule, 'student_name' => $fullName];
+    }
+
+    $hashedPassword = password_hash($matricule, PASSWORD_DEFAULT);
+
+    if ($hasMatriculeColumn) {
+        $email = $matricule . '@student.local';
+        $stmt = $bdd->prepare("
+            INSERT INTO user (fullname, email, password, role, matricule)
+            VALUES (?, ?, ?, 'student', ?)
+        ");
+        $stmt->execute([$fullName, $email, $hashedPassword, $matricule]);
+    } else {
+        $stmt = $bdd->prepare("
+            INSERT INTO user (fullname, email, password, role)
+            VALUES (?, ?, ?, 'student')
+        ");
+        $stmt->execute([$fullName, $matricule, $hashedPassword]);
+    }
+
+    return ['matricule' => $matricule, 'student_name' => $fullName];
+}
+
 function getStudentByNameAndDepartment(PDO $bdd, string $fullName, string $department): ?array {
     $stmt = $bdd->prepare("
         SELECT matricule, student_name, department_name

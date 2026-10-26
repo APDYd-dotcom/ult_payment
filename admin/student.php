@@ -2,6 +2,7 @@
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
+ini_set('pcre.jit', '0');
 
 define('REQUIRED_ROLE', 'admin');
 require __DIR__ . '/../auth_check.php';
@@ -41,12 +42,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $messageType = 'error';
         } else {
             try {
-                // Appel de la procédure stockée
-                $stmt = $bdd->prepare("CALL sp_student_create(?, ?, ?)");
-                $stmt->execute([$fullName, $age, $department]);
-                $stmt->closeCursor();
+                // Insert student directly and generate matricule
+                $deptStmt = $bdd->prepare('SELECT id FROM department WHERE name = ? LIMIT 1');
+                $deptStmt->execute([$department]);
+                $deptId = (int) $deptStmt->fetchColumn();
+                if ($deptId <= 0) {
+                    throw new RuntimeException('Département introuvable.');
+                }
 
-                $studentAccount = createStudentUserAccount($bdd, $fullName, $department);
+                $bdd->beginTransaction();
+                $stmt = $bdd->prepare('INSERT INTO student (name, age, department_id, matricule) VALUES (?, ?, ?, NULL)');
+                $stmt->execute([$fullName, $age, $deptId]);
+                $newStudentId = (int) $bdd->lastInsertId();
+                $matricule = 'S-' . str_pad($newStudentId, 3, '0', STR_PAD_LEFT);
+                $updateStmt = $bdd->prepare('UPDATE student SET matricule = ? WHERE id = ?');
+                $updateStmt->execute([$matricule, $newStudentId]);
+
+                $studentAccount = createStudentUserAccountDirect($bdd, $fullName, $matricule);
 
                 logActivity(
                     $bdd,
@@ -54,7 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $_SESSION['fullname'] ?? '',
                     $_SESSION['email'] ?? '',
                     'student_created',
-                    "Nom: $fullName, Département: $department" . ($studentAccount ? ", Matricule: {$studentAccount['matricule']}" : '')
+                    "Nom: $fullName, Département: $department, Matricule: {$matricule}"
                 );
 
                 try {
@@ -64,10 +76,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     error_log('New student notification error: ' . $notificationError->getMessage());
                 }
 
+                $bdd->commit();
                 header('Location: student.php?success=1');
                 exit();
             } catch (PDOException $e) {
-                // Traduire le message d'erreur
+                if ($bdd->inTransaction()) {
+                    $bdd->rollBack();
+                }
                 $message = translateStudentError($e->getMessage());
                 $messageType = 'error';
             }
