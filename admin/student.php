@@ -8,6 +8,18 @@ define('REQUIRED_ROLE', 'admin');
 require __DIR__ . '/../auth_check.php';
 require_once __DIR__ . '/../functions.php';
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'archive') {
+    if (hash_equals($_SESSION['csrf_token'] ?? '', $_POST['csrf_token'] ?? '')) {
+        $table = $_POST['table'] ?? '';
+        $id = (int)($_POST['id'] ?? 0);
+        if ($table === 'student' && $id > 0) {
+            $st = $bdd->prepare('CALL sp_archive_record(?,?,?)');
+            $st->execute([$table, $id, $_SESSION['userId'] ?? null]);
+            logActivity($bdd, $_SESSION['userId'] ?? null, $_SESSION['fullname'] ?? '', $_SESSION['email'] ?? '', 'ARCHIVE', $table . '#' . $id);
+        }
+    }
+}
+
 $message = '';
 $messageType = '';
 
