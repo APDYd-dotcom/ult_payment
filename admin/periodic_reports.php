@@ -88,7 +88,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'gener
             <button class="btn-primary" type="submit">Generer PDF</button>
         </form>
         <div class="table-section">
-            <p>Paiements: <?= (int)$summary['count'] ?>, total <?= number_format($summary['total'], 0, ',', ' ') ?></p>
+            <h2>Paiements du mois</h2>
+            <p>Nombre: <?= (int)$summary['count'] ?> - Total: <?= number_format($summary['total'], 0, ',', ' ') ?></p>
+            <table><tr><th>Mode</th><th>Nombre</th><th>Total</th></tr>
+            <?php foreach ($summary['by_method'] as $m => $d): ?>
+            <tr><td><?= htmlspecialchars($m) ?></td><td><?= (int)$d['count'] ?></td><td><?= number_format($d['total'], 0, ',', ' ') ?></td></tr>
+            <?php endforeach; ?>
+            </table>
+            <h3>Par departement</h3>
+            <table><tr><th>Departement</th><th>Nombre</th><th>Total</th></tr>
+            <?php foreach ($byDept as $d => $v): ?>
+            <tr><td><?= htmlspecialchars($d) ?></td><td><?= (int)$v['count'] ?></td><td><?= number_format($v['total'], 0, ',', ' ') ?></td></tr>
+            <?php endforeach; ?>
+            </table>
+            <p>Penalites: <?= (int)$pen['c'] ?> - Total: <?= number_format((float)$pen['t'], 0, ',', ' ') ?></p>
+            <p>Nouveaux etudiants: <?= (int)$newStudents ?></p>
         </div>
     </main>
 </div>
