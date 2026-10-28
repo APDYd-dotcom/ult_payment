@@ -48,7 +48,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 } else {
                     $cmd = "sed 's/DEFINER=[^*]*\\*/\\*/g' " . escapeshellarg($file) . ' | mariadb --defaults-extra-file=' . escapeshellarg($tmp) . ' ult_payment';
                 }
-                exec($cmd, $out, $rc);
+                exec($cmd . ' 2>&1', $out, $rc);
+                error_log('RESTORE CMD: ' . $cmd);
+                error_log('RESTORE RC: ' . $rc . ' OUT: ' . implode(' | ', $out));
                 unlink($tmp);
                 if ($rc === 0) {
                     $msg = 'Restauration reussie.';
