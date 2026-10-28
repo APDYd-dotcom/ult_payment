@@ -54,9 +54,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     file_put_contents($tmp, "[client]\nhost=localhost\nuser=app_user\npassword=secure_password_123\n");
                     chmod($tmp, 0600);
                     if (str_ends_with($file, '.gz')) {
-                        $pipeline = '/usr/bin/gunzip -c ' . escapeshellarg($file) . " | /usr/bin/sed 's/DEFINER=[^*]*\\*/\\*/g' | /usr/bin/mariadb --defaults-extra-file=" . escapeshellarg($tmp) . ' ult_payment';
+                        $pipeline = '/usr/bin/gunzip -c ' . escapeshellarg($file) . " | /usr/bin/sed 's/DEFINER=[^ ]* //g' | /usr/bin/mariadb --defaults-extra-file=" . escapeshellarg($tmp) . ' ult_payment';
                     } else {
-                        $pipeline = "/usr/bin/sed 's/DEFINER=[^*]*\\*/\\*/g' " . escapeshellarg($file) . ' | /usr/bin/mariadb --defaults-extra-file=' . escapeshellarg($tmp) . ' ult_payment';
+                        $pipeline = "/usr/bin/sed 's/DEFINER=[^ ]* //g' " . escapeshellarg($file) . ' | /usr/bin/mariadb --defaults-extra-file=' . escapeshellarg($tmp) . ' ult_payment';
                     }
                     $cmd = '/bin/bash -o pipefail -c ' . escapeshellarg($pipeline);
                     exec($cmd . ' 2>&1', $out, $rc);
