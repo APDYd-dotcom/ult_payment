@@ -13,8 +13,10 @@ function runDatabaseBackup(): array {
 
     $stamp = date('Y-m-d_His');
     $file = $backupDir . '/' . $stamp . '.sql.gz';
-    $cmd = 'mysqldump --defaults-extra-file=' . escapeshellarg($tmp) . ' --single-transaction --routines --triggers ult_payment | gzip > ' . escapeshellarg($file);
-    exec($cmd, $out, $rc);
+    $cmd = '/usr/bin/mysqldump --defaults-extra-file=' . escapeshellarg($tmp) . ' --single-transaction --routines --triggers ult_payment | /usr/bin/gzip > ' . escapeshellarg($file);
+    exec($cmd . ' 2>&1', $out, $rc);
+    error_log('BACKUP CMD: ' . $cmd);
+    error_log('BACKUP RC: ' . $rc . ' OUT: ' . implode(' | ', $out));
     unlink($tmp);
 
     if ($rc !== 0 || !file_exists($file)) {
