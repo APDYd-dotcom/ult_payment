@@ -292,6 +292,13 @@ try {
     <div class="options-menu dropdown-hidden">
         <button type="button" class="menu-item dropdown-edit-btn">Modifier</button>
         <button type="button" class="menu-item dropdown-delete-btn">Supprimer</button>
+        <form method="POST" style="display:inline">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
+            <input type="hidden" name="action" value="archive">
+            <input type="hidden" name="table" value="student">
+            <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
+            <button type="submit" class="menu-item">Archiver</button>
+        </form>
     </div>
 </td>
 </tr>
