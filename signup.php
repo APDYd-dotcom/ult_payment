@@ -23,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['signup'])) {
     $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
     $confirm_password = $_POST['confirm_password'] ?? '';
-    $role = $_POST['role'] ?? 'student';
+    $role = 'student';
 
     // --- Validation ---
     if (empty($fullname) || empty($email) || empty($password) || empty($confirm_password)) {
@@ -399,9 +399,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['signup'])) {
                         <span class="label-icon" aria-hidden="true">🎓</span>
                         Rôle
                     </label>
-                    <select id="role" name="role">
-                        <option value="student" <?= $role === 'student' ? 'selected' : '' ?>>Étudiant</option>
-                        <option value="admin" <?= $role === 'admin' ? 'selected' : '' ?>>Administrateur</option>
+                    <select id="role" name="role" disabled>
+                        <option value="student" selected>Étudiant</option>
                     </select>
                 </div>
 

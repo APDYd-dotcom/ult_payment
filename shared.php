@@ -12,7 +12,7 @@ if (!$row || strtotime($row['expires_at']) < time()) { http_response_code(404); 
 $path = __DIR__ . '/uploads/' . ($row['is_archived'] ? 'archive/' : 'documents/') . $row['stored_name'];
 if (!is_file($path)) { $path = __DIR__ . '/uploads/documents/' . $row['stored_name']; }
 if (!is_file($path)) { http_response_code(404); exit('Fichier absent.'); }
-logActivity($bdd, 0, 'public', '', 'SHARED_DOWNLOAD', $row['original_name']);
+logActivity($bdd, null, 'public', '', 'SHARED_DOWNLOAD', $row['original_name']);
 header('Content-Type: ' . $row['mime_type']);
 header('Content-Disposition: attachment; filename="' . $row['original_name'] . '"');
 header('Content-Length: ' . filesize($path));
