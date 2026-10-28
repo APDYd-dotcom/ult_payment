@@ -36,4 +36,3 @@ if (php_sapi_name() === 'cli' && realpath(__FILE__) === realpath($_SERVER['SCRIP
     echo ($res['success'] ? "Backup: " . $res['file'] : $res['message']) . "\n";
     exit($res['success'] ? 0 : 1);
 }
-PHP
