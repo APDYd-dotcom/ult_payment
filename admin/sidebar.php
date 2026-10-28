@@ -19,6 +19,7 @@
     <li><a href="theme_settings.php">Theme Settings</a></li>
     <li><a href="mailing.php">Mailing List</a></li>
     <li><a href="activity_log.php">Activity Log</a></li>
+    <li><a href="chat.php">Chat</a></li>
     <li><a href="archives.php">Archives</a></li>
     <li><a href="backups.php">Sauvegardes</a></li>
     <li><a href="restore.php">Restauration</a></li>
