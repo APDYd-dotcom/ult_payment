@@ -54,7 +54,7 @@ async function load() {
           box.innerHTML=''; lastId=0; load();
         }
       };
-      actions.appendChild(editBtn);
+      if (age < 120) actions.appendChild(editBtn);
       actions.appendChild(delBtn);
       div.appendChild(actions);
     }
