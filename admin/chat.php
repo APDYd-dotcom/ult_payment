@@ -73,7 +73,7 @@ function send() {
   if (!msg) return;
   fetch('/payment/send_message.php', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:'csrf_token=<?= $_SESSION['csrf_token'] ?>&receiver_id=<?= $with ?>&message=' + encodeURIComponent(msg)});
   input.value='';
-  setTimeout(load, 300);
+  setTimeout(()=>{ box.innerHTML=''; lastId=0; load(); }, 300);
 }
 document.addEventListener('DOMContentLoaded', load);
 </script>
