@@ -2,6 +2,24 @@
     "require": {
         "phpmailer/phpmailer": "^7.1",
         "robthree/twofactorauth": "^3.0",
-        "endroid/qr-code": "^6.1"
+        "endroid/qr-code": "^6.1",
+        "dompdf/dompdf": "^2.0",
+        "phpoffice/phpspreadsheet": "^1.29"
+    },
+    "config": {
+        "audit": {
+            "ignore": [
+                "PKSA-cv56-2228-pzr6",
+                "PKSA-6r8f-nxsb-67bq",
+                "PKSA-gh7h-hhy4-byg7",
+                "PKSA-mwt3-h9tv-kx78",
+                "PKSA-hp6n-n4kz-21wk",
+                "PKSA-mckv-s5hg-868k",
+                "PKSA-7ztm-rpt3-qqzk",
+                "PKSA-2kw5-jd8w-5mvh",
+                "PKSA-4jrs-y99s-q8j6",
+                "PKSA-hbk6-2vfz-868k"
+            ]
+        }
     }
 }

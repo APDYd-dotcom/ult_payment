@@ -5,6 +5,7 @@
     <li><a href="departement.php">Departement</a></li>
     <li><a href="student.php">Students</a></li>
     <li><a href="payment.php">Payments</a></li>
+    <li><a href="reports.php">Rapports</a></li>
     <li><a href="partial.php">Partial Payments</a></li>
     <li><a href="penalty.php">Penalties</a></li>
     <li><a href="login_history.php">Login History</a></li>
