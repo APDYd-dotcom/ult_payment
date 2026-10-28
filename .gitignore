@@ -1,0 +1,21 @@
+# Dependencies
+vendor/
+
+# Uploads / generated files
+uploads/
+*.env
+.env
+.env.*
+
+# IDE
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
