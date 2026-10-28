@@ -176,7 +176,7 @@ if (isset($_GET['success'])) {
 
 // --- Récupération des étudiants
 try {
-    $stmtStudents = $bdd->query("SELECT * FROM vw_students_with_department ORDER BY student_name ASC");
+    $stmtStudents = $bdd->query("SELECT * FROM vw_students_with_department WHERE id NOT IN (SELECT record_id FROM archives WHERE table_name='student' AND restored_at IS NULL) ORDER BY student_name ASC");
     $students = $stmtStudents->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     die('Erreur lors de la récupération des étudiants : ' . $e->getMessage());
