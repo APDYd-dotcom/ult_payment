@@ -10,7 +10,7 @@ for ($i = 5; $i >= 0; $i--) {
     $m = date('Y-m', strtotime("-$i month"));
     $months[$m] = 0.0;
 }
-$stmt = $bdd->query("SELECT DATE_FORMAT(payment_date,'%Y-%m') AS m, COALESCE(SUM(amount),0) AS t FROM payment WHERE payment_date >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH) GROUP BY m");
+$stmt = $bdd->query("SELECT DATE_FORMAT(created_at,'%Y-%m') AS m, COALESCE(SUM(amount),0) AS t FROM payment WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH) GROUP BY m");
 foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
     if (isset($months[$r['m']])) $months[$r['m']] = (float)$r['t'];
 }

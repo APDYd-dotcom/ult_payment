@@ -36,7 +36,7 @@ foreach ($rows as $r) {
 }
 
 // penalites du mois
-$penStmt = $bdd->prepare("SELECT COUNT(*) AS c, COALESCE(SUM(amount),0) AS t FROM penalite WHERE DATE(created_at) BETWEEN ? AND ?");
+$penStmt = $bdd->prepare("SELECT COUNT(*) AS c, COALESCE(SUM(montant_penalite),0) AS t FROM penalite WHERE DATE(created_at) BETWEEN ? AND ?");
 $penStmt->execute([$first, $last]);
 $pen = $penStmt->fetch(PDO::FETCH_ASSOC) ?: ['c' => 0, 't' => 0];
 

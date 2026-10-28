@@ -20,7 +20,7 @@ $diff = $sa['total'] - $sb['total'];
 $pct = $sb['total'] > 0 ? ($diff / $sb['total']) * 100 : 0;
 
 // par departement
-$deptTotals = $bdd->query("SELECT d.name, COALESCE(SUM(p.amount),0) AS t FROM department d LEFT JOIN payment p ON p.department_id=d.id GROUP BY d.id ORDER BY d.name")->fetchAll(PDO::FETCH_ASSOC);
+$deptTotals = $bdd->query("SELECT d.name, COALESCE(SUM(p.amount),0) AS t FROM department d LEFT JOIN tranche t ON t.department_id=d.id LEFT JOIN payment p ON p.tranche_id=t.id GROUP BY d.id ORDER BY d.name")->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
 <html><head><title>Analyse comparative</title>
