@@ -9,20 +9,34 @@ $stmt->execute([$_SESSION['userId']]);
 $docs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
-<html><head><title>Mes documents</title><link rel="stylesheet" href="../admin/styles.css?v=1.1"></head><body>
-<div class="container"><main class="main-content">
+<html><head><title>Mes documents</title><link rel="stylesheet" href="../admin/styles.css?v=1.1">
+<style>
+.doc-card { background:#fff; border-radius:12px; padding:16px; margin-bottom:12px; box-shadow:0 2px 8px rgba(0,0,0,.08); display:flex; justify-content:space-between; align-items:center; }
+.doc-info h3 { margin:0; font-size:1rem; color:#1e3a8a; }
+.doc-meta { color:#64748b; font-size:.85rem; }
+.btn { padding:8px 14px; border-radius:8px; text-decoration:none; color:#fff; background:#1e3a8a; }
+</style>
+</head><body>
+<div class="container"><aside class="sidebar"><?php include 'sidebar.php'; ?></aside><main class="main-content">
 <h1 class="page-title">Mes documents</h1>
-<p><a href="upload_document.php">Téléverser</a></p>
-<table class="table-section"><tr><th>Nom</th><th>Version</th><th>Taille</th><th>Date</th><th></th></tr>
+<p><a class="btn" href="upload_document.php">Téléverser un document</a></p>
+<?php if (!$docs): ?>
+  <p>Aucun document.</p>
+<?php endif; ?>
 <?php foreach ($docs as $d): ?>
-<tr>
-<td><?= htmlspecialchars($d['original_name']) ?></td>
-<td><?= (int)$d['version'] ?></td>
-<td><?= (int)$d['size'] ?></td>
-<td><?= htmlspecialchars($d['created_at']) ?></td>
-<td><a href="../admin/download.php?id=<?= (int)$d['id'] ?>">Télécharger</a></td>
-</tr>
+  <div class="doc-card">
+    <div class="doc-info">
+      <h3><?= htmlspecialchars($d['original_name']) ?></h3>
+      <div class="doc-meta">Version <?= (int)$d['version'] ?> · <?= (int)$d['size'] ?> octets · <?= htmlspecialchars($d['created_at']) ?> <?= $d['is_archived'] ? '· Archivé' : '' ?></div>
+    </div>
+    <div>
+      <?php if (!$d['is_archived']): ?>
+        <a class="btn" href="../admin/download.php?id=<?= (int)$d['id'] ?>">Télécharger</a>
+      <?php else: ?>
+        <span class="doc-meta">Archivé par l'admin</span>
+      <?php endif; ?>
+    </div>
+  </div>
 <?php endforeach; ?>
-</table>
 </main></div></body></html>
 PHP
