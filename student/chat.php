@@ -55,7 +55,7 @@ async function load() {
                 box.innerHTML=''; lastId=0; load();
               }
             }
-          };
+                if (div.firstChild) div.firstChild.nodeValue = nm;
           actions.appendChild(editBtn);
           setTimeout(() => editBtn.remove(), remaining * 1000);
         }

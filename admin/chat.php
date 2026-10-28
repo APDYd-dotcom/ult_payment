@@ -55,7 +55,7 @@ async function load() {
                 alert(data.error || 'Modification impossible');
                 if (res.status === 403) editBtn.remove();
               } else {
-                box.innerHTML=''; lastId=0; load();
+                if (div.firstChild) div.firstChild.nodeValue = nm;
               }
             }
           };
