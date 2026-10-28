@@ -20,4 +20,4 @@ $bdd->prepare("UPDATE messages SET message=? WHERE id=?")->execute([$msg, $id]);
 logActivity($bdd, $_SESSION['userId'] ?? null, $_SESSION['fullname'] ?? '', $_SESSION['email'] ?? '', 'EDIT_MESSAGE', (string)$id);
 echo json_encode(['ok' => true]);
 exit();
-PHP
+

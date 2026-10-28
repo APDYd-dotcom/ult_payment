@@ -20,4 +20,4 @@ $bdd->prepare("DELETE FROM messages WHERE id=?")->execute([$id]);
 logActivity($bdd, $_SESSION['userId'] ?? null, $_SESSION['fullname'] ?? '', $_SESSION['email'] ?? '', 'DELETE_MESSAGE', (string)$id);
 echo json_encode(['ok' => true]);
 exit();
-PHP
+
