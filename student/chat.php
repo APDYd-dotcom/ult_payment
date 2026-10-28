@@ -19,58 +19,80 @@ $adminId = (int)$bdd->query("SELECT userId FROM user WHERE role='admin' ORDER BY
 .chat-input button { padding:10px 18px; background:#1e3a8a; color:#fff; border:none; border-radius:8px; cursor:pointer; }
 </style>
 <script>
+const EDIT_WINDOW = 120;
 const me = <?= (int)$_SESSION['userId'] ?>;
 const adminId = <?= $adminId ?>;
 let lastId = 0;
+let loading = false;
 async function load() {
-  const r = await fetch('/payment/get_messages.php?with=' + adminId + '&since=' + lastId);
-  const msgs = await r.json();
-  const box = document.getElementById('box');
-  msgs.forEach(m => {
-    const div = document.createElement('div');
-    div.className = 'msg ' + (m.sender_id == me ? 'me' : 'them');
-    div.textContent = m.message;
-    const age = (Date.now() - new Date(m.created_at).getTime()) / 1000;
-    if (m.sender_id == me) {
-      const actions = document.createElement('div');
-      actions.style.fontSize='0.75rem';
-      actions.style.marginTop='4px';
-      if (age < 120) {
-      const editBtn = document.createElement('button');
-      editBtn.textContent='Modifier';
-      editBtn.onclick = async () => {
-        const nm = prompt('Nouveau message', m.message);
-        if (nm && nm.trim()) {
-          await fetch('/payment/edit_message.php', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:'csrf_token=<?= $_SESSION['csrf_token'] ?>&id=' + m.id + '&message=' + encodeURIComponent(nm)});
-          box.innerHTML=''; lastId=0; load();
+  if (loading) return;
+  loading = true;
+  try {
+    const r = await fetch('/payment/get_messages.php?with=' + adminId + '&since=' + lastId);
+    const msgs = await r.json();
+    const box = document.getElementById('box');
+    msgs.forEach(m => {
+      const div = document.createElement('div');
+      div.className = 'msg ' + (m.sender_id == me ? 'me' : 'them');
+      div.textContent = m.message;
+      if (m.sender_id == me) {
+        const actions = document.createElement('div');
+        actions.style.fontSize='0.75rem';
+        actions.style.marginTop='4px';
+        const remaining = EDIT_WINDOW - (m.age_seconds || 0);
+        if (remaining > 0) {
+          const editBtn = document.createElement('button');
+          editBtn.textContent='Modifier';
+          editBtn.onclick = async () => {
+            const nm = prompt('Nouveau message', m.message);
+            if (nm && nm.trim()) {
+              const res = await fetch('/payment/edit_message.php', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:'csrf_token=<?= $_SESSION['csrf_token'] ?>&id=' + m.id + '&message=' + encodeURIComponent(nm)});
+              if (!res.ok) {
+                const data = await res.json().catch(()=>({}));
+                alert(data.error || 'Modification impossible');
+                if (res.status === 403) editBtn.remove();
+              } else {
+                box.innerHTML=''; lastId=0; load();
+              }
+            }
+          };
+          actions.appendChild(editBtn);
+          setTimeout(() => editBtn.remove(), remaining * 1000);
         }
-      };
+        const delBtn = document.createElement('button');
+        delBtn.textContent='Supprimer';
+        delBtn.onclick = async () => {
+          if (confirm('Supprimer ce message ?')) {
+            await fetch('/payment/delete_message.php', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:'csrf_token=<?= $_SESSION['csrf_token'] ?>&id=' + m.id});
+            box.innerHTML=''; lastId=0; load();
+          }
+        };
+        actions.appendChild(delBtn);
+        div.appendChild(actions);
       }
-      const delBtn = document.createElement('button');
-      delBtn.textContent='Supprimer';
-      delBtn.onclick = async () => {
-        if (confirm('Supprimer ce message ?')) {
-          await fetch('/payment/delete_message.php', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:'csrf_token=<?= $_SESSION['csrf_token'] ?>&id=' + m.id});
-          box.innerHTML=''; lastId=0; load();
-        }
-      };
-      if (age < 120) actions.appendChild(editBtn);
-      actions.appendChild(delBtn);
-      div.appendChild(actions);
-    }
-    box.appendChild(div);
-    lastId = m.id;
-  });
-  box.scrollTop = box.scrollHeight;
+      box.appendChild(div);
+      lastId = m.id;
+    });
+    box.scrollTop = box.scrollHeight;
+  } finally {
+    loading = false;
+  }
 }
-setInterval(load, 1000);
-function send() {
+setInterval(load, 3000);
+async function send() {
   const input = document.getElementById('msg');
   const msg = input.value.trim();
   if (!msg) return;
-  fetch('/payment/send_message.php', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:'csrf_token=<?= $_SESSION['csrf_token'] ?>&receiver_id=' + adminId + '&message=' + encodeURIComponent(msg)});
-  input.value='';
-  setTimeout(()=>{ box.innerHTML=''; lastId=0; load(); }, 300);
+  const btn = document.getElementById('sendBtn');
+  btn.disabled = true;
+  try {
+    const res = await fetch('/payment/send_message.php', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:'csrf_token=<?= $_SESSION['csrf_token'] ?>&receiver_id=' + adminId + '&message=' + encodeURIComponent(msg)});
+    if (!res.ok) { alert('Envoi impossible'); return; }
+    input.value='';
+    await load();
+  } finally {
+    btn.disabled = false;
+  }
 }
 document.addEventListener('DOMContentLoaded', load);
 </script>
@@ -81,7 +103,7 @@ document.addEventListener('DOMContentLoaded', load);
   <div class="chat-box" id="box"></div>
   <div class="chat-input">
     <input id="msg" placeholder="Écrire un message..." onkeydown="if(event.key==='Enter')send()">
-    <button onclick="send()">Envoyer</button>
+    <button id="sendBtn" onclick="send()">Envoyer</button>
   </div>
 </div>
 </main></div></body></html>
