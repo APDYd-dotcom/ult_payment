@@ -28,4 +28,3 @@ if ($doc) {
 }
 header('Location: documents.php');
 exit();
-PHP
