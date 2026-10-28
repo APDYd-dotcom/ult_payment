@@ -44,9 +44,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 file_put_contents($tmp, "[client]\nhost=localhost\nuser=app_user\npassword=secure_password_123\n");
                 chmod($tmp, 0600);
                 if (str_ends_with($file, '.gz')) {
-                    $cmd = 'gunzip -c ' . escapeshellarg($file) . ' | mariadb --defaults-extra-file=' . escapeshellarg($tmp) . ' ult_payment';
+                    $cmd = 'gunzip -c ' . escapeshellarg($file) . " | sed 's/DEFINER=[^*]*\\*/\\*/g' | mariadb --defaults-extra-file=" . escapeshellarg($tmp) . ' ult_payment';
                 } else {
-                    $cmd = 'mariadb --defaults-extra-file=' . escapeshellarg($tmp) . ' ult_payment < ' . escapeshellarg($file);
+                    $cmd = "sed 's/DEFINER=[^*]*\\*/\\*/g' " . escapeshellarg($file) . ' | mariadb --defaults-extra-file=' . escapeshellarg($tmp) . ' ult_payment';
                 }
                 exec($cmd, $out, $rc);
                 unlink($tmp);
