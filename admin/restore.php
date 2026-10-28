@@ -18,48 +18,65 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $hash = $stmt->fetchColumn();
         if (!password_verify($password, $hash)) { $msg = 'Mot de passe invalide.'; }
         else {
-            // determine file
             $file = null;
+            $uploadedTemp = null;
             if (!empty($_POST['existing'])) {
                 $name = basename($_POST['existing']);
                 $path = $backupDir . '/' . $name;
-                if (is_file($path)) $file = $path;
+                $real = realpath($path);
+                if ($real && strpos($real, realpath($backupDir)) === 0 && is_file($real)) {
+                    $file = $real;
+                }
             } elseif (isset($_FILES['upload']) && $_FILES['upload']['error'] === UPLOAD_ERR_OK) {
                 $up = $_FILES['upload'];
-                if ($up['size'] > 5 * 1024 * 1024) { $msg = 'Fichier trop volumineux.'; }
+                if ($up['size'] > 20 * 1024 * 1024) { $msg = 'Fichier trop volumineux.'; }
                 else {
                     $ext = strtolower(pathinfo($up['name'], PATHINFO_EXTENSION));
                     if (!in_array($ext, ['sql','gz'], true)) { $msg = 'Extension invalide.'; }
                     else {
                         $dest = $backupDir . '/upload_' . time() . '.' . $ext;
-                        if (move_uploaded_file($up['tmp_name'], $dest)) $file = $dest;
+                        if (move_uploaded_file($up['tmp_name'], $dest)) { $file = $dest; $uploadedTemp = $dest; }
                     }
                 }
             }
             if ($file && $msg === '') {
-                // safety backup
-                runDatabaseBackup();
-                // run restore
-                $tmp = tempnam(sys_get_temp_dir(), 'ult_');
-                file_put_contents($tmp, "[client]\nhost=localhost\nuser=app_user\npassword=secure_password_123\n");
-                chmod($tmp, 0600);
-                if (str_ends_with($file, '.gz')) {
-                    $cmd = 'gunzip -c ' . escapeshellarg($file) . " | sed 's/DEFINER=[^*]*\\*/\\*/g' | mariadb --defaults-extra-file=" . escapeshellarg($tmp) . ' ult_payment';
-                } else {
-                    $cmd = "sed 's/DEFINER=[^*]*\\*/\\*/g' " . escapeshellarg($file) . ' | mariadb --defaults-extra-file=' . escapeshellarg($tmp) . ' ult_payment';
+                // reject dump without CREATE TABLE
+                $checkCmd = '/bin/bash -o pipefail -c ' . escapeshellarg('/usr/bin/gunzip -c ' . escapeshellarg($file) . ' 2>/dev/null | /usr/bin/grep -qi "CREATE TABLE" && echo OK');
+                if (str_ends_with($file, '.sql')) {
+                    $checkCmd = '/bin/bash -o pipefail -c ' . escapeshellarg('/usr/bin/grep -qi "CREATE TABLE" ' . escapeshellarg($file) . ' && echo OK');
                 }
-                exec($cmd . ' 2>&1', $out, $rc);
-                error_log('RESTORE CMD: ' . $cmd);
-                error_log('RESTORE RC: ' . $rc . ' OUT: ' . implode(' | ', $out));
-                unlink($tmp);
-                if ($rc === 0) {
-                    $msg = 'Restauration reussie.';
-                    logActivity($bdd, $_SESSION['userId'] ?? null, $_SESSION['fullname'] ?? '', $_SESSION['email'] ?? '', 'RESTORE', basename($file));
+                exec($checkCmd, $cout, $crc);
+                if (!in_array('OK', $cout, true)) {
+                    $msg = 'Fichier invalide : CREATE TABLE introuvable.';
                 } else {
-                    $msg = 'Echec de la restauration.';
+                    runDatabaseBackup(); // safety
+                    $tmp = tempnam(sys_get_temp_dir(), 'ult_');
+                    file_put_contents($tmp, "[client]\nhost=localhost\nuser=app_user\npassword=secure_password_123\n");
+                    chmod($tmp, 0600);
+                    if (str_ends_with($file, '.gz')) {
+                        $pipeline = '/usr/bin/gunzip -c ' . escapeshellarg($file) . " | /usr/bin/sed 's/DEFINER=[^*]*\\*/\\*/g' | /usr/bin/mariadb --defaults-extra-file=" . escapeshellarg($tmp) . ' ult_payment';
+                    } else {
+                        $pipeline = "/usr/bin/sed 's/DEFINER=[^*]*\\*/\\*/g' " . escapeshellarg($file) . ' | /usr/bin/mariadb --defaults-extra-file=' . escapeshellarg($tmp) . ' ult_payment';
+                    }
+                    $cmd = '/bin/bash -o pipefail -c ' . escapeshellarg($pipeline);
+                    exec($cmd . ' 2>&1', $out, $rc);
+                    @unlink($tmp);
+                    if ($uploadedTemp) { @unlink($uploadedTemp); }
+                    if ($rc === 0) {
+                        $msg = 'Restauration reussie.';
+                        logActivity($bdd, $_SESSION['userId'] ?? null, $_SESSION['fullname'] ?? '', $_SESSION['email'] ?? '', 'RESTORE', basename($file));
+                    } else {
+                        $detail = trim(implode("\n", array_slice($out, -3)));
+                        if (strlen($detail) > 300) $detail = substr($detail, -300);
+                        $msg = 'Echec de la restauration (code ' . $rc . ') : ' . $detail;
+                        logActivity($bdd, $_SESSION['userId'] ?? null, $_SESSION['fullname'] ?? '', $_SESSION['email'] ?? '', 'RESTORE_FAILED', 'code=' . $rc);
+                    }
                 }
             } elseif ($msg === '') {
                 $msg = 'Aucun fichier selectionne.';
+            }
+            if ($uploadedTemp && is_file($uploadedTemp) && $msg !== 'Restauration reussie.') {
+                @unlink($uploadedTemp);
             }
         }
     }
@@ -71,7 +88,7 @@ $files = glob($backupDir . '/*.sql.gz') ?: [];
 <html><head><title>Restauration</title><link rel="stylesheet" href="./styles.css?v=1.1"></head><body>
 <div class="container"><aside class="sidebar"><?php include 'sidebar.php'; ?></aside><main class="main-content">
 <h1 class="page-title">Restauration</h1>
-<?php if ($msg): ?><div class="message message-error"><?= htmlspecialchars($msg) ?></div><?php endif; ?>
+<?php if ($msg): ?><div class="message <?= strpos($msg,'reussie')!==false?'message-success':'message-error' ?>"><?= htmlspecialchars($msg) ?></div><?php endif; ?>
 <form method="POST" enctype="multipart/form-data" class="form-section">
 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
 <label>Sauvegarde existante</label>

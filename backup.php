@@ -13,14 +13,29 @@ function runDatabaseBackup(): array {
 
     $stamp = date('Y-m-d_His');
     $file = $backupDir . '/' . $stamp . '.sql.gz';
-    $cmd = '/usr/bin/mysqldump --defaults-extra-file=' . escapeshellarg($tmp) . ' --single-transaction --routines --triggers ult_payment | /usr/bin/gzip > ' . escapeshellarg($file);
-    exec($cmd . ' 2>&1', $out, $rc);
-    error_log('BACKUP CMD: ' . $cmd);
-    error_log('BACKUP RC: ' . $rc . ' OUT: ' . implode(' | ', $out));
-    unlink($tmp);
+    $errFile = tempnam(sys_get_temp_dir(), 'ulterr_');
 
-    if ($rc !== 0 || !file_exists($file)) {
-        return ['success' => false, 'message' => 'Echec de la sauvegarde.'];
+    $pipeline = '/usr/bin/mysqldump --defaults-extra-file=' . escapeshellarg($tmp) . ' --single-transaction --routines --triggers ult_payment 2>' . escapeshellarg($errFile) . ' | /usr/bin/gzip > ' . escapeshellarg($file);
+    $cmd = '/bin/bash -o pipefail -c ' . escapeshellarg($pipeline);
+    exec($cmd, $out, $rc);
+
+    $dumpErr = is_file($errFile) ? trim((string) file_get_contents($errFile)) : '';
+    @unlink($errFile);
+    @unlink($tmp);
+
+    if ($rc !== 0 || !file_exists($file) || filesize($file) <= 0) {
+        @unlink($file);
+        $detail = $dumpErr !== '' ? $dumpErr : 'code ' . $rc;
+        return ['success' => false, 'message' => 'Sauvegarde incomplete : ' . $detail];
+    }
+
+    // verify dump completed
+    $verifyCmd = '/bin/bash -o pipefail -c ' . escapeshellarg('/usr/bin/gunzip -c ' . escapeshellarg($file) . ' | /usr/bin/tail -n 3');
+    exec($verifyCmd, $vout, $vrc);
+    $tail = implode("\n", $vout);
+    if (strpos($tail, 'Dump completed') === false) {
+        @unlink($file);
+        return ['success' => false, 'message' => 'Sauvegarde incomplete : marque de fin absente'];
     }
 
     // rotation: keep 7 latest
