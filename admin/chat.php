@@ -33,10 +33,12 @@ async function load() {
     const div = document.createElement('div');
     div.className = 'msg ' + (m.sender_id == me ? 'me' : 'them');
     div.textContent = m.message;
+    const age = (Date.now() - new Date(m.created_at).getTime()) / 1000;
     if (m.sender_id == me) {
       const actions = document.createElement('div');
       actions.style.fontSize='0.75rem';
       actions.style.marginTop='4px';
+      if (age < 120) {
       const editBtn = document.createElement('button');
       editBtn.textContent='Modifier';
       editBtn.onclick = async () => {
@@ -46,6 +48,7 @@ async function load() {
           box.innerHTML=''; lastId=0; load();
         }
       };
+      }
       const delBtn = document.createElement('button');
       delBtn.textContent='Supprimer';
       delBtn.onclick = async () => {
