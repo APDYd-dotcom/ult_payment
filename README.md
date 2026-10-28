@@ -355,3 +355,7 @@ Merci à :
 ---
 
 **ULT Payment System** — Une solution académique pour digitaliser et sécuriser la gestion des paiements universitaires.
+
+## Cron
+0 2 * * * php /var/www/html/payment/backup.php
+0 7 1 * * php /var/www/html/payment/cron_periodic_report.php

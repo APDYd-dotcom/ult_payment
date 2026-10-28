@@ -1,0 +1,9 @@
+@startuml
+actor Admin
+actor Student
+Admin --> (Gerer etudiants)
+Admin --> (Gerer paiements)
+Admin --> (Rapports)
+Student --> (Consulter profil)
+Student --> (Televerser documents)
+@enduml

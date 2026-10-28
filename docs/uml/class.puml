@@ -1,0 +1,8 @@
+@startuml
+class User
+class Student
+class Payment
+class Document
+User "1" -- "*" Document
+Student "1" -- "*" Payment
+@enduml

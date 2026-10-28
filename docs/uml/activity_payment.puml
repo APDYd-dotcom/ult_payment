@@ -1,0 +1,7 @@
+@startuml
+start
+:Creer paiement;
+:Calculer penalite;
+:Enregistrer;
+stop
+@enduml
