@@ -1205,3 +1205,67 @@ function validateSystemSettingsInput(array $input): array
 
     return [$values, $errors];
 }
+
+function ultEnvValue(string $key): ?string {
+    $val = getenv($key);
+    if ($val !== false && $val !== '') {
+        return $val;
+    }
+    $envFile = __DIR__ . '/.env';
+    if (is_readable($envFile)) {
+        foreach (file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
+            if (strpos(trim($line), '#') === 0) continue;
+            if (strpos($line, '=') === false) continue;
+            [$k, $v] = explode('=', $line, 2);
+            if (trim($k) === $key) {
+                return trim($v, " \t\n\r\0\x0B\"'");
+            }
+        }
+    }
+    return null;
+}
+
+function ultEncryptionKey(): string {
+    $key = ultEnvValue('APP_ENC_KEY');
+    if (!$key) {
+        throw new RuntimeException('APP_ENC_KEY manquant dans .env');
+    }
+    return hash('sha256', $key, true);
+}
+
+function encryptData(?string $plaintext): ?string {
+    if ($plaintext === null || $plaintext === '') {
+        return $plaintext;
+    }
+    $key = ultEncryptionKey();
+    $iv = random_bytes(12);
+    $tag = '';
+    $cipher = openssl_encrypt($plaintext, 'aes-256-gcm', $key, OPENSSL_RAW_DATA, $iv, $tag, '', 16);
+    if ($cipher === false) {
+        return $plaintext;
+    }
+    return base64_encode($iv . $tag . $cipher);
+}
+
+function decryptData(?string $value): ?string {
+    if ($value === null || $value === '') {
+        return $value;
+    }
+    $raw = base64_decode($value, true);
+    if ($raw === false || strlen($raw) < 28) {
+        return $value; // backward compatible
+    }
+    $iv = substr($raw, 0, 12);
+    $tag = substr($raw, 12, 16);
+    $cipher = substr($raw, 28);
+    try {
+        $key = ultEncryptionKey();
+    } catch (Throwable $e) {
+        return $value;
+    }
+    $plain = openssl_decrypt($cipher, 'aes-256-gcm', $key, OPENSSL_RAW_DATA, $iv, $tag);
+    if ($plain === false) {
+        return $value;
+    }
+    return $plain;
+}

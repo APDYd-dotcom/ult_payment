@@ -147,7 +147,7 @@ function ultTwoFactorConsumeBackupCode(PDO $bdd, array $user, string $code): boo
         return false;
     }
 
-    $hashes = json_decode((string) ($user['two_factor_backup_codes'] ?? '[]'), true);
+    $hashes = json_decode((string) (decryptData($user['two_factor_backup_codes'] ?? '[]') ?? '[]'), true);
     if (!is_array($hashes)) {
         return false;
     }
@@ -233,8 +233,8 @@ function ultTwoFactorHandleProfilePost(PDO $bdd, string &$error, string &$succes
             WHERE userId = ?
         ");
         $stmt->execute([
-            (string) $setup['secret'],
-            ultTwoFactorHashBackupCodes((array) $setup['backup_codes']),
+            encryptData((string) $setup['secret']),
+            encryptData(ultTwoFactorHashBackupCodes((array) $setup['backup_codes'])),
             $userId,
         ]);
 
@@ -254,7 +254,7 @@ function ultTwoFactorHandleProfilePost(PDO $bdd, string &$error, string &$succes
         }
 
         $confirmed = password_verify($confirmation, (string) $user['password'])
-            || ultTwoFactorVerifyTotp((string) $user['two_factor_secret'], $confirmation);
+            || ultTwoFactorVerifyTotp(decryptData($user['two_factor_secret']), $confirmation);
 
         if (!$confirmed) {
             $error = 'Mot de passe ou code 2FA invalide.';

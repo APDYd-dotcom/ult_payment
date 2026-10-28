@@ -18,6 +18,8 @@
     <li><a href="theme_settings.php">Theme Settings</a></li>
     <li><a href="mailing.php">Mailing List</a></li>
     <li><a href="activity_log.php">Activity Log</a></li>
+    <li><a href="backups.php">Sauvegardes</a></li>
+    <li><a href="restore.php">Restauration</a></li>
     <li><a href="profile.php">Profile</a></li>
     <li>
         <form method="POST" action="/payment/logout.php">

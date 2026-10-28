@@ -42,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!$user || (int) ($user['two_factor_enabled'] ?? 0) !== 1) {
             $error = 'Configuration 2FA introuvable.';
         } elseif (
-            ultTwoFactorVerifyTotp((string) $user['two_factor_secret'], $code)
+            ultTwoFactorVerifyTotp(decryptData($user['two_factor_secret']), $code)
             || ultTwoFactorConsumeBackupCode($bdd, $user, $code)
         ) {
             ultTwoFactorCompleteLogin($bdd, $user);
