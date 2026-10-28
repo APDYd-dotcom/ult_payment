@@ -8,6 +8,7 @@ $csrfToken = $_SESSION['csrf_token'] ?? '';
 <ul>
     <li><a href="student.php">Mon dossier</a></li>
     <li><a href="payment.php">Mes paiements</a></li>
+    <li><a href="documents.php">Mes documents</a></li>
     <li><a href="partial.php">Paiements partiels</a></li>
     <li><a href="penalty.php">Mes penalites</a></li>
     <li><a href="theme_settings.php">Theme Settings</a></li>

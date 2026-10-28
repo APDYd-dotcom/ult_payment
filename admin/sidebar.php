@@ -6,6 +6,7 @@
     <li><a href="student.php">Students</a></li>
     <li><a href="payment.php">Payments</a></li>
     <li><a href="reports.php">Rapports</a></li>
+    <li><a href="documents.php">Documents</a></li>
     <li><a href="periodic_reports.php">Rapport periodique</a></li>
     <li><a href="custom_reports.php">Rapport personnalise</a></li>
     <li><a href="comparative_analysis.php">Analyse comparative</a></li>
