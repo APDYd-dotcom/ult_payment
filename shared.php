@@ -1,5 +1,5 @@
 <?php
-require __DIR__ . '/../functions.php';
+require __DIR__ . '/functions.php';
 $bdd = new PDO('mysql:host=localhost;dbname=ult_payment;charset=utf8mb4', 'app_user', 'secure_password_123');
 $bdd->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 

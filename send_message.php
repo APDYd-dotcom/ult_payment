@@ -1,8 +1,8 @@
 <?php
 declare(strict_types=1);
 define('REQUIRED_ROLE', 'any');
-require __DIR__ . '/../auth_check.php';
-require_once __DIR__ . '/../functions.php';
+require __DIR__ . '/auth_check.php';
+require_once __DIR__ . '/functions.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') { http_response_code(405); exit(); }
 if (!hash_equals($_SESSION['csrf_token'] ?? '', $_POST['csrf_token'] ?? '')) { http_response_code(403); exit('CSRF'); }

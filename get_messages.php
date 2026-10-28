@@ -1,8 +1,8 @@
 <?php
 declare(strict_types=1);
 define('REQUIRED_ROLE', 'any');
-require __DIR__ . '/../auth_check.php';
-require_once __DIR__ . '/../functions.php';
+require __DIR__ . '/auth_check.php';
+require_once __DIR__ . '/functions.php';
 
 $with = (int)($_GET['with'] ?? 0);
 $since = (int)($_GET['since'] ?? 0);
