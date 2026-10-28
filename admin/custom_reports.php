@@ -74,7 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <html><head><title>Rapport personnalise</title><link rel="stylesheet" href="./styles.css?v=1.1"></head><body>
 <div class="container"><aside class="sidebar"><?php include 'sidebar.php'; ?></aside><main class="main-content">
 <h1 class="page-title">Rapport personnalise</h1>
-<form method="POST" class="form-section">
+<form method="POST" class="form-section" style="background:#fff;padding:20px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);">
 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
 <label>Colonnes</label><br>
 <?php foreach ($allowedCols as $col): ?>
