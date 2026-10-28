@@ -19,7 +19,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if (!in_array($mime, $allowedMime, true)) { $msg = 'Type MIME invalide.'; }
                 else {
                     $studentId = ($_POST['student_id'] ?? '') !== '' ? (int)$_POST['student_id'] : null;
-                    // versioning
                     $version = 1; $parentId = null;
                     if ($studentId) {
                         $st = $bdd->prepare("SELECT id, version, parent_id FROM documents WHERE original_name=? AND student_id=? ORDER BY version DESC LIMIT 1");
@@ -48,17 +47,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $students = $bdd->query("SELECT id, name, matricule FROM student ORDER BY name")->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
-<html><head><title>Upload document</title><link rel="stylesheet" href="./styles.css?v=1.1"></head><body>
+<html><head><title>Upload document</title><link rel="stylesheet" href="./styles.css?v=1.1">
+<style>
+.upload-card { background:#fff; border-radius:12px; padding:24px; max-width:520px; box-shadow:0 2px 8px rgba(0,0,0,.08); }
+.upload-card label { display:block; margin:12px 0 6px; font-weight:600; color:#1e293b; }
+.upload-card input, .upload-card select { width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px; }
+</style>
+</head><body>
 <div class="container"><aside class="sidebar"><?php include 'sidebar.php'; ?></aside><main class="main-content">
 <h1 class="page-title">Téléverser un document</h1>
 <?php if ($msg): ?><div class="message message-success"><?= htmlspecialchars($msg) ?></div><?php endif; ?>
-<form method="POST" enctype="multipart/form-data" class="form-section">
+<div class="upload-card">
+<form method="POST" enctype="multipart/form-data">
 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
-<label>Fichier (pdf/jpg/png, max 5 Mo)</label><input type="file" name="file" required>
+<label>Fichier (pdf/jpg/png, max 5 Mo)</label>
+<input type="file" name="file" required>
 <label>Étudiant (optionnel)</label>
 <select name="student_id"><option value="">--</option><?php foreach ($students as $s): ?><option value="<?= (int)$s['id'] ?>"><?= htmlspecialchars($s['name']) ?></option><?php endforeach; ?></select>
-<button class="btn-primary" type="submit">Téléverser</button>
+<button class="btn-primary" type="submit" style="margin-top:16px;width:100%;">Téléverser</button>
 </form>
-<p><a href="documents.php">Liste des documents</a></p>
+</div>
+<p style="margin-top:16px;"><a href="documents.php">Liste des documents</a></p>
 </main></div></body></html>
 PHP
