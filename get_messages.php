@@ -8,10 +8,19 @@ $with = (int)($_GET['with'] ?? 0);
 $since = (int)($_GET['since'] ?? 0);
 if ($with <= 0) { echo json_encode([]); exit(); }
 
-// mark as read messages to me
-$bdd->prepare("UPDATE messages SET is_read=1 WHERE receiver_id=? AND sender_id=? AND is_read=0")->execute([$_SESSION['userId'], $with]);
+$me = (int)$_SESSION['userId'];
+$role = $_SESSION['role'] ?? '';
 
-$stmt = $bdd->prepare("SELECT id, sender_id, receiver_id, message, created_at FROM messages WHERE ((sender_id=? AND receiver_id=?) OR (sender_id=? AND receiver_id=?)) AND id > ? ORDER BY id ASC");
-$stmt->execute([$_SESSION['userId'], $with, $with, $_SESSION['userId'], $since]);
+if ($role === 'admin') {
+    $adminIds = $bdd->query("SELECT userId FROM user WHERE role='admin'")->fetchAll(PDO::FETCH_COLUMN);
+    $in = implode(',', array_map('intval', $adminIds));
+    $bdd->prepare("UPDATE messages SET is_read=1 WHERE receiver_id IN ($in) AND sender_id=? AND is_read=0")->execute([$with]);
+    $stmt = $bdd->prepare("SELECT id, sender_id, receiver_id, message, created_at FROM messages WHERE ((sender_id=? AND receiver_id IN ($in)) OR (sender_id IN ($in) AND receiver_id=?)) AND id > ? ORDER BY id ASC");
+    $stmt->execute([$with, $with, $since]);
+} else {
+    $bdd->prepare("UPDATE messages SET is_read=1 WHERE receiver_id=? AND sender_id=? AND is_read=0")->execute([$me, $with]);
+    $stmt = $bdd->prepare("SELECT id, sender_id, receiver_id, message, created_at FROM messages WHERE ((sender_id=? AND receiver_id=?) OR (sender_id=? AND receiver_id=?)) AND id > ? ORDER BY id ASC");
+    $stmt->execute([$me, $with, $with, $me, $since]);
+}
 echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
 exit();
