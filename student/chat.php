@@ -30,6 +30,31 @@ async function load() {
     const div = document.createElement('div');
     div.className = 'msg ' + (m.sender_id == me ? 'me' : 'them');
     div.textContent = m.message;
+    if (m.sender_id == me) {
+      const actions = document.createElement('div');
+      actions.style.fontSize='0.75rem';
+      actions.style.marginTop='4px';
+      const editBtn = document.createElement('button');
+      editBtn.textContent='Modifier';
+      editBtn.onclick = async () => {
+        const nm = prompt('Nouveau message', m.message);
+        if (nm && nm.trim()) {
+          await fetch('/payment/edit_message.php', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:'csrf_token=<?= $_SESSION['csrf_token'] ?>&id=' + m.id + '&message=' + encodeURIComponent(nm)});
+          box.innerHTML=''; lastId=0; load();
+        }
+      };
+      const delBtn = document.createElement('button');
+      delBtn.textContent='Supprimer';
+      delBtn.onclick = async () => {
+        if (confirm('Supprimer ce message ?')) {
+          await fetch('/payment/delete_message.php', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:'csrf_token=<?= $_SESSION['csrf_token'] ?>&id=' + m.id});
+          box.innerHTML=''; lastId=0; load();
+        }
+      };
+      actions.appendChild(editBtn);
+      actions.appendChild(delBtn);
+      div.appendChild(actions);
+    }
     box.appendChild(div);
     lastId = m.id;
   });
