@@ -35,20 +35,14 @@ async function load() {
   });
   box.scrollTop = box.scrollHeight;
 }
-setInterval(load, 3000);
+setInterval(load, 1000);
 function send() {
   const input = document.getElementById('msg');
   const msg = input.value.trim();
   if (!msg) return;
-  const box = document.getElementById('box');
-  const div = document.createElement('div');
-  div.className = 'msg me';
-  div.textContent = msg;
-  box.appendChild(div);
-  box.scrollTop = box.scrollHeight;
   fetch('/payment/send_message.php', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:'csrf_token=<?= $_SESSION['csrf_token'] ?>&receiver_id=' + adminId + '&message=' + encodeURIComponent(msg)});
   input.value='';
-  setTimeout(load, 500);
+  setTimeout(load, 300);
 }
 document.addEventListener('DOMContentLoaded', load);
 </script>
