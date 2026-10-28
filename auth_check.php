@@ -84,7 +84,7 @@ if (REQUIRED_ROLE !== 'any' && $_SESSION['role'] !== REQUIRED_ROLE) {
     if ($_SESSION['role'] === 'admin') {
         header('Location: /payment/admin/dashboard.php');
     } else {
-        header('Location: /payment/student/dashboard.php');
+        header('Location: /payment/student/profile.php');
     }
     exit();
 }
