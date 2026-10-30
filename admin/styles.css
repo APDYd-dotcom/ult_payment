@@ -1398,3 +1398,73 @@ html.menu-open,
 html.menu-open body {
     overflow: hidden;
 }
+
+/* Mobile overrides for dashboard */
+@media (max-width: 767px) {
+    .sidebar {
+        display: none !important;
+        position: fixed !important;
+        left: 0;
+        top: 0;
+        height: 100vh;
+        height: 100dvh;
+        width: 85%;
+        max-width: 320px;
+        z-index: 2000;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+    }
+    .sidebar.open {
+        display: flex !important;
+        flex-direction: column;
+        transform: translateX(0);
+    }
+    .container {
+        flex-direction: column;
+    }
+    .main-content {
+        width: 100% !important;
+        margin-left: 0 !important;
+        padding: 16px !important;
+    }
+    .cards {
+        gap: 16px;
+    }
+    .charts-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+    .chart-card-wide {
+        grid-column: span 1;
+    }
+    .chart-wrapper,
+    .chart-wrapper-small {
+        height: 250px !important;
+        width: 100% !important;
+    }
+    .chart-card {
+        padding: 16px;
+    }
+    .form-section {
+        width: 100%;
+    }
+    .form-section form {
+        grid-template-columns: 1fr !important;
+    }
+    .buttons {
+        grid-template-columns: 1fr !important;
+    }
+    .menu-toggle {
+        display: inline-flex !important;
+    }
+    .overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 1500;
+    }
+    .overlay.active {
+        display: block;
+    }
+}
