@@ -58,11 +58,11 @@ try {
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <link rel="stylesheet" href="/payment/assets/css/app.css">
+    <link rel="stylesheet" href="/payment/assets/css/app.css?v=20261030">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestion des utilisateurs - ULT Payment</title>
-    <link rel="stylesheet" href="./styles.css?v=1.2">
+    <link rel="stylesheet" href="./styles.css?v=20261030">
     <?php loadTheme($bdd); ?>
     <style>
         .status-badge {
@@ -100,13 +100,11 @@ try {
             color: #64748b;
         }
     </style>
-    <link rel="stylesheet" href="/payment/assets/css/responsive.css">
+    <link rel="stylesheet" href="/payment/assets/css/responsive.css?v=20261030">
 </head>
 <body>
 <div class="container">
-    <aside id="sidebar" class="sidebar">
-        <?php include __DIR__ . '/sidebar.php'; ?>
-    </aside>
+    <?php include __DIR__ . '/sidebar.php'; ?>
 
         <main id="main-content" class="main-content">
         <section id="manage-users" class="page active">
@@ -185,6 +183,6 @@ try {
         </section>
     </main>
 </div>
-    <script src="/payment/assets/js/responsive.js"></script>
+    <script src="/payment/assets/js/responsive.js?v=20261030"></script>
 </body>
 </html>

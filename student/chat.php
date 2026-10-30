@@ -8,9 +8,9 @@ $adminId = (int)$bdd->query("SELECT userId FROM user WHERE role='admin' ORDER BY
 ?>
 <!DOCTYPE html>
 <html><head>
-    <link rel="stylesheet" href="/payment/assets/css/app.css">
+    <link rel="stylesheet" href="/payment/assets/css/app.css?v=20261030">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"><title>Chat</title><link rel="stylesheet" href="../admin/styles.css?v=1.1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"><title>Chat</title><link rel="stylesheet" href="../admin/styles.css?v=20261030">
 <style>
 .chat-main { display:flex; flex-direction:column; background:#fff; border-radius:12px; padding:16px; height:70vh; box-shadow:0 2px 8px rgba(0,0,0,.08); }
 .chat-box { flex:1; overflow:auto; padding:12px; background:#f8fafc; border-radius:8px; }
@@ -55,10 +55,10 @@ async function load() {
                 alert(data.error || 'Modification impossible');
                 if (res.status === 403) editBtn.remove();
               } else {
-                box.innerHTML=''; lastId=0; load();
+                if (div.firstChild) div.firstChild.nodeValue = nm;
               }
             }
-                if (div.firstChild) div.firstChild.nodeValue = nm;
+          };
           actions.appendChild(editBtn);
           setTimeout(() => editBtn.remove(), remaining * 1000);
         }
@@ -99,7 +99,7 @@ async function send() {
 }
 document.addEventListener('DOMContentLoaded', load);
 </script>
-    <link rel="stylesheet" href="/payment/assets/css/responsive.css">
+    <link rel="stylesheet" href="/payment/assets/css/responsive.css?v=20261030">
 </head><body>
 <div class="container">
     <?php include 'sidebar.php'; ?>
@@ -113,6 +113,6 @@ document.addEventListener('DOMContentLoaded', load);
     <button id="sendBtn" onclick="send()">Envoyer</button>
   </div>
 </div>
-</main></div>    <script src="/payment/assets/js/responsive.js"></script>
+</main></div>    <script src="/payment/assets/js/responsive.js?v=20261030"></script>
 </body></html>
 PHP
