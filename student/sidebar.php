@@ -1,17 +1,19 @@
-<button id="menu-toggle" class="menu-toggle" aria-label="Ouvrir le menu">
+<!-- Bouton Hamburger (caché sur PC) -->
+<button class="menu-toggle" id="menu-toggle">
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
 </button>
 
-<div id="sidebar-overlay" class="sidebar-overlay"></div>
+<!-- Overlay sombre -->
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
 
-<aside id="sidebar" class="sidebar">
-    <button id="close-sidebar" class="close-sidebar" aria-label="Fermer le menu">
+<!-- Sidebar -->
+<aside class="sidebar" id="sidebar">
+    <button class="close-sidebar" id="close-sidebar">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
-    <div class="logo">
-        <?php renderThemeLogo($bdd); ?>
-    </div>
+    <div class="logo"><h2>ULT Payment</h2></div>
     <ul>
+
 
     <li><a href="student.php">Mon dossier</a></li>
     <li><a href="payment.php">Mes paiements</a></li>
@@ -28,8 +30,6 @@
         </form>
     </li>
 
+    
     </ul>
-
-    <?php include_once __DIR__ . '/../notification_assets.php'; ?>
-    <?php include_once __DIR__ . '/../session_timeout_assets.php'; ?>
 </aside>
