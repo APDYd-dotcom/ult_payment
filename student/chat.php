@@ -100,8 +100,7 @@ document.addEventListener('DOMContentLoaded', load);
 </script>
     <link rel="stylesheet" href="/payment/assets/css/responsive.css">
 </head><body>
-<div class="container"><?php include 'sidebar.php'; ?>    <?php include "topbar.php"; ?>
-<main class="main-content">
+<div class="container"><?php include 'sidebar.php'; ?>    <main class="main-content">
 <h1 class="page-title">Chat avec l'administration</h1>
 <div class="chat-main">
   <div class="chat-box" id="box"></div>

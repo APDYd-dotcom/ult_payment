@@ -44,8 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"><title>Upload document</title><link rel="stylesheet" href="../admin/styles.css?v=1.1">    <link rel="stylesheet" href="/payment/assets/css/responsive.css">
 </head><body>
-<div class="container">    <?php include "topbar.php"; ?>
-<main class="main-content">
+<div class="container">    <main class="main-content">
 <h1 class="page-title">Téléverser un document</h1>
 <?php if ($msg): ?><div class="message message-success"><?= htmlspecialchars($msg) ?></div><?php endif; ?>
 <form method="POST" enctype="multipart/form-data" class="form-section">

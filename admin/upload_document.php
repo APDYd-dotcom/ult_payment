@@ -57,8 +57,7 @@ $students = $bdd->query("SELECT id, name, matricule FROM student ORDER BY name")
 </style>
     <link rel="stylesheet" href="/payment/assets/css/responsive.css">
 </head><body>
-<div class="container"><?php include 'sidebar.php'; ?>    <?php include "topbar.php"; ?>
-<main class="main-content">
+<div class="container"><?php include 'sidebar.php'; ?>    <main class="main-content">
 <h1 class="page-title">Téléverser un document</h1>
 <?php if ($msg): ?><div class="message message-success"><?= htmlspecialchars($msg) ?></div><?php endif; ?>
 <div class="upload-card">

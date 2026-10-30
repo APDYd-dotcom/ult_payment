@@ -206,7 +206,6 @@ if ($format === 'pdf') {
     <link rel="stylesheet" href="/payment/assets/css/responsive.css">
 </head>
 <body>
-    <?php include "topbar.php"; ?>
     <h1>Universite du Lac Tanganyika - Rapport des paiements</h1>
     <div class="meta">
         Genere le <strong>' . $generatedAt . '</strong> par <strong>' . $escAdmin . '</strong> | Periode: <strong>' . $escPeriod . '</strong> | Nombre de paiements: <strong>' . $rowCount . '</strong>

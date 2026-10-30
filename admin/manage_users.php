@@ -107,8 +107,7 @@ try {
         <?php include __DIR__ . '/sidebar.php'; ?>
     </aside>
 
-        <?php include "topbar.php"; ?>
-<main id="main-content" class="main-content">
+        <main id="main-content" class="main-content">
         <section id="manage-users" class="page active">
             <h1 class="page-title">Gestion des utilisateurs</h1>
 

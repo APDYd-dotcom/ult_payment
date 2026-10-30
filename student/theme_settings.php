@@ -127,8 +127,7 @@ $fontOptions = getAllowedThemeFonts();
 <div class="container">
     <?php include 'sidebar.php'; ?>
 
-        <?php include "topbar.php"; ?>
-<main id="main-content" class="main-content">
+        <main id="main-content" class="main-content">
         <section class="page active">
             <h1 class="page-title">Gestion des themes</h1>
 

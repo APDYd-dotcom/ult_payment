@@ -195,8 +195,7 @@ if (substr($displayEmail, -strlen($studentEmailSuffix)) === $studentEmailSuffix)
 <body>
 <div class="container">
     <?php include 'sidebar.php'; ?>
-        <?php include "topbar.php"; ?>
-<main id="main-content" class="main-content">
+        <main id="main-content" class="main-content">
         <section id="profile" class="page active">
             <h1 class="page-title">Mon profil</h1>
 

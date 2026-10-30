@@ -20,8 +20,7 @@ $docs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 </style>
     <link rel="stylesheet" href="/payment/assets/css/responsive.css">
 </head><body>
-<div class="container"><?php include 'sidebar.php'; ?>    <?php include "topbar.php"; ?>
-<main class="main-content">
+<div class="container"><?php include 'sidebar.php'; ?>    <main class="main-content">
 <h1 class="page-title">Mes documents</h1>
 <p><a class="btn" href="upload_document.php">Téléverser un document</a></p>
 <?php if (!$docs): ?>

@@ -30,8 +30,7 @@ $deptTotals = $bdd->query("SELECT d.name, COALESCE(SUM(p.amount),0) AS t FROM de
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="/payment/assets/css/responsive.css">
 </head><body>
-<div class="container"><?php include 'sidebar.php'; ?>    <?php include "topbar.php"; ?>
-<main class="main-content">
+<div class="container"><?php include 'sidebar.php'; ?>    <main class="main-content">
 <h1 class="page-title">Analyse comparative</h1>
 <form method="GET" class="form-section">
 <label>Periode A debut</label><input type="date" name="from_a" value="<?= htmlspecialchars($fromA) ?>">

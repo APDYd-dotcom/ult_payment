@@ -81,8 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'gener
 <body>
 <div class="container">
     <?php include 'sidebar.php'; ?>
-        <?php include "topbar.php"; ?>
-<main class="main-content">
+        <main class="main-content">
         <h1 class="page-title">Rapport periodique</h1>
         <form method="POST" class="form-section">
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">

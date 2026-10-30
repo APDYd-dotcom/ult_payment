@@ -30,8 +30,7 @@ $history = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <aside id="sidebar" class="sidebar">
         <?php include __DIR__ . '/sidebar.php'; ?>
     </aside>
-        <?php include "topbar.php"; ?>
-<main id="main-content" class="main-content">
+        <main id="main-content" class="main-content">
         <section id="history" class="page active">
             <h1 class="page-title">📋 Historique des connexions</h1>
             

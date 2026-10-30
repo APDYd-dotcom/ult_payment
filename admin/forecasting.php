@@ -45,8 +45,7 @@ $caution = $n < 2 ? 'Donnees insuffisantes (moins de 2 mois).' : 'Projection bas
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="/payment/assets/css/responsive.css">
 </head><body>
-<div class="container"><?php include 'sidebar.php'; ?>    <?php include "topbar.php"; ?>
-<main class="main-content">
+<div class="container"><?php include 'sidebar.php'; ?>    <main class="main-content">
 <h1 class="page-title">Prevision des paiements</h1>
 <p>Pente (slope): <?= number_format($slope, 4, ',', ' ') ?></p>
 <p>Projection mois prochain (<?= htmlspecialchars($nextMonth) ?>): <?= number_format($projection, 0, ',', ' ') ?></p>

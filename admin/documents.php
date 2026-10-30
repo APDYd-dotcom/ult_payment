@@ -30,8 +30,7 @@ $docs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 </style>
     <link rel="stylesheet" href="/payment/assets/css/responsive.css">
 </head><body>
-<div class="container"><?php include 'sidebar.php'; ?>    <?php include "topbar.php"; ?>
-<main class="main-content">
+<div class="container"><?php include 'sidebar.php'; ?>    <main class="main-content">
 <h1 class="page-title">Documents</h1>
 <form method="GET" class="filters">
   <input type="text" name="q" value="<?= htmlspecialchars($q) ?>" placeholder="Recherche nom">

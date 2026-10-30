@@ -2272,3 +2272,34 @@ html.menu-open body {
         width: 100% !important;
     }
 }
+
+
+/* === FORCE CLEAN DESKTOP vs MOBILE === */
+@media (min-width: 1025px) {
+    .mobile-appbar,
+    .sidebar-overlay,
+    .menu-toggle,
+    .close-sidebar {
+        display: none !important;
+        visibility: hidden !important;
+    }
+    .sidebar {
+        position: sticky !important;
+        left: auto !important;
+        transform: none !important;
+        width: 260px !important;
+        height: 100vh !important;
+        background: var(--primary-color, #1e3a8a) !important;
+        color: white !important;
+    }
+    .sidebar .logo h2 { color: white !important; }
+    .sidebar ul li a { color: white !important; }
+    .container {
+        display: flex !important;
+    }
+    .main-content {
+        padding: 20px !important;
+        margin-left: 0 !important;
+        width: auto !important;
+    }
+}
