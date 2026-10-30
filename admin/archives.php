@@ -24,8 +24,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $rows = $bdd->query("SELECT * FROM archives ORDER BY archived_at DESC")->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
-<html><head><title>Archives</title><link rel="stylesheet" href="./styles.css?v=1.1"></head><body>
-<div class="container"><aside class="sidebar"><?php include 'sidebar.php'; ?></aside><main class="main-content">
+<html><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"><title>Archives</title><link rel="stylesheet" href="./styles.css?v=1.1">    <link rel="stylesheet" href="/payment/assets/css/responsive.css">
+</head><body>
+<div class="container"><aside class="sidebar"><?php include 'sidebar.php'; ?></aside>    <?php include "topbar.php"; ?>
+<main class="main-content">
 <h1 class="page-title">Archives</h1>
 <table class="table-section"><tr><th>ID</th><th>Table</th><th>Record</th><th>Archivé le</th><th>Restauré le</th><th></th></tr>
 <?php foreach ($rows as $r): ?>
@@ -46,5 +50,6 @@ $rows = $bdd->query("SELECT * FROM archives ORDER BY archived_at DESC")->fetchAl
 </tr>
 <?php endforeach; ?>
 </table>
-</main></div></body></html>
+</main></div>    <script src="/payment/assets/js/responsive.js"></script>
+</body></html>
 PHP

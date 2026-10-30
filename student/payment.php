@@ -304,6 +304,7 @@ foreach ($departments as $d) {
         .muted { color: #64748b; font-size: 0.9rem; }
         .readonly-input { background: #f1f5f9; color: #475569; }
     </style>
+    <link rel="stylesheet" href="/payment/assets/css/responsive.css">
 </head>
 <body>
 
@@ -674,5 +675,6 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 
+    <script src="/payment/assets/js/responsive.js"></script>
 </body>
 </html>

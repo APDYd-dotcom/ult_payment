@@ -18,8 +18,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 ?>
 <!DOCTYPE html>
-<html><head><title>Partage</title><link rel="stylesheet" href="./styles.css?v=1.1"></head><body>
-<div class="container"><aside class="sidebar"><?php include 'sidebar.php'; ?></aside><main class="main-content">
+<html><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"><title>Partage</title><link rel="stylesheet" href="./styles.css?v=1.1">    <link rel="stylesheet" href="/payment/assets/css/responsive.css">
+</head><body>
+<div class="container"><aside class="sidebar"><?php include 'sidebar.php'; ?></aside>    <?php include "topbar.php"; ?>
+<main class="main-content">
 <h1 class="page-title">Partager un document</h1>
 <form method="POST" class="form-section">
 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
@@ -28,5 +32,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </form>
 <?php if ($link): ?><div class="message message-success"><?= htmlspecialchars($link) ?></div><?php endif; ?>
 <p><a href="documents.php">Retour</a></p>
-</main></div></body></html>
+</main></div>    <script src="/payment/assets/js/responsive.js"></script>
+</body></html>
 PHP

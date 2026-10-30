@@ -1,0 +1,212 @@
+/* Responsive Breakpoints - xs<=480, sm<=640, md<=768, lg<=1024, xl<=1280, 2xl>=1536 */
+
+/* Tablet and below - sidebar becomes drawer */
+@media (max-width: 1024px) {
+    .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        transform: translateX(-100%);
+        height: 100vh;
+        height: 100dvh;
+        width: min(85vw, 300px);
+    }
+    
+    .sidebar.open {
+        transform: translateX(0);
+    }
+    
+    .menu-toggle {
+        display: inline-flex;
+    }
+    
+    .main-content {
+        width: 100%;
+    }
+    
+    .topbar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 0;
+        margin-bottom: 16px;
+        position: sticky;
+        top: 0;
+        background: var(--background-color, #f4f6f9);
+        z-index: 800;
+        padding-inline: env(safe-area-inset-left, 0) env(safe-area-inset-right, 0);
+    }
+    
+    .topbar-title {
+        flex: 1;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--primary-color, #1e3a8a);
+    }
+}
+
+/* Mobile - large */
+@media (max-width: 768px) {
+    .main-content {
+        padding: 16px;
+        padding-inline: clamp(12px, 4vw, 16px);
+    }
+    
+    .form-section form {
+        grid-template-columns: 1fr;
+    }
+    
+    .cards {
+        gap: 12px;
+    }
+    
+    .card {
+        padding: 16px;
+    }
+    
+    .table-section {
+        padding: 12px;
+    }
+    
+    table th,
+    table td {
+        padding: 8px;
+        font-size: 0.9rem;
+    }
+    
+    .modal-card {
+        width: 95%;
+        max-height: 95vh;
+        max-height: 95dvh;
+        padding: 20px;
+    }
+}
+
+/* Mobile - medium */
+@media (max-width: 640px) {
+    .pagination-controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .pagination-controls button {
+        width: 100%;
+    }
+    
+    .btn-primary,
+    .btn-secondary {
+        width: 100%;
+    }
+    
+    /* Stack tables as cards for small tables */
+    .table-cards table,
+    .table-cards thead,
+    .table-cards tbody,
+    .table-cards th,
+    .table-cards td,
+    .table-cards tr {
+        display: block;
+    }
+    
+    .table-cards thead {
+        display: none;
+    }
+    
+    .table-cards tr {
+        margin-bottom: 16px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 12px;
+        background: white;
+    }
+    
+    .table-cards td {
+        padding: 8px 0;
+        border: none;
+        border-bottom: 1px solid #f1f5f9;
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+    }
+    
+    .table-cards td:last-child {
+        border-bottom: none;
+    }
+    
+    .table-cards td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: var(--primary-color, #1e3a8a);
+    }
+}
+
+/* Mobile - small */
+@media (max-width: 480px) {
+    .main-content {
+        padding: 12px;
+    }
+    
+    .page-title {
+        font-size: 1.3rem;
+    }
+    
+    .card p {
+        font-size: 1.5rem;
+    }
+    
+    .modal-card {
+        width: 100%;
+        height: 100vh;
+        height: 100dvh;
+        max-height: 100vh;
+        max-height: 100dvh;
+        border-radius: 0;
+        padding: 16px;
+    }
+}
+
+/* Landscape phones */
+@media (max-height: 480px) and (orientation: landscape) {
+    .sidebar {
+        height: 100vh;
+        height: 100dvh;
+    }
+    
+    .modal-card {
+        max-height: 95vh;
+        max-height: 95dvh;
+    }
+}
+
+/* Touch devices */
+@media (hover: none) and (pointer: coarse) {
+    button,
+    .btn-primary,
+    .btn-secondary,
+    .menu-toggle,
+    a {
+        min-height: 44px;
+        min-width: 44px;
+    }
+    
+    .sidebar ul li a,
+    .sidebar ul li button[type="submit"] {
+        padding: 14px 12px;
+    }
+}
+
+/* Large screens */
+@media (min-width: 1536px) {
+    .main-content {
+        max-width: 1440px;
+        margin: 0 auto;
+    }
+    
+    .container {
+        justify-content: center;
+    }
+    
+    .sidebar {
+        flex-shrink: 0;
+    }
+}

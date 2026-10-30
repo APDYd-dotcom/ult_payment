@@ -17,7 +17,9 @@ $stmt->execute($params);
 $docs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
-<html><head><title>Documents</title><link rel="stylesheet" href="./styles.css?v=1.1">
+<html><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"><title>Documents</title><link rel="stylesheet" href="./styles.css?v=1.1">
 <style>
 .doc-card { background:#fff; border-radius:12px; padding:16px; margin-bottom:12px; box-shadow:0 2px 8px rgba(0,0,0,.08); display:flex; justify-content:space-between; align-items:center; }
 .doc-info h3 { margin:0; font-size:1rem; color:#1e3a8a; }
@@ -26,8 +28,10 @@ $docs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 .filters { display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
 .filters input, .filters select { padding:8px; border-radius:8px; border:1px solid #cbd5e1; }
 </style>
+    <link rel="stylesheet" href="/payment/assets/css/responsive.css">
 </head><body>
-<div class="container"><aside class="sidebar"><?php include 'sidebar.php'; ?></aside><main class="main-content">
+<div class="container"><aside class="sidebar"><?php include 'sidebar.php'; ?></aside>    <?php include "topbar.php"; ?>
+<main class="main-content">
 <h1 class="page-title">Documents</h1>
 <form method="GET" class="filters">
   <input type="text" name="q" value="<?= htmlspecialchars($q) ?>" placeholder="Recherche nom">
@@ -55,5 +59,6 @@ $docs = $stmt->fetchAll(PDO::FETCH_ASSOC);
     </div>
   </div>
 <?php endforeach; ?>
-</main></div></body></html>
+</main></div>    <script src="/payment/assets/js/responsive.js"></script>
+</body></html>
 PHP

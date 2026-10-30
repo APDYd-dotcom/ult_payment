@@ -130,6 +130,7 @@ $chartData = [
     <link rel="stylesheet" href="./styles.css?v=1.2">
     <?php loadTheme($bdd); ?>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="/payment/assets/css/responsive.css">
 </head>
 <body>
 
@@ -138,7 +139,8 @@ $chartData = [
         <?php include 'sidebar.php'; ?>
     </aside>
 
-    <main id="main-content" class="main-content">
+        <?php include "topbar.php"; ?>
+<main id="main-content" class="main-content">
         <section id="dashboard" class="page active">
             <h1 class="page-title">Dashboard</h1>
 
@@ -494,5 +496,6 @@ document.addEventListener('DOMContentLoaded', function () {
     renderPage();
 });
 </script>
+    <script src="/payment/assets/js/responsive.js"></script>
 </body>
 </html>

@@ -121,6 +121,7 @@ $fontOptions = getAllowedThemeFonts();
         .btn-danger:hover { background: #b91c1c; }
         @media (max-width: 900px) { .theme-layout, .theme-form-grid { grid-template-columns: 1fr; } }
     </style>
+    <link rel="stylesheet" href="/payment/assets/css/responsive.css">
 </head>
 <body>
 <div class="container">
@@ -128,7 +129,8 @@ $fontOptions = getAllowedThemeFonts();
         <?php include 'sidebar.php'; ?>
     </aside>
 
-    <main id="main-content" class="main-content">
+        <?php include "topbar.php"; ?>
+<main id="main-content" class="main-content">
         <section class="page active">
             <h1 class="page-title">Gestion des themes</h1>
 
@@ -236,5 +238,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 </script>
+    <script src="/payment/assets/js/responsive.js"></script>
 </body>
 </html>

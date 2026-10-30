@@ -205,6 +205,8 @@ try {
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>ULT Payment System</title>
 <link rel="stylesheet" href="./styles.css?v=1.1">
     <?php loadTheme($bdd); ?>
@@ -233,12 +235,14 @@ try {
     font-size: 1.4rem;
 }
 </style>
+    <link rel="stylesheet" href="/payment/assets/css/responsive.css">
 </head>
 <body>
 <div class="container">
 <aside id="sidebar" class="sidebar">
 <?php include 'sidebar.php'; ?>
 </aside>
+    <?php include "topbar.php"; ?>
 <main id="main-content" class="main-content">
 <section id="student" class="page active">
 <h1 class="page-title">Students</h1>
@@ -721,5 +725,6 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('cancel-delete-modal').addEventListener('click', () => deleteModal.classList.remove('open'));
 });
 </script>
+    <script src="/payment/assets/js/responsive.js"></script>
 </body>
 </html>

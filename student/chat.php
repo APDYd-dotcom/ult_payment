@@ -7,7 +7,9 @@ require_once __DIR__ . '/../functions.php';
 $adminId = (int)$bdd->query("SELECT userId FROM user WHERE role='admin' ORDER BY userId LIMIT 1")->fetchColumn();
 ?>
 <!DOCTYPE html>
-<html><head><title>Chat</title><link rel="stylesheet" href="../admin/styles.css?v=1.1">
+<html><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"><title>Chat</title><link rel="stylesheet" href="../admin/styles.css?v=1.1">
 <style>
 .chat-main { display:flex; flex-direction:column; background:#fff; border-radius:12px; padding:16px; height:70vh; box-shadow:0 2px 8px rgba(0,0,0,.08); }
 .chat-box { flex:1; overflow:auto; padding:12px; background:#f8fafc; border-radius:8px; }
@@ -96,8 +98,10 @@ async function send() {
 }
 document.addEventListener('DOMContentLoaded', load);
 </script>
+    <link rel="stylesheet" href="/payment/assets/css/responsive.css">
 </head><body>
-<div class="container"><aside class="sidebar"><?php include 'sidebar.php'; ?></aside><main class="main-content">
+<div class="container"><aside class="sidebar"><?php include 'sidebar.php'; ?></aside>    <?php include "topbar.php"; ?>
+<main class="main-content">
 <h1 class="page-title">Chat avec l'administration</h1>
 <div class="chat-main">
   <div class="chat-box" id="box"></div>
@@ -106,5 +110,6 @@ document.addEventListener('DOMContentLoaded', load);
     <button id="sendBtn" onclick="send()">Envoyer</button>
   </div>
 </div>
-</main></div></body></html>
+</main></div>    <script src="/payment/assets/js/responsive.js"></script>
+</body></html>
 PHP

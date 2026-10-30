@@ -20,6 +20,7 @@ try {
     <link rel="stylesheet" href="./styles.css?v=1.1">
     <?php loadTheme($bdd); ?>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/payment/assets/css/responsive.css">
 </head>
 <body>
 
@@ -28,7 +29,8 @@ try {
         <?php include 'sidebar.php'; ?>
     </aside>
 
-    <main id="main-content" class="main-content">
+        <?php include "topbar.php"; ?>
+<main id="main-content" class="main-content">
         <section id="partial" class="page active">
             <h1 class="page-title">Partial Payments</h1>
 
@@ -211,5 +213,6 @@ document.addEventListener('DOMContentLoaded', function () {
     renderPage();
 });
 </script>
+    <script src="/payment/assets/js/responsive.js"></script>
 </body>
 </html>

@@ -99,6 +99,7 @@ try {
             color: #64748b;
         }
     </style>
+    <link rel="stylesheet" href="/payment/assets/css/responsive.css">
 </head>
 <body>
 <div class="container">
@@ -106,7 +107,8 @@ try {
         <?php include __DIR__ . '/sidebar.php'; ?>
     </aside>
 
-    <main id="main-content" class="main-content">
+        <?php include "topbar.php"; ?>
+<main id="main-content" class="main-content">
         <section id="manage-users" class="page active">
             <h1 class="page-title">Gestion des utilisateurs</h1>
 
@@ -181,5 +183,6 @@ try {
         </section>
     </main>
 </div>
+    <script src="/payment/assets/js/responsive.js"></script>
 </body>
 </html>

@@ -133,6 +133,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             border: 1px solid #f5c6cb;
         }
     </style>
+    <link rel="stylesheet" href="/payment/assets/css/app.css">
+    <link rel="stylesheet" href="/payment/assets/css/responsive.css">
 </head>
 <body>
     <main class="verify-card">
@@ -150,5 +152,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <button type="submit">Valider</button>
         </form>
     </main>
+    <script src="/payment/assets/js/responsive.js"></script>
 </body>
 </html>

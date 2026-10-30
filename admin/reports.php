@@ -67,6 +67,7 @@ $success = isset($_GET['exported']) ? true : false;
             color: #475569;
         }
     </style>
+    <link rel="stylesheet" href="/payment/assets/css/responsive.css">
 </head>
 <body>
 
@@ -245,5 +246,6 @@ $success = isset($_GET['exported']) ? true : false;
     </main>
 </div>
 
+    <script src="/payment/assets/js/responsive.js"></script>
 </body>
 </html>

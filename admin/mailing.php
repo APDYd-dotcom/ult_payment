@@ -2,6 +2,7 @@
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
+ini_set('pcre.jit', '0');
 
 define('REQUIRED_ROLE', 'admin');
 
@@ -18,9 +19,12 @@ try {
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>ULT Payment System</title>
     <link rel="stylesheet" href="./styles.css?v=1.1">
     <?php loadTheme($bdd); ?>
+    <link rel="stylesheet" href="/payment/assets/css/responsive.css">
 </head>
 <body>
 
@@ -29,7 +33,8 @@ try {
         <?php include  'sidebar.php'; ?>  
     </aside>
 
-    <main id="main-content" class="main-content">
+        <?php include "topbar.php"; ?>
+<main id="main-content" class="main-content">
         <section id="mailing" class="page active">
             <h1 class="page-title">Mailing List</h1>
 
@@ -203,5 +208,6 @@ document.addEventListener('DOMContentLoaded', function () {
     renderPage();
 });
 </script>
+    <script src="/payment/assets/js/responsive.js"></script>
 </body>
 </html>

@@ -38,11 +38,15 @@ $nextMonth = date('Y-m', strtotime('+1 month'));
 $caution = $n < 2 ? 'Donnees insuffisantes (moins de 2 mois).' : 'Projection basee sur un petit echantillon; a interpreter avec prudence.';
 ?>
 <!DOCTYPE html>
-<html><head><title>Prevision</title>
+<html><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"><title>Prevision</title>
 <link rel="stylesheet" href="./styles.css?v=1.1">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="/payment/assets/css/responsive.css">
 </head><body>
-<div class="container"><aside class="sidebar"><?php include 'sidebar.php'; ?></aside><main class="main-content">
+<div class="container"><aside class="sidebar"><?php include 'sidebar.php'; ?></aside>    <?php include "topbar.php"; ?>
+<main class="main-content">
 <h1 class="page-title">Prevision des paiements</h1>
 <p>Pente (slope): <?= number_format($slope, 4, ',', ' ') ?></p>
 <p>Projection mois prochain (<?= htmlspecialchars($nextMonth) ?>): <?= number_format($projection, 0, ',', ' ') ?></p>
@@ -59,4 +63,5 @@ new Chart(ctx, { type:'line', data:{ labels: labels, datasets:[
   { label:'Projete', data: projected, borderColor:'#ef4444', borderDash:[5,5], fill:false }
 ] } });
 </script>
-</main></div></body></html>
+</main></div>    <script src="/payment/assets/js/responsive.js"></script>
+</body></html>

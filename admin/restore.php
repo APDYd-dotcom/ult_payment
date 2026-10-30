@@ -85,8 +85,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $files = glob($backupDir . '/*.sql.gz') ?: [];
 ?>
 <!DOCTYPE html>
-<html><head><title>Restauration</title><link rel="stylesheet" href="./styles.css?v=1.1"></head><body>
-<div class="container"><aside class="sidebar"><?php include 'sidebar.php'; ?></aside><main class="main-content">
+<html><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"><title>Restauration</title><link rel="stylesheet" href="./styles.css?v=1.1">    <link rel="stylesheet" href="/payment/assets/css/responsive.css">
+</head><body>
+<div class="container"><aside class="sidebar"><?php include 'sidebar.php'; ?></aside>    <?php include "topbar.php"; ?>
+<main class="main-content">
 <h1 class="page-title">Restauration</h1>
 <?php if ($msg): ?><div class="message <?= strpos($msg,'reussie')!==false?'message-success':'message-error' ?>"><?= htmlspecialchars($msg) ?></div><?php endif; ?>
 <form method="POST" enctype="multipart/form-data" class="form-section">
@@ -98,5 +102,6 @@ $files = glob($backupDir . '/*.sql.gz') ?: [];
 <label><input type="checkbox" name="confirm"> Je confirme la restauration (sauvegarde de securite automatique)</label>
 <button class="btn-primary" type="submit">Restaurer</button>
 </form>
-</main></div></body></html>
+</main></div>    <script src="/payment/assets/js/responsive.js"></script>
+</body></html>
 PHP

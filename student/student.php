@@ -153,11 +153,13 @@ $formData = [
         .profile-summary{background:#fff;padding:20px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.1);margin-bottom:20px}
         .profile-summary p{margin:8px 0;color:#1e293b}
     </style>
+    <link rel="stylesheet" href="/payment/assets/css/responsive.css">
 </head>
 <body>
 <div class="container">
     <aside id="sidebar" class="sidebar"><?php include 'sidebar.php'; ?></aside>
-    <main id="main-content" class="main-content">
+        <?php include "topbar.php"; ?>
+<main id="main-content" class="main-content">
         <section id="student" class="page active">
             <h1 class="page-title">Mon dossier etudiant</h1>
 
@@ -207,5 +209,6 @@ $formData = [
         </section>
     </main>
 </div>
+    <script src="/payment/assets/js/responsive.js"></script>
 </body>
 </html>

@@ -138,6 +138,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .back-link a { color: var(--secondary-color, #2563eb); font-weight: 600; text-decoration: none; }
         .back-link a:hover { text-decoration: underline; }
     </style>
+    <link rel="stylesheet" href="/payment/assets/css/app.css">
+    <link rel="stylesheet" href="/payment/assets/css/responsive.css">
 </head>
 <body>
 <main>
@@ -176,5 +178,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </div>
 </main>
+    <script src="/payment/assets/js/responsive.js"></script>
 </body>
 </html>

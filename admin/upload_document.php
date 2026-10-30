@@ -47,14 +47,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $students = $bdd->query("SELECT id, name, matricule FROM student ORDER BY name")->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
-<html><head><title>Upload document</title><link rel="stylesheet" href="./styles.css?v=1.1">
+<html><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"><title>Upload document</title><link rel="stylesheet" href="./styles.css?v=1.1">
 <style>
 .upload-card { background:#fff; border-radius:12px; padding:24px; max-width:520px; box-shadow:0 2px 8px rgba(0,0,0,.08); }
 .upload-card label { display:block; margin:12px 0 6px; font-weight:600; color:#1e293b; }
 .upload-card input, .upload-card select { width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px; }
 </style>
+    <link rel="stylesheet" href="/payment/assets/css/responsive.css">
 </head><body>
-<div class="container"><aside class="sidebar"><?php include 'sidebar.php'; ?></aside><main class="main-content">
+<div class="container"><aside class="sidebar"><?php include 'sidebar.php'; ?></aside>    <?php include "topbar.php"; ?>
+<main class="main-content">
 <h1 class="page-title">Téléverser un document</h1>
 <?php if ($msg): ?><div class="message message-success"><?= htmlspecialchars($msg) ?></div><?php endif; ?>
 <div class="upload-card">
@@ -68,5 +72,6 @@ $students = $bdd->query("SELECT id, name, matricule FROM student ORDER BY name")
 </form>
 </div>
 <p style="margin-top:16px;"><a href="documents.php">Liste des documents</a></p>
-</main></div></body></html>
+</main></div>    <script src="/payment/assets/js/responsive.js"></script>
+</body></html>
 PHP

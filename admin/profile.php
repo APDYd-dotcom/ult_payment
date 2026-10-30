@@ -108,7 +108,10 @@ $twoFactorState = ultTwoFactorProfileState($bdd);
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Mon profil - ULT Payment</title>
+    <link rel="stylesheet" href="/payment/assets/css/app.css">
     <link rel="stylesheet" href="./styles.css">
     <?php loadTheme($bdd); ?>
     <style>
@@ -218,13 +221,15 @@ $twoFactorState = ultTwoFactorProfileState($bdd);
             }
         }
     </style>
+    <link rel="stylesheet" href="/payment/assets/css/responsive.css">
 </head>
 <body>
 <div class="container">
     <aside id="sidebar" class="sidebar">
         <?php include 'sidebar.php'; ?>
     </aside>
-    <main id="main-content" class="main-content">
+        <?php include "topbar.php"; ?>
+<main id="main-content" class="main-content">
         <section id="profile" class="page active">
             <h1 class="page-title">👤 Mon profil</h1>
 
@@ -302,5 +307,6 @@ $twoFactorState = ultTwoFactorProfileState($bdd);
         </section>
     </main>
 </div>
+    <script src="/payment/assets/js/responsive.js"></script>
 </body>
 </html>

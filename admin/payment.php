@@ -322,6 +322,7 @@ foreach ($departments as $d) {
         }
         /* Les styles responsive sont dans styles.css */
     </style>
+    <link rel="stylesheet" href="/payment/assets/css/responsive.css">
 </head>
 <body>
 
@@ -695,5 +696,6 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 
+    <script src="/payment/assets/js/responsive.js"></script>
 </body>
 </html>

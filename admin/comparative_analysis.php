@@ -23,11 +23,15 @@ $pct = $sb['total'] > 0 ? ($diff / $sb['total']) * 100 : 0;
 $deptTotals = $bdd->query("SELECT d.name, COALESCE(SUM(p.amount),0) AS t FROM department d LEFT JOIN tranche t ON t.department_id=d.id LEFT JOIN payment p ON p.tranche_id=t.id GROUP BY d.id ORDER BY d.name")->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
-<html><head><title>Analyse comparative</title>
+<html><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"><title>Analyse comparative</title>
 <link rel="stylesheet" href="./styles.css?v=1.1">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="/payment/assets/css/responsive.css">
 </head><body>
-<div class="container"><aside class="sidebar"><?php include 'sidebar.php'; ?></aside><main class="main-content">
+<div class="container"><aside class="sidebar"><?php include 'sidebar.php'; ?></aside>    <?php include "topbar.php"; ?>
+<main class="main-content">
 <h1 class="page-title">Analyse comparative</h1>
 <form method="GET" class="form-section">
 <label>Periode A debut</label><input type="date" name="from_a" value="<?= htmlspecialchars($fromA) ?>">
@@ -47,4 +51,5 @@ new Chart(ctx1, { type:'bar', data:{ labels:['Periode A','Periode B'], datasets:
 const ctx2 = document.getElementById('chartDept').getContext('2d');
 new Chart(ctx2, { type:'bar', data:{ labels:<?= json_encode(array_column($deptTotals,'name')) ?>, datasets:[{label:'Total par departement', data:<?= json_encode(array_map('floatval', array_column($deptTotals,'t'))) ?>, backgroundColor:'#10b981' }] } });
 </script>
-</main></div></body></html>
+</main></div>    <script src="/payment/assets/js/responsive.js"></script>
+</body></html>

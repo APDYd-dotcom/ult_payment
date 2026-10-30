@@ -163,11 +163,13 @@ if ($partialTableExists) {
         .muted{color:#64748b;font-size:.9rem}
         @media(max-width:900px){.table-section{overflow-x:auto}}
     </style>
+    <link rel="stylesheet" href="/payment/assets/css/responsive.css">
 </head>
 <body>
 <div class="container">
     <aside id="sidebar" class="sidebar"><?php include 'sidebar.php'; ?></aside>
-    <main id="main-content" class="main-content">
+        <?php include "topbar.php"; ?>
+<main id="main-content" class="main-content">
         <section id="partial" class="page active">
             <h1 class="page-title">Paiements partiels</h1>
 
@@ -225,5 +227,6 @@ function toggleEdit(id) {
     }
 }
 </script>
+    <script src="/payment/assets/js/responsive.js"></script>
 </body>
 </html>

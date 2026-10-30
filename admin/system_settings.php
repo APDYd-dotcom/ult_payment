@@ -130,6 +130,7 @@ function renderSystemSettingField(string $key, array $definition, array $values)
         .btn-danger:hover { background: #b91c1c; }
         @media (max-width: 900px) { .settings-grid { grid-template-columns: 1fr; } .settings-actions { justify-content: flex-start; } }
     </style>
+    <link rel="stylesheet" href="/payment/assets/css/responsive.css">
 </head>
 <body>
 <div class="container">
@@ -137,7 +138,8 @@ function renderSystemSettingField(string $key, array $definition, array $values)
         <?php include 'sidebar.php'; ?>
     </aside>
 
-    <main id="main-content" class="main-content">
+        <?php include "topbar.php"; ?>
+<main id="main-content" class="main-content">
         <section class="page active">
             <h1 class="page-title">Parametrage du systeme</h1>
 
@@ -174,5 +176,6 @@ function renderSystemSettingField(string $key, array $definition, array $values)
         </section>
     </main>
 </div>
+    <script src="/payment/assets/js/responsive.js"></script>
 </body>
 </html>

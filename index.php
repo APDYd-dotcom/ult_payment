@@ -459,6 +459,8 @@ if (isset($_GET['expired']) && $_GET['expired'] === '1') {
             border: 0;
         }
     </style>
+    <link rel="stylesheet" href="/payment/assets/css/app.css">
+    <link rel="stylesheet" href="/payment/assets/css/responsive.css">
 </head>
 <body>
 
@@ -543,5 +545,6 @@ if (isset($_GET['expired']) && $_GET['expired'] === '1') {
         </div>
     </main>
 
+    <script src="/payment/assets/js/responsive.js"></script>
 </body>
 </html>
