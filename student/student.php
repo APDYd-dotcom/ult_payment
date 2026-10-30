@@ -187,7 +187,7 @@ $formData = [
                         <input id="fullName" type="text" name="fullName" value="<?= htmlspecialchars((string) $formData['name'], ENT_QUOTES, 'UTF-8') ?>" required>
 
                         <label for="age">Age</label>
-                        <input id="age" type="number" name="age" min="18" value="<?= htmlspecialchars((string) $formData['age'], ENT_QUOTES, 'UTF-8') ? inputmode="numeric">" required>
+                        <input id="age" type="number" name="age" min="18" value="<?= htmlspecialchars((string) $formData['age'], ENT_QUOTES, 'UTF-8') ?>" inputmode="numeric" required>
 
                         <label for="department_id">Departement</label>
                         <select id="department_id" name="department_id" required>

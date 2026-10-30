@@ -360,7 +360,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['signup'])) {
                         type="email"
                         name="email"
                         placeholder="vous@exemple.com"
-                        value="<?= htmlspecialchars($email) ? inputmode="email" autocomplete="email">"
+                        value="<?= htmlspecialchars($email) ?>" inputmode="email" autocomplete="email"
                         autocomplete="email"
                         required
                     />

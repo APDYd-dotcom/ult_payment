@@ -255,7 +255,7 @@ if (substr($displayEmail, -strlen($studentEmailSuffix)) === $studentEmailSuffix)
                         <form method="POST" action="profile.php">
                             <div class="form-group">
                                 <label for="email">Email</label>
-                                <input id="email" type="email" name="email" value="<?= htmlspecialchars($displayEmail) ? inputmode="email" autocomplete="email">" required>
+                                <input id="email" type="email" name="email" value="<?= htmlspecialchars($displayEmail) ?>" inputmode="email" autocomplete="email" required>
                             </div>
                             <button type="submit" name="update_email" class="btn btn-primary">Enregistrer</button>
                         </form>

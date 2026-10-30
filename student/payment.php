@@ -308,9 +308,6 @@ foreach ($departments as $d) {
 </head>
 <body>
 
-<button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open'); document.querySelector('.overlay').classList.toggle('active')">☰</button>
-<div class="overlay" onclick="document.querySelector('.sidebar').classList.remove('open'); document.querySelector('.overlay').classList.remove('active')"></div>
-
 <div class="container">
     <aside id="sidebar" class="sidebar">
         <?php include 'sidebar.php'; ?>
