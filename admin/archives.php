@@ -28,7 +28,7 @@ $rows = $bdd->query("SELECT * FROM archives ORDER BY archived_at DESC")->fetchAl
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"><title>Archives</title><link rel="stylesheet" href="./styles.css?v=1.1">    <link rel="stylesheet" href="/payment/assets/css/responsive.css">
 </head><body>
-<div class="container"><aside class="sidebar"><?php include 'sidebar.php'; ?></aside>    <?php include "topbar.php"; ?>
+<div class="container"><?php include 'sidebar.php'; ?>    <?php include "topbar.php"; ?>
 <main class="main-content">
 <h1 class="page-title">Archives</h1>
 <div class="table-responsive">

@@ -309,9 +309,7 @@ foreach ($departments as $d) {
 <body>
 
 <div class="container">
-    <aside id="sidebar" class="sidebar">
-        <?php include 'sidebar.php'; ?>
-    </aside>
+    <?php include 'sidebar.php'; ?>
 
     <main id="main-content" class="main-content">
         <section id="payment" class="page active">

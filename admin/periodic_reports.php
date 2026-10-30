@@ -80,7 +80,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'gener
 </head>
 <body>
 <div class="container">
-    <aside class="sidebar"><?php include 'sidebar.php'; ?></aside>
+    <?php include 'sidebar.php'; ?>
         <?php include "topbar.php"; ?>
 <main class="main-content">
         <h1 class="page-title">Rapport periodique</h1>

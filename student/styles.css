@@ -2104,3 +2104,85 @@ html.menu-open body {
         overflow-x: hidden !important;
     }
 }
+
+
+/* Cacher l'App Bar et l'overlay sur GRAND ÉCRAN */
+.mobile-appbar,
+.sidebar-overlay {
+    display: none !important;
+}
+
+/* =========================================
+   MEDIA QUERY : Mobile et Tablette
+   ========================================= */
+@media (max-width: 1024px) {
+    /* 1. App Bar */
+    .mobile-appbar {
+        display: flex !important;
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 60px;
+        background: #ffffff;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        z-index: 1000;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 15px;
+    }
+    .mobile-appbar .menu-toggle {
+        background: none !important; border: none !important; color: #1e3a8a !important; cursor: pointer; padding: 5px !important; display: flex !important; align-items: center; position: static !important; width: auto !important; height: auto !important; box-shadow: none !important;
+    }
+    .mobile-appbar .appbar-title {
+        font-weight: 600; color: #1e3a8a; font-size: 1.1rem; flex-grow: 1; margin-left: 15px;
+    }
+    .mobile-appbar .btn-notification {
+        background: none; border: none; color: #475569; cursor: pointer; display: flex; align-items: center;
+    }
+
+    /* 2. Sidebar cachée à gauche */
+    .sidebar {
+        position: fixed !important;
+        top: 0 !important; left: 0 !important;
+        width: 280px !important; height: 100vh !important;
+        background: #ffffff !important;
+        z-index: 1001 !important;
+        transform: translateX(-100%) !important;
+        transition: transform 0.3s ease !important;
+        box-shadow: 2px 0 10px rgba(0,0,0,0.1) !important;
+        display: flex !important; flex-direction: column !important;
+        padding-top: 20px !important; overflow-y: auto !important;
+    }
+    .sidebar .close-sidebar {
+        display: block !important; position: absolute; top: 15px; right: 15px; background: none; border: none; color: #333; cursor: pointer;
+    }
+    
+    .sidebar .logo h2 { color: #1e3a8a !important; margin-top: 10px;}
+    .sidebar ul li a { color: #333 !important; }
+    
+    .sidebar.open {
+        transform: translateX(0) !important;
+    }
+
+    /* 3. Overlay */
+    .sidebar-overlay {
+        position: fixed !important;
+        top: 0; left: 0; width: 100vw; height: 100vh;
+        background: rgba(15, 23, 42, 0.5) !important;
+        z-index: 1000 !important;
+    }
+    .sidebar-overlay.active {
+        display: block !important;
+    }
+
+    /* 4. Contenu principal */
+    .container {
+        display: block !important;
+    }
+    .main-content {
+        margin-left: 0 !important;
+        width: 100% !important;
+        padding: 75px 15px 15px 15px !important;
+    }
+    body, html {
+        overflow-x: hidden !important;
+    }
+}

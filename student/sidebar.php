@@ -1,13 +1,12 @@
-<!-- 1. APP BAR MOBILE (Cachée sur PC) -->
+<!-- 1. APP BAR MOBILE -->
 <header class="mobile-appbar">
     <button class="menu-toggle" id="menu-toggle">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
     </button>
-    <div class="appbar-title">Tableau de bord</div>
+    <div class="appbar-title" id="appbar-title">Tableau de bord</div>
     <div class="appbar-actions">
         <button class="btn-notification">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
-            <span class="notification-badge">1</span>
         </button>
     </div>
 </header>
@@ -20,8 +19,11 @@
     <button class="close-sidebar" id="close-sidebar">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
-    <div class="logo"><h2>ULT Payment</h2></div>
+    <div class="logo">
+        <h2>ULT Payment</h2>
+    </div>
     <ul>
+
 
 
 
@@ -42,5 +44,38 @@
 
     
     
+    
     </ul>
 </aside>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const menuToggle = document.getElementById('menu-toggle');
+    const closeSidebar = document.getElementById('close-sidebar');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+
+    if (menuToggle && sidebar && overlay) {
+        menuToggle.addEventListener('click', () => {
+            sidebar.classList.add('open');
+            overlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        });
+
+        const closeMenu = () => {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('active');
+            document.body.style.overflow = '';
+        };
+
+        if (closeSidebar) closeSidebar.addEventListener('click', closeMenu);
+        overlay.addEventListener('click', closeMenu);
+    }
+
+    const pageTitleElement = document.querySelector('.page-title');
+    const appbarTitleElement = document.getElementById('appbar-title');
+    if (pageTitleElement && appbarTitleElement) {
+        appbarTitleElement.textContent = pageTitleElement.textContent;
+    }
+});
+</script>
