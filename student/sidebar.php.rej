@@ -1,0 +1,19 @@
+--- student/sidebar.php
++++ student/sidebar.php
+@@ -5,13 +5,14 @@
+     </button>
+     <div class="appbar-title" id="appbar-title">Tableau de bord</div>
+     <div class="appbar-actions">
+-        <button class="btn-notification">
++        <button type="button" class="btn-notification" id="appbar-bell" aria-label="Notifications" aria-expanded="false" aria-controls="notification-menu">
+             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
++            <span class="notification-badge" id="notification-badge-mobile">0</span>
+         </button>
+     </div>
+ </header>
+ 
+-2. OVERLAY SOMBRE
++<!-- 2. OVERLAY SOMBRE -->
+ <div class="sidebar-overlay" id="sidebar-overlay"></div>
+ 
+ <!-- 3. SIDEBAR -->

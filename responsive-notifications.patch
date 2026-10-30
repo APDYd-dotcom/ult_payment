@@ -1,0 +1,637 @@
+diff --git a/admin/custom_reports.php b/admin/custom_reports.php
+index c042e4c..f1818ce 100644
+--- a/admin/custom_reports.php
++++ b/admin/custom_reports.php
+@@ -72,30 +72,232 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+     }
+ }
+ ?>
++<?php
++// Libellés lisibles : les valeurs envoyées restent les noms de colonnes de la liste blanche ($allowedCols)
++$columnLabels = [
++    'student_name'     => 'Étudiant',
++    'matricule'        => 'Matricule',
++    'department_name'  => 'Département',
++    'tranche_name'     => 'Tranche',
++    'amount'           => 'Montant',
++    'payment_method'   => 'Mode de paiement',
++    'reference_number' => 'N° de référence',
++    'payment_date'     => 'Date de paiement',
++];
++?>
+ <!DOCTYPE html>
+-<html><head>
+-    <link rel="stylesheet" href="/payment/assets/css/app.css">
++<html lang="fr">
++<head>
+     <meta charset="UTF-8">
+-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"><title>Rapport personnalise</title><link rel="stylesheet" href="./styles.css?v=1.1">    <link rel="stylesheet" href="/payment/assets/css/responsive.css">
+-</head><body>
++    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
++    <title>Rapport personnalisé</title>
++    <link rel="stylesheet" href="/payment/assets/css/app.css?v=20261030">
++    <link rel="stylesheet" href="./styles.css?v=20261030">
++    <style>
++        /* Styles propres à cette page, limités à .report-form.
++           Ils neutralisent les règles globales de styles.css (form{display:flex},
++           form input{width:100%}) qui déformaient les cases à cocher. */
++        .report-form { display: block; max-width: 980px; }
++        .report-card {
++            background: #fff;
++            border-radius: 12px;
++            box-shadow: 0 2px 8px rgba(0, 0, 0, .08);
++            padding: 20px;
++            margin-bottom: 16px;
++        }
++        .report-card-head {
++            display: flex;
++            align-items: center;
++            justify-content: space-between;
++            flex-wrap: wrap;
++            gap: 8px 12px;
++            margin-bottom: 14px;
++        }
++        .report-card h2 { margin: 0; font-size: 1.05rem; color: var(--primary-color, #1e3a8a); }
++        .report-hint { margin: 2px 0 0; color: #64748b; font-size: .88rem; }
++        .report-form .link-btn {
++            background: none; border: 0; padding: 4px 6px; min-height: 0; min-width: 0;
++            color: var(--secondary-color, #2563eb); font-weight: 600; font-size: .88rem; cursor: pointer;
++        }
++        .report-form .link-btn:hover { background: none; text-decoration: underline; }
++
++        .col-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
++        .report-form .option {
++            display: flex; align-items: center; gap: 10px;
++            margin: 0; padding: 10px 12px;
++            border: 1px solid #d8e1ee; border-radius: 10px; background: #f8fafc;
++            cursor: pointer; font-weight: 500; color: #1e293b;
++        }
++        .report-form .option:hover { border-color: var(--secondary-color, #2563eb); }
++        .report-form .option:has(input:checked) { background: #eff6ff; border-color: var(--secondary-color, #2563eb); }
++        .report-form .option input {
++            width: 18px; height: 18px; margin: 0; padding: 0; flex: 0 0 auto;
++            accent-color: var(--secondary-color, #2563eb);
++        }
++
++        .filter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
++        .report-form .field { display: flex; flex-direction: column; gap: 6px; }
++        .report-form .field label { margin: 0; font-weight: 600; color: #334155; font-size: .9rem; }
++        .report-form .field input,
++        .report-form .field select {
++            width: 100%; min-height: 44px; margin: 0; padding: 10px 12px;
++            border: 1px solid #cbd5e1; border-radius: 8px; background: #fff;
++        }
++
++        .format-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; max-width: 420px; }
++        .report-actions { display: flex; justify-content: flex-end; }
++        .report-form .btn-generate {
++            min-height: 44px; padding: 12px 28px; border-radius: 8px;
++            background: var(--primary-color, #1e3a8a); color: #fff; font-weight: 700; font-size: 1rem;
++        }
++        .report-error {
++            margin-bottom: 16px; padding: 12px 14px; border-radius: 8px;
++            background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;
++        }
++
++        @media (max-width: 640px) {
++            .report-card { padding: 16px; }
++            .col-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
++            .filter-grid { grid-template-columns: 1fr; }
++            .report-actions .btn-generate { width: 100%; }
++        }
++        @media (max-width: 380px) {
++            .col-grid { grid-template-columns: 1fr; }
++        }
++    </style>
++    <link rel="stylesheet" href="/payment/assets/css/responsive.css?v=20261030">
++</head>
++<body>
+ <div class="container">
+     <?php include 'sidebar.php'; ?>
+-    <main class="main-content">
+-        <section class="page active">
+-            <h1 class="page-title">Rapport personnalise</h1>
+-<form method="POST" class="form-section" style="background:#fff;padding:20px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);">
+-<input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
+-<label>Colonnes</label><br>
+-<?php foreach ($allowedCols as $col): ?>
+-<input type="checkbox" name="columns[]" value="<?= $col ?>" <?= in_array($col, $selected, true) ? 'checked' : '' ?>> <?= htmlspecialchars($col) ?><br>
+-<?php endforeach; ?>
+-<label>Date debut</label><input type="date" name="date_from">
+-<label>Date fin</label><input type="date" name="date_to">
+-<label>Departement</label><select name="department"><option value="">Tous</option><?php foreach ($departments as $d): ?><option><?= htmlspecialchars($d) ?></option><?php endforeach; ?></select>
+-<label>Tranche</label><select name="tranche"><option value="">Toutes</option><?php foreach ($tranches as $t): ?><option><?= htmlspecialchars($t) ?></option><?php endforeach; ?></select>
+-<label>Mode</label><select name="method"><option value="">Tous</option><option>IBBM+</option><option>BANKOBU</option><option>OTHER</option></select>
+-<label>Sortie</label><select name="format"><option value="pdf">PDF</option><option value="xlsx">Excel</option></select>
+-<button class="btn-primary" type="submit">Generer</button>
+-</form>
+-</main></div>    <script src="/payment/assets/js/responsive.js"></script>
+-</body></html>
++    <main id="main-content" class="main-content">
++        <h1 class="page-title">Rapport personnalisé</h1>
++
++        <div class="report-error" id="report-error" role="alert" hidden></div>
++
++        <form method="POST" class="report-form" id="report-form" novalidate>
++            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
++
++            <section class="report-card">
++                <div class="report-card-head">
++                    <div>
++                        <h2>Colonnes à inclure</h2>
++                        <p class="report-hint">Cochez les informations qui apparaîtront dans le rapport.</p>
++                    </div>
++                    <div>
++                        <button type="button" class="link-btn" id="cols-all">Tout cocher</button>
++                        <button type="button" class="link-btn" id="cols-none">Tout décocher</button>
++                    </div>
++                </div>
++                <div class="col-grid">
++                    <?php foreach ($allowedCols as $col): ?>
++                        <label class="option">
++                            <input type="checkbox" name="columns[]" value="<?= htmlspecialchars($col) ?>" <?= in_array($col, $selected, true) ? 'checked' : '' ?>>
++                            <span><?= htmlspecialchars($columnLabels[$col] ?? $col) ?></span>
++                        </label>
++                    <?php endforeach; ?>
++                </div>
++            </section>
++
++            <section class="report-card">
++                <div class="report-card-head">
++                    <div>
++                        <h2>Filtres</h2>
++                        <p class="report-hint">Laissez vide pour ne pas filtrer.</p>
++                    </div>
++                </div>
++                <div class="filter-grid">
++                    <div class="field">
++                        <label for="date_from">Date de début</label>
++                        <input type="date" id="date_from" name="date_from">
++                    </div>
++                    <div class="field">
++                        <label for="date_to">Date de fin</label>
++                        <input type="date" id="date_to" name="date_to">
++                    </div>
++                    <div class="field">
++                        <label for="department">Département</label>
++                        <select id="department" name="department">
++                            <option value="">Tous</option>
++                            <?php foreach ($departments as $d): ?>
++                                <option value="<?= htmlspecialchars($d) ?>"><?= htmlspecialchars($d) ?></option>
++                            <?php endforeach; ?>
++                        </select>
++                    </div>
++                    <div class="field">
++                        <label for="tranche">Tranche</label>
++                        <select id="tranche" name="tranche">
++                            <option value="">Toutes</option>
++                            <?php foreach ($tranches as $t): ?>
++                                <option value="<?= htmlspecialchars($t) ?>"><?= htmlspecialchars($t) ?></option>
++                            <?php endforeach; ?>
++                        </select>
++                    </div>
++                    <div class="field">
++                        <label for="method">Mode de paiement</label>
++                        <select id="method" name="method">
++                            <option value="">Tous</option>
++                            <option value="IBBM+">IBBM+</option>
++                            <option value="BANKOBU">BANKOBU</option>
++                            <option value="OTHER">OTHER</option>
++                        </select>
++                    </div>
++                </div>
++            </section>
++
++            <section class="report-card">
++                <div class="report-card-head">
++                    <div>
++                        <h2>Format de sortie</h2>
++                    </div>
++                </div>
++                <div class="format-options">
++                    <label class="option"><input type="radio" name="format" value="pdf" checked><span>PDF</span></label>
++                    <label class="option"><input type="radio" name="format" value="xlsx"><span>Excel (.xlsx)</span></label>
++                </div>
++            </section>
++
++            <div class="report-actions">
++                <button class="btn-generate" type="submit">Générer le rapport</button>
++            </div>
++        </form>
++    </main>
++</div>
++<script>
++(function () {
++    var form = document.getElementById('report-form');
++    var boxes = form.querySelectorAll('input[name="columns[]"]');
++    var errorBox = document.getElementById('report-error');
++
++    function showError(message) {
++        errorBox.textContent = message;
++        errorBox.hidden = false;
++        errorBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
++    }
++
++    document.getElementById('cols-all').addEventListener('click', function () {
++        boxes.forEach(function (b) { b.checked = true; });
++    });
++    document.getElementById('cols-none').addEventListener('click', function () {
++        boxes.forEach(function (b) { b.checked = false; });
++    });
++
++    form.addEventListener('submit', function (event) {
++        errorBox.hidden = true;
++        var anyChecked = Array.prototype.some.call(boxes, function (b) { return b.checked; });
++        var from = form.date_from.value;
++        var to = form.date_to.value;
++
++        if (!anyChecked) {
++            event.preventDefault();
++            showError('Choisissez au moins une colonne.');
++        } else if (from && to && from > to) {
++            event.preventDefault();
++            showError('La date de début doit être antérieure à la date de fin.');
++        }
++    });
++})();
++</script>
++<script src="/payment/assets/js/responsive.js?v=20261030"></script>
++</body>
++</html>
+diff --git a/admin/sidebar.php b/admin/sidebar.php
+index c6ad7d5..1dae0d9 100755
+--- a/admin/sidebar.php
++++ b/admin/sidebar.php
+@@ -5,8 +5,9 @@
+     </button>
+     <div class="appbar-title" id="appbar-title">Tableau de bord</div>
+     <div class="appbar-actions">
+-        <button class="btn-notification">
++        <button type="button" class="btn-notification" id="appbar-bell" aria-label="Notifications" aria-expanded="false" aria-controls="notification-menu">
+             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
++            <span class="notification-badge" id="notification-badge-mobile">0</span>
+         </button>
+     </div>
+ </header>
+@@ -20,6 +21,11 @@
+         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+     </button>
+     <div class="logo"><h2>ULT Payment</h2></div>
++    <!-- Notifications (grand écran) : la cloche de la barre du haut sert sur mobile -->
++    <button type="button" class="notification-toggle" id="notification-toggle" aria-expanded="false" aria-controls="notification-menu">
++        <span><span class="notification-bell" aria-hidden="true">🔔</span> Notifications</span>
++        <span class="notification-badge" id="notification-badge">0</span>
++    </button>
+     <ul>
+ 
+ 
+@@ -63,6 +69,9 @@
+     </ul>
+ </aside>
+ 
++<!-- Panneau de notifications : volontairement HORS de l'<aside> (position:fixed) -->
++<?php include_once __DIR__ . '/../notification_assets.php'; ?>
++
+ <script>
+ document.addEventListener('DOMContentLoaded', function() {
+     const menuToggle = document.getElementById('menu-toggle');
+diff --git a/notification_assets.php b/notification_assets.php
+index da046f0..1819f3a 100755
+--- a/notification_assets.php
++++ b/notification_assets.php
+@@ -1,4 +1,9 @@
+ <?php
++// Panneau de notifications unique, partagé par la cloche de la barre mobile
++// (#appbar-bell) et le bouton de la sidebar sur grand écran (#notification-toggle).
++// Inclus par admin/sidebar.php et student/sidebar.php, APRÈS la balise </aside> :
++// le panneau est en position:fixed, il ne doit pas être dans la sidebar
++// (un parent avec transform casserait le positionnement).
+ if (defined('NOTIFICATION_ASSETS_LOADED')) {
+     return;
+ }
+@@ -8,10 +13,7 @@ define('NOTIFICATION_ASSETS_LOADED', true);
+ $notificationCsrfToken = $_SESSION['csrf_token'] ?? '';
+ ?>
+ <style>
+-    .notification-widget {
+-        position: relative;
+-        margin: 0 0 18px;
+-    }
++    /* Bouton dans la sidebar (grand écran uniquement) */
+     .notification-toggle {
+         position: relative;
+         width: 100%;
+@@ -20,6 +22,7 @@ $notificationCsrfToken = $_SESSION['csrf_token'] ?? '';
+         align-items: center;
+         justify-content: space-between;
+         gap: 10px;
++        margin: 0 0 18px;
+         padding: 10px 12px;
+         border: 1px solid rgba(255, 255, 255, 0.16);
+         border-radius: 8px;
+@@ -35,6 +38,8 @@ $notificationCsrfToken = $_SESSION['csrf_token'] ?? '';
+         font-size: 1.2rem;
+         line-height: 1;
+     }
++
++    /* Pastille rouge (sidebar et cloche mobile) */
+     .notification-badge {
+         min-width: 24px;
+         height: 24px;
+@@ -51,13 +56,30 @@ $notificationCsrfToken = $_SESSION['csrf_token'] ?? '';
+     .notification-badge.is-visible {
+         display: inline-flex;
+     }
+-    .notification-menu {
++
++    /* Cloche de la barre mobile */
++    .mobile-appbar .btn-notification {
++        position: relative;
++    }
++    .mobile-appbar .btn-notification .notification-badge {
+         position: absolute;
+-        left: 0;
+-        right: 0;
+-        top: calc(100% + 8px);
+-        width: 100%;
+-        max-height: 460px;
++        top: -4px;
++        right: -4px;
++        min-width: 18px;
++        height: 18px;
++        padding: 0 5px;
++        font-size: 0.65rem;
++        line-height: 1;
++    }
++
++    /* Panneau : un seul, fixe, hors de la sidebar */
++    .notification-menu {
++        position: fixed;
++        top: 16px;
++        left: 276px; /* repositionné par notifications.js à côté du bouton */
++        width: 380px;
++        max-width: calc(100vw - 24px);
++        max-height: min(520px, calc(100vh - 32px));
+         display: none;
+         flex-direction: column;
+         z-index: 6000;
+@@ -93,8 +115,11 @@ $notificationCsrfToken = $_SESSION['csrf_token'] ?? '';
+         font-weight: 700;
+         padding: 4px 0;
+     }
++    .notification-mark-all:hover {
++        background: transparent;
++        text-decoration: underline;
++    }
+     .notification-list {
+-        max-height: 360px;
+         overflow-y: auto;
+     }
+     .notification-item {
+@@ -103,6 +128,7 @@ $notificationCsrfToken = $_SESSION['csrf_token'] ?? '';
+         padding: 12px 14px;
+         border: 0;
+         border-bottom: 1px solid #eef2f7;
++        border-radius: 0;
+         background: #ffffff;
+         color: inherit;
+         text-align: left;
+@@ -130,12 +156,14 @@ $notificationCsrfToken = $_SESSION['csrf_token'] ?? '';
+         flex: 0 0 auto;
+     }
+     .notification-item-message {
++        display: block;
+         color: #475569;
+         font-size: 0.88rem;
+         line-height: 1.35;
+         white-space: normal;
+     }
+     .notification-item-date {
++        display: block;
+         margin-top: 6px;
+         color: #64748b;
+         font-size: 0.78rem;
+@@ -146,30 +174,30 @@ $notificationCsrfToken = $_SESSION['csrf_token'] ?? '';
+         color: #64748b;
+         font-size: 0.9rem;
+     }
+-    @media (max-width: 768px) {
++
++    /* Tablette et mobile : la cloche est dans la barre du haut,
++       le bouton de la sidebar (drawer blanc) est masqué. */
++    @media (max-width: 1024px) {
++        .notification-toggle {
++            display: none !important;
++        }
+         .notification-menu {
+-            position: fixed;
+-            top: 78px;
+-            left: 16px;
+-            right: 16px;
+-            width: auto;
++            top: 68px !important;
++            left: auto !important;
++            right: 12px;
++            width: min(92vw, 380px);
++            max-height: calc(100vh - 84px);
+         }
+     }
+ </style>
+ 
+-<div class="notification-widget" id="notification-widget">
+-    <button type="button" class="notification-toggle" id="notification-toggle" aria-expanded="false" aria-controls="notification-menu">
+-        <span><span class="notification-bell" aria-hidden="true">🔔</span> Notifications</span>
+-        <span class="notification-badge" id="notification-badge">0</span>
+-    </button>
+-    <div class="notification-menu" id="notification-menu">
+-        <div class="notification-menu-header">
+-            <span class="notification-menu-title">Notifications</span>
+-            <button type="button" class="notification-mark-all" id="notification-mark-all">Tout marquer comme lu</button>
+-        </div>
+-        <div class="notification-list" id="notification-list">
+-            <div class="notification-empty">Chargement...</div>
+-        </div>
++<div class="notification-menu" id="notification-menu" role="dialog" aria-label="Notifications">
++    <div class="notification-menu-header">
++        <span class="notification-menu-title">Notifications</span>
++        <button type="button" class="notification-mark-all" id="notification-mark-all">Tout marquer comme lu</button>
++    </div>
++    <div class="notification-list" id="notification-list">
++        <div class="notification-empty">Chargement...</div>
+     </div>
+ </div>
+ 
+@@ -182,4 +210,4 @@ $notificationCsrfToken = $_SESSION['csrf_token'] ?? '';
+         pollIntervalMs: 30000
+     };
+ </script>
+-<script src="/payment/notifications.js?v=1.0" defer></script>
++<script src="/payment/notifications.js?v=1.1" defer></script>
+diff --git a/notifications.js b/notifications.js
+index ea0c6c2..ec71f80 100755
+--- a/notifications.js
++++ b/notifications.js
+@@ -2,14 +2,19 @@
+     'use strict';
+ 
+     const config = window.ULTNotifications || {};
+-    const widget = document.getElementById('notification-widget');
+-    const toggle = document.getElementById('notification-toggle');
+     const menu = document.getElementById('notification-menu');
+-    const badge = document.getElementById('notification-badge');
+     const list = document.getElementById('notification-list');
+     const markAllButton = document.getElementById('notification-mark-all');
+-
+-    if (!widget || !toggle || !menu || !badge || !list || !markAllButton) {
++    // Deux déclencheurs possibles : bouton de la sidebar (grand écran) et cloche de la barre mobile
++    const toggles = ['notification-toggle', 'appbar-bell']
++        .map(function (id) { return document.getElementById(id); })
++        .filter(Boolean);
++    const badges = ['notification-badge', 'notification-badge-mobile']
++        .map(function (id) { return document.getElementById(id); })
++        .filter(Boolean);
++    const mobileQuery = window.matchMedia('(max-width: 1024px)');
++
++    if (!menu || !list || !markAllButton || toggles.length === 0) {
+         return;
+     }
+ 
+@@ -39,8 +44,10 @@
+ 
+     function setBadge(count) {
+         const safeCount = Number(count || 0);
+-        badge.textContent = safeCount > 99 ? '99+' : String(safeCount);
+-        badge.classList.toggle('is-visible', safeCount > 0);
++        badges.forEach(function (badge) {
++            badge.textContent = safeCount > 99 ? '99+' : String(safeCount);
++            badge.classList.toggle('is-visible', safeCount > 0);
++        });
+     }
+ 
+     function renderNotifications(notifications) {
+@@ -154,25 +161,76 @@
+             .catch(function () {});
+     }
+ 
+-    function setMenuOpen(isOpen) {
++    function visibleToggle() {
++        return toggles.find(function (t) { return t.offsetParent !== null; }) || toggles[0];
++    }
++
++    // Grand écran : le panneau s'ouvre à droite de la sidebar, à la hauteur du bouton.
++    // Mobile / tablette : positionné par le CSS (sous la barre du haut, à droite).
++    function positionMenu(trigger) {
++        if (mobileQuery.matches) {
++            menu.style.left = '';
++            menu.style.top = '';
++            return;
++        }
++
++        const sidebar = document.getElementById('sidebar');
++        const triggerRect = trigger.getBoundingClientRect();
++        const sidebarRight = sidebar ? sidebar.getBoundingClientRect().right : triggerRect.right;
++        const maxTop = Math.max(12, window.innerHeight - menu.offsetHeight - 12);
++
++        menu.style.left = Math.round(sidebarRight + 8) + 'px';
++        menu.style.top = Math.round(Math.min(Math.max(12, triggerRect.top), maxTop)) + 'px';
++    }
++
++    function setMenuOpen(isOpen, trigger) {
+         menu.classList.toggle('is-open', isOpen);
+-        toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
++        toggles.forEach(function (t) {
++            t.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
++        });
+ 
+         if (isOpen) {
+-            loadNotifications();
++            // Sur mobile, on referme le drawer s'il était ouvert
++            const closeDrawer = document.getElementById('close-sidebar');
++            const drawer = document.getElementById('sidebar');
++            if (mobileQuery.matches && drawer && drawer.classList.contains('open') && closeDrawer) {
++                closeDrawer.click();
++            }
++            positionMenu(trigger || visibleToggle());
++            loadNotifications().then(function () {
++                positionMenu(trigger || visibleToggle());
++            });
+         }
+     }
+ 
+-    toggle.addEventListener('click', function () {
+-        setMenuOpen(!menu.classList.contains('is-open'));
++    toggles.forEach(function (t) {
++        t.addEventListener('click', function () {
++            setMenuOpen(!menu.classList.contains('is-open'), t);
++        });
+     });
+ 
+     document.addEventListener('click', function (event) {
+-        if (!widget.contains(event.target)) {
++        if (!menu.classList.contains('is-open')) {
++            return;
++        }
++        const insideToggle = toggles.some(function (t) { return t.contains(event.target); });
++        if (!menu.contains(event.target) && !insideToggle) {
+             setMenuOpen(false);
+         }
+     });
+ 
++    document.addEventListener('keydown', function (event) {
++        if (event.key === 'Escape') {
++            setMenuOpen(false);
++        }
++    });
++
++    window.addEventListener('resize', function () {
++        if (menu.classList.contains('is-open')) {
++            positionMenu(visibleToggle());
++        }
++    });
++
+     list.addEventListener('click', function (event) {
+         const item = event.target.closest('.notification-item');
+         if (!item) {
+diff --git a/student/sidebar.php b/student/sidebar.php
+index 6ba20fa..bea3595 100755
+--- a/student/sidebar.php
++++ b/student/sidebar.php
+@@ -5,13 +5,14 @@
+     </button>
+     <div class="appbar-title" id="appbar-title">Tableau de bord</div>
+     <div class="appbar-actions">
+-        <button class="btn-notification">
++        <button type="button" class="btn-notification" id="appbar-bell" aria-label="Notifications" aria-expanded="false" aria-controls="notification-menu">
+             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
++            <span class="notification-badge" id="notification-badge-mobile">0</span>
+         </button>
+     </div>
+ </header>
+ 
+-2. OVERLAY SOMBRE
++<!-- 2. OVERLAY SOMBRE -->
+ <div class="sidebar-overlay" id="sidebar-overlay"></div>
+ 
+ <!-- 3. SIDEBAR -->
+@@ -20,6 +21,11 @@
+         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+     </button>
+     <div class="logo"><h2>ULT Payment</h2></div>
++    <!-- Notifications (grand écran) : la cloche de la barre du haut sert sur mobile -->
++    <button type="button" class="notification-toggle" id="notification-toggle" aria-expanded="false" aria-controls="notification-menu">
++        <span><span class="notification-bell" aria-hidden="true">🔔</span> Notifications</span>
++        <span class="notification-badge" id="notification-badge">0</span>
++    </button>
+     <ul>
+ 
+ 
+@@ -48,6 +54,9 @@
+     </ul>
+ </aside>
+ 
++<!-- Panneau de notifications : volontairement HORS de l'<aside> (position:fixed) -->
++<?php include_once __DIR__ . '/../notification_assets.php'; ?>
++
+ <script>
+ document.addEventListener('DOMContentLoaded', function() {
+     const menuToggle = document.getElementById('menu-toggle');
