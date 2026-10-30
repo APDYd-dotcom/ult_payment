@@ -328,7 +328,6 @@ foreach ($departments as $d) {
 
 <div class="container">
     <?php include 'sidebar.php'; ?>
-
     <main id="main-content" class="main-content">
         <section id="payment" class="page active">
             <h1 class="page-title">Payments</h1>

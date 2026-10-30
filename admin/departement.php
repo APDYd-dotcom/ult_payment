@@ -231,8 +231,8 @@ try {
 
 <body>
     <div class="container">
-        <?php include 'sidebar.php'; ?>
-            <main id="main-content" class="main-content">
+    <?php include 'sidebar.php'; ?>
+    <main id="main-content" class="main-content">
             <section id="department" class="page active">
                 <h1 class="page-title">Départements</h1>
 

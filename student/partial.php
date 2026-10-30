@@ -168,7 +168,7 @@ if ($partialTableExists) {
 <body>
 <div class="container">
     <?php include 'sidebar.php'; ?>
-        <main id="main-content" class="main-content">
+    <main id="main-content" class="main-content">
         <section id="partial" class="page active">
             <h1 class="page-title">Paiements partiels</h1>
 

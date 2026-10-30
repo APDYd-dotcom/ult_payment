@@ -45,7 +45,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"><title>Upload document</title><link rel="stylesheet" href="../admin/styles.css?v=1.1">    <link rel="stylesheet" href="/payment/assets/css/responsive.css">
 </head><body>
 <div class="container">    <main class="main-content">
-<h1 class="page-title">Téléverser un document</h1>
+        <section class="page active">
+            <h1 class="page-title">Téléverser un document</h1>
 <?php if ($msg): ?><div class="message message-success"><?= htmlspecialchars($msg) ?></div><?php endif; ?>
 <form method="POST" enctype="multipart/form-data" class="form-section">
 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">

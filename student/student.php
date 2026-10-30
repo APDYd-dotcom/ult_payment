@@ -158,7 +158,7 @@ $formData = [
 <body>
 <div class="container">
     <?php include 'sidebar.php'; ?>
-        <main id="main-content" class="main-content">
+    <main id="main-content" class="main-content">
         <section id="student" class="page active">
             <h1 class="page-title">Mon dossier etudiant</h1>
 

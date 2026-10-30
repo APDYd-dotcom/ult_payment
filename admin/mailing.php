@@ -30,8 +30,7 @@ try {
 
 <div class="container">
     <?php include 'sidebar.php'; ?>
-
-        <main id="main-content" class="main-content">
+    <main id="main-content" class="main-content">
         <section id="mailing" class="page active">
             <h1 class="page-title">Mailing List</h1>
 

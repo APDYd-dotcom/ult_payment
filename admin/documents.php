@@ -30,8 +30,11 @@ $docs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 </style>
     <link rel="stylesheet" href="/payment/assets/css/responsive.css">
 </head><body>
-<div class="container"><?php include 'sidebar.php'; ?>    <main class="main-content">
-<h1 class="page-title">Documents</h1>
+<div class="container">
+    <?php include 'sidebar.php'; ?>
+    <main class="main-content">
+        <section class="page active">
+            <h1 class="page-title">Documents</h1>
 <form method="GET" class="filters">
   <input type="text" name="q" value="<?= htmlspecialchars($q) ?>" placeholder="Recherche nom">
   <select name="archived">

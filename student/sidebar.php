@@ -11,7 +11,7 @@
     </div>
 </header>
 
-<!-- 2. OVERLAY SOMBRE -->
+2. OVERLAY SOMBRE
 <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
 <!-- 3. SIDEBAR -->

@@ -73,7 +73,6 @@ $success = isset($_GET['exported']) ? true : false;
 
 <div class="container">
     <?php include 'sidebar.php'; ?>
-
     <main id="main-content" class="main-content">
         <section id="reports" class="page active">
             <h1 class="page-title">Rapports des paiements</h1>

@@ -226,7 +226,7 @@ $twoFactorState = ultTwoFactorProfileState($bdd);
 <body>
 <div class="container">
     <?php include 'sidebar.php'; ?>
-        <main id="main-content" class="main-content">
+    <main id="main-content" class="main-content">
         <section id="profile" class="page active">
             <h1 class="page-title">👤 Mon profil</h1>
 

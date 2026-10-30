@@ -103,8 +103,11 @@ document.addEventListener('DOMContentLoaded', load);
 </script>
     <link rel="stylesheet" href="/payment/assets/css/responsive.css">
 </head><body>
-<div class="container"><?php include 'sidebar.php'; ?>    <main class="main-content">
-<h1 class="page-title">Messagerie</h1>
+<div class="container">
+    <?php include 'sidebar.php'; ?>
+    <main class="main-content">
+        <section class="page active">
+            <h1 class="page-title">Messagerie</h1>
 <div class="chat-layout">
   <div class="chat-sidebar">
     <h3>Étudiants</h3>

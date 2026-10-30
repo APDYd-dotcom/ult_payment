@@ -22,8 +22,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"><title>Partage</title><link rel="stylesheet" href="./styles.css?v=1.1">    <link rel="stylesheet" href="/payment/assets/css/responsive.css">
 </head><body>
-<div class="container"><?php include 'sidebar.php'; ?>    <main class="main-content">
-<h1 class="page-title">Partager un document</h1>
+<div class="container">
+    <?php include 'sidebar.php'; ?>
+    <main class="main-content">
+        <section class="page active">
+            <h1 class="page-title">Partager un document</h1>
 <form method="POST" class="form-section">
 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
 <label>Durée (heures)</label><input type="number" name="hours" value="24" inputmode="numeric">
