@@ -1714,3 +1714,101 @@ html.menu-open body {
         width: 100%;
     }
 }
+
+
+/* =========================================
+   CORRECTION FORCÉE RESPONSIVE
+   ========================================= */
+
+/* 1. Cacher le bouton X et le hamburger par défaut sur grand écran */
+@media (min-width: 1025px) {
+    .menu-toggle,
+    .close-sidebar {
+        display: none !important;
+    }
+}
+
+/* 2. Comportement Tablette & Mobile */
+@media (max-width: 1024px) {
+    /* Forcer le hamburger à s'afficher */
+    .menu-toggle {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        position: fixed !important;
+        top: 15px !important;
+        left: 15px !important;
+        z-index: 1100 !important;
+        background: #1e3a8a !important;
+        color: white !important;
+        border: none !important;
+        padding: 10px !important;
+        border-radius: 8px !important;
+        width: 44px !important;
+        height: 44px !important;
+    }
+
+    /* Forcer la sidebar à être un drawer caché */
+    .sidebar {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        height: 100vh !important;
+        height: 100dvh !important;
+        width: 280px !important;
+        background: #ffffff !important;
+        z-index: 1050 !important;
+        transform: translateX(-100%) !important;
+        transition: transform 0.3s ease-in-out !important;
+        box-shadow: 2px 0 10px rgba(0,0,0,0.2) !important;
+        overflow-y: auto !important;
+        display: flex !important;
+        flex-direction: column !important;
+        padding-top: 60px !important;
+    }
+
+    /* Quand la sidebar est ouverte */
+    .sidebar.open {
+        transform: translateX(0) !important;
+    }
+
+    /* Forcer le bouton X à s'afficher dans la sidebar */
+    .close-sidebar {
+        display: block !important;
+        position: absolute !important;
+        top: 15px !important;
+        right: 15px !important;
+        background: none !important;
+        border: none !important;
+        color: #1e293b !important;
+        cursor: pointer !important;
+        z-index: 1060 !important;
+    }
+
+    /* Forcer le contenu principal à prendre 100% */
+    .main-content {
+        margin-left: 0 !important;
+        width: 100% !important;
+        padding-top: 70px !important;
+    }
+
+    /* Overlay sombre */
+    .sidebar-overlay {
+        display: none !important;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        background: rgba(0,0,0,0.5) !important;
+        z-index: 1040 !important;
+    }
+    .sidebar-overlay.active {
+        display: block !important;
+    }
+
+    /* Empêcher le débordement horizontal */
+    body, html {
+        overflow-x: hidden !important;
+    }
+}
