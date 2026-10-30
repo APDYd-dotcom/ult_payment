@@ -2,14 +2,19 @@
     'use strict';
 
     const config = window.ULTNotifications || {};
-    const widget = document.getElementById('notification-widget');
-    const toggle = document.getElementById('notification-toggle');
     const menu = document.getElementById('notification-menu');
-    const badge = document.getElementById('notification-badge');
     const list = document.getElementById('notification-list');
     const markAllButton = document.getElementById('notification-mark-all');
+    // Deux déclencheurs possibles : bouton de la sidebar (grand écran) et cloche de la barre mobile
+    const toggles = ['notification-toggle', 'appbar-bell']
+        .map(function (id) { return document.getElementById(id); })
+        .filter(Boolean);
+    const badges = ['notification-badge', 'notification-badge-mobile']
+        .map(function (id) { return document.getElementById(id); })
+        .filter(Boolean);
+    const mobileQuery = window.matchMedia('(max-width: 1024px)');
 
-    if (!widget || !toggle || !menu || !badge || !list || !markAllButton) {
+    if (!menu || !list || !markAllButton || toggles.length === 0) {
         return;
     }
 
@@ -39,8 +44,10 @@
 
     function setBadge(count) {
         const safeCount = Number(count || 0);
-        badge.textContent = safeCount > 99 ? '99+' : String(safeCount);
-        badge.classList.toggle('is-visible', safeCount > 0);
+        badges.forEach(function (badge) {
+            badge.textContent = safeCount > 99 ? '99+' : String(safeCount);
+            badge.classList.toggle('is-visible', safeCount > 0);
+        });
     }
 
     function renderNotifications(notifications) {
@@ -154,22 +161,73 @@
             .catch(function () {});
     }
 
-    function setMenuOpen(isOpen) {
+    function visibleToggle() {
+        return toggles.find(function (t) { return t.offsetParent !== null; }) || toggles[0];
+    }
+
+    // Grand écran : le panneau s'ouvre à droite de la sidebar, à la hauteur du bouton.
+    // Mobile / tablette : positionné par le CSS (sous la barre du haut, à droite).
+    function positionMenu(trigger) {
+        if (mobileQuery.matches) {
+            menu.style.left = '';
+            menu.style.top = '';
+            return;
+        }
+
+        const sidebar = document.getElementById('sidebar');
+        const triggerRect = trigger.getBoundingClientRect();
+        const sidebarRight = sidebar ? sidebar.getBoundingClientRect().right : triggerRect.right;
+        const maxTop = Math.max(12, window.innerHeight - menu.offsetHeight - 12);
+
+        menu.style.left = Math.round(sidebarRight + 8) + 'px';
+        menu.style.top = Math.round(Math.min(Math.max(12, triggerRect.top), maxTop)) + 'px';
+    }
+
+    function setMenuOpen(isOpen, trigger) {
         menu.classList.toggle('is-open', isOpen);
-        toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        toggles.forEach(function (t) {
+            t.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        });
 
         if (isOpen) {
-            loadNotifications();
+            // Sur mobile, on referme le drawer s'il était ouvert
+            const closeDrawer = document.getElementById('close-sidebar');
+            const drawer = document.getElementById('sidebar');
+            if (mobileQuery.matches && drawer && drawer.classList.contains('open') && closeDrawer) {
+                closeDrawer.click();
+            }
+            positionMenu(trigger || visibleToggle());
+            loadNotifications().then(function () {
+                positionMenu(trigger || visibleToggle());
+            });
         }
     }
 
-    toggle.addEventListener('click', function () {
-        setMenuOpen(!menu.classList.contains('is-open'));
+    toggles.forEach(function (t) {
+        t.addEventListener('click', function () {
+            setMenuOpen(!menu.classList.contains('is-open'), t);
+        });
     });
 
     document.addEventListener('click', function (event) {
-        if (!widget.contains(event.target)) {
+        if (!menu.classList.contains('is-open')) {
+            return;
+        }
+        const insideToggle = toggles.some(function (t) { return t.contains(event.target); });
+        if (!menu.contains(event.target) && !insideToggle) {
             setMenuOpen(false);
+        }
+    });
+
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') {
+            setMenuOpen(false);
+        }
+    });
+
+    window.addEventListener('resize', function () {
+        if (menu.classList.contains('is-open')) {
+            positionMenu(visibleToggle());
         }
     });
 

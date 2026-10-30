@@ -1,4 +1,9 @@
 <?php
+// Panneau de notifications unique, partagé par la cloche de la barre mobile
+// (#appbar-bell) et le bouton de la sidebar sur grand écran (#notification-toggle).
+// Inclus par admin/sidebar.php et student/sidebar.php, APRÈS la balise </aside> :
+// le panneau est en position:fixed, il ne doit pas être dans la sidebar
+// (un parent avec transform casserait le positionnement).
 if (defined('NOTIFICATION_ASSETS_LOADED')) {
     return;
 }
@@ -8,10 +13,7 @@ define('NOTIFICATION_ASSETS_LOADED', true);
 $notificationCsrfToken = $_SESSION['csrf_token'] ?? '';
 ?>
 <style>
-    .notification-widget {
-        position: relative;
-        margin: 0 0 18px;
-    }
+    /* Bouton dans la sidebar (grand écran uniquement) */
     .notification-toggle {
         position: relative;
         width: 100%;
@@ -20,6 +22,7 @@ $notificationCsrfToken = $_SESSION['csrf_token'] ?? '';
         align-items: center;
         justify-content: space-between;
         gap: 10px;
+        margin: 0 0 18px;
         padding: 10px 12px;
         border: 1px solid rgba(255, 255, 255, 0.16);
         border-radius: 8px;
@@ -35,6 +38,8 @@ $notificationCsrfToken = $_SESSION['csrf_token'] ?? '';
         font-size: 1.2rem;
         line-height: 1;
     }
+
+    /* Pastille rouge (sidebar et cloche mobile) */
     .notification-badge {
         min-width: 24px;
         height: 24px;
@@ -51,13 +56,30 @@ $notificationCsrfToken = $_SESSION['csrf_token'] ?? '';
     .notification-badge.is-visible {
         display: inline-flex;
     }
-    .notification-menu {
+
+    /* Cloche de la barre mobile */
+    .mobile-appbar .btn-notification {
+        position: relative;
+    }
+    .mobile-appbar .btn-notification .notification-badge {
         position: absolute;
-        left: 0;
-        right: 0;
-        top: calc(100% + 8px);
-        width: 100%;
-        max-height: 460px;
+        top: -4px;
+        right: -4px;
+        min-width: 18px;
+        height: 18px;
+        padding: 0 5px;
+        font-size: 0.65rem;
+        line-height: 1;
+    }
+
+    /* Panneau : un seul, fixe, hors de la sidebar */
+    .notification-menu {
+        position: fixed;
+        top: 16px;
+        left: 276px; /* repositionné par notifications.js à côté du bouton */
+        width: 380px;
+        max-width: calc(100vw - 24px);
+        max-height: min(520px, calc(100vh - 32px));
         display: none;
         flex-direction: column;
         z-index: 6000;
@@ -93,8 +115,11 @@ $notificationCsrfToken = $_SESSION['csrf_token'] ?? '';
         font-weight: 700;
         padding: 4px 0;
     }
+    .notification-mark-all:hover {
+        background: transparent;
+        text-decoration: underline;
+    }
     .notification-list {
-        max-height: 360px;
         overflow-y: auto;
     }
     .notification-item {
@@ -103,6 +128,7 @@ $notificationCsrfToken = $_SESSION['csrf_token'] ?? '';
         padding: 12px 14px;
         border: 0;
         border-bottom: 1px solid #eef2f7;
+        border-radius: 0;
         background: #ffffff;
         color: inherit;
         text-align: left;
@@ -130,12 +156,14 @@ $notificationCsrfToken = $_SESSION['csrf_token'] ?? '';
         flex: 0 0 auto;
     }
     .notification-item-message {
+        display: block;
         color: #475569;
         font-size: 0.88rem;
         line-height: 1.35;
         white-space: normal;
     }
     .notification-item-date {
+        display: block;
         margin-top: 6px;
         color: #64748b;
         font-size: 0.78rem;
@@ -146,30 +174,30 @@ $notificationCsrfToken = $_SESSION['csrf_token'] ?? '';
         color: #64748b;
         font-size: 0.9rem;
     }
-    @media (max-width: 768px) {
+
+    /* Tablette et mobile : la cloche est dans la barre du haut,
+       le bouton de la sidebar (drawer blanc) est masqué. */
+    @media (max-width: 1024px) {
+        .notification-toggle {
+            display: none !important;
+        }
         .notification-menu {
-            position: fixed;
-            top: 78px;
-            left: 16px;
-            right: 16px;
-            width: auto;
+            top: 68px !important;
+            left: auto !important;
+            right: 12px;
+            width: min(92vw, 380px);
+            max-height: calc(100vh - 84px);
         }
     }
 </style>
 
-<div class="notification-widget" id="notification-widget">
-    <button type="button" class="notification-toggle" id="notification-toggle" aria-expanded="false" aria-controls="notification-menu">
-        <span><span class="notification-bell" aria-hidden="true">🔔</span> Notifications</span>
-        <span class="notification-badge" id="notification-badge">0</span>
-    </button>
-    <div class="notification-menu" id="notification-menu">
-        <div class="notification-menu-header">
-            <span class="notification-menu-title">Notifications</span>
-            <button type="button" class="notification-mark-all" id="notification-mark-all">Tout marquer comme lu</button>
-        </div>
-        <div class="notification-list" id="notification-list">
-            <div class="notification-empty">Chargement...</div>
-        </div>
+<div class="notification-menu" id="notification-menu" role="dialog" aria-label="Notifications">
+    <div class="notification-menu-header">
+        <span class="notification-menu-title">Notifications</span>
+        <button type="button" class="notification-mark-all" id="notification-mark-all">Tout marquer comme lu</button>
+    </div>
+    <div class="notification-list" id="notification-list">
+        <div class="notification-empty">Chargement...</div>
     </div>
 </div>
 
@@ -182,4 +210,4 @@ $notificationCsrfToken = $_SESSION['csrf_token'] ?? '';
         pollIntervalMs: 30000
     };
 </script>
-<script src="/payment/notifications.js?v=1.0" defer></script>
+<script src="/payment/notifications.js?v=1.1" defer></script>
