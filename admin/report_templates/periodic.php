@@ -3,7 +3,8 @@
 // Variables expected: $month, $rows, $summary, $byDept, $pen, $newStudents, $first, $last
 ?>
 <!DOCTYPE html>
-<html><head><meta charset="UTF-8"><style>
+<html><head><meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"><style>
 body { font-family: DejaVu Sans, sans-serif; font-size: 11px; }
 h1 { color: #1e3a8a; }
 table { width: 100%; border-collapse: collapse; margin: 8px 0; }
