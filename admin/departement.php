@@ -264,7 +264,8 @@ try {
                                 departments
                             </div>
                         </div>
-                        <table>
+                        <div class="table-responsive">
+<table>
                             <thead>
                                 <tr>
                                     <th><input type="checkbox" id="select-all-checkbox"></th>
@@ -309,6 +310,7 @@ try {
                                 <?php endif; ?>
                             </tbody>
                         </table>
+</div>
                         <div class="pagination-controls hidden" id="payment-pagination">
                             <button type="button" id="payment-prev">Previous</button>
                             <span class="pagination-info" id="payment-page-info">Page 1 of 1</span>
@@ -324,7 +326,7 @@ try {
 
                             <label for="minerval">Minerval total</label>
                             <input id="minerval" type="number" step="0.01" name="minerval" required
-                                placeholder="e.g. 785000">
+                                placeholder="e.g. 785000" inputmode="numeric">
 
                             <div class="buttons">
                                 <button type="submit" name="Create">Créer</button>
@@ -361,7 +363,7 @@ try {
                     <input id="edit-name" type="text" name="Name" required>
 
                     <label for="edit-minerval">Minerval total</label>
-                    <input id="edit-minerval" type="number" step="0.01" name="minerval" required>
+                    <input id="edit-minerval" type="number" step="0.01" name="minerval" required inputmode="numeric">
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="modal-btn modal-cancel-btn" id="cancel-edit-modal">Cancel</button>

@@ -36,7 +36,8 @@ $history = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <h1 class="page-title">📋 Historique des connexions</h1>
             
             <div class="table-section">
-                <table>
+                <div class="table-responsive">
+<table>
                     <thead>
                         <tr>
                             <!-- <th>#</th> -->
@@ -70,6 +71,7 @@ $history = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         <?php endif; ?>
                     </tbody>
                 </table>
+</div>
             </div>
         </section>
     </main>

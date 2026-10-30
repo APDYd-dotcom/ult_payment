@@ -42,9 +42,11 @@ $deptTotals = $bdd->query("SELECT d.name, COALESCE(SUM(p.amount),0) AS t FROM de
 </form>
 <canvas id="chartPeriods" width="400" height="200"></canvas>
 <canvas id="chartDept" width="400" height="200"></canvas>
+<div class="table-responsive">
 <table class="table-section"><tr><th></th><th>Periode A</th><th>Periode B</th><th>Diff</th><th>%</th></tr>
 <tr><td>Total</td><td><?= number_format($sa['total'],0,',',' ') ?></td><td><?= number_format($sb['total'],0,',',' ') ?></td><td><?= number_format($diff,0,',',' ') ?></td><td><?= number_format($pct,2,',',' ') ?>%</td></tr>
 </table>
+</div>
 <script>
 const ctx1 = document.getElementById('chartPeriods').getContext('2d');
 new Chart(ctx1, { type:'bar', data:{ labels:['Periode A','Periode B'], datasets:[{label:'Total paiements', data:[<?= (float)$sa['total'] ?>, <?= (float)$sb['total'] ?>], backgroundColor:['#1e3a8a','#64748b'] }] } });

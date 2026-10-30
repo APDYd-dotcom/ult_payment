@@ -27,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <h1 class="page-title">Partager un document</h1>
 <form method="POST" class="form-section">
 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
-<label>Durée (heures)</label><input type="number" name="hours" value="24">
+<label>Durée (heures)</label><input type="number" name="hours" value="24" inputmode="numeric">
 <button class="btn-primary" type="submit">Générer le lien</button>
 </form>
 <?php if ($link): ?><div class="message message-success"><?= htmlspecialchars($link) ?></div><?php endif; ?>

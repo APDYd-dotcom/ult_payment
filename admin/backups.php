@@ -44,6 +44,7 @@ rsort($files);
 <input type="hidden" name="action" value="backup">
 <button class="btn-primary" type="submit">Lancer une sauvegarde</button>
 </form>
+<div class="table-responsive">
 <table class="table-section"><tr><th>Nom</th><th>Taille</th><th>Date</th><th></th></tr>
 <?php foreach ($files as $f): ?>
 <tr>
@@ -54,6 +55,7 @@ rsort($files);
 </tr>
 <?php endforeach; ?>
 </table>
+</div>
 <p><a href="restore.php">Restaurer</a></p>
 </main></div>    <script src="/payment/assets/js/responsive.js"></script>
 </body></html>

@@ -206,7 +206,8 @@ $success = isset($_GET['exported']) ? true : false;
                         </div>
                     <?php endif; ?>
 
-                    <table>
+                    <div class="table-responsive">
+<table>
                         <thead>
                             <tr>
                                 <th>Ref.</th>
@@ -240,6 +241,7 @@ $success = isset($_GET['exported']) ? true : false;
                             <?php endif; ?>
                         </tbody>
                     </table>
+</div>
                 </div>
             </div>
         </section>

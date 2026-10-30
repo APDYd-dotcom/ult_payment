@@ -513,7 +513,7 @@ if (isset($_GET['expired']) && $_GET['expired'] === '1') {
                         placeholder="Enter your password"
                         autocomplete="current-password"
                         required
-                    />
+                    / autocomplete="current-password">
                 </div>
 
                 <div class="form-options">

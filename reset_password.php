@@ -161,11 +161,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <input type="hidden" name="token" value="<?= htmlspecialchars($token) ?>" />
                 <div class="form-group">
                     <label for="password">Nouveau mot de passe</label>
-                    <input id="password" type="password" name="password" autocomplete="new-password" minlength="8" required />
+                    <input id="password" type="password" name="password" autocomplete="new-password" minlength="8" required / autocomplete="current-password">
                 </div>
                 <div class="form-group">
                     <label for="confirm_password">Confirmer le mot de passe</label>
-                    <input id="confirm_password" type="password" name="confirm_password" autocomplete="new-password" minlength="8" required />
+                    <input id="confirm_password" type="password" name="confirm_password" autocomplete="new-password" minlength="8" required / autocomplete="current-password">
                 </div>
                 <div class="buttons">
                     <button type="submit" class="btn-primary">Réinitialiser</button>

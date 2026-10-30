@@ -92,7 +92,7 @@ function renderSystemSettingField(string $key, array $definition, array $values)
     } elseif (in_array($type, ['number', 'percent'], true)) {
         $min = isset($definition['min']) ? ' min="' . htmlspecialchars((string) $definition['min'], ENT_QUOTES, 'UTF-8') . '"' : '';
         $max = isset($definition['max']) ? ' max="' . htmlspecialchars((string) $definition['max'], ENT_QUOTES, 'UTF-8') . '"' : '';
-        echo '<input type="number" name="' . $safeKey . '" value="' . $safeValue . '"' . $min . $max . ' step="1" required>';
+        echo '<input type="number" name="' . $safeKey . '" value="' . $safeValue . '"' . $min . $max . ' step="1" required inputmode="numeric">';
     } else {
         echo '<input type="text" name="' . $safeKey . '" value="' . $safeValue . '" maxlength="255" required>';
     }

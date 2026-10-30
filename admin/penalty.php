@@ -54,7 +54,8 @@ try {
                             Found <strong id="counter-match">0</strong> of <span id="counter-total">0</span> penalties
                         </div>
                     </div>
-                    <table>
+                    <div class="table-responsive">
+<table>
                         <thead>
                             <tr>
                                 <th>Réf. Pénalité</th>
@@ -88,6 +89,7 @@ try {
                             <?php endif; ?>
                         </tbody>
                     </table>
+</div>
                     <div class="pagination-controls hidden" id="payment-pagination">
                         <button type="button" id="payment-prev">Previous</button>
                         <span class="pagination-info" id="payment-page-info">Page 1 of 1</span>

@@ -48,7 +48,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         (new Xlsx($ss))->save('php://output');
         exit();
     } else {
-        $html = '<h1>Rapport personnalise</h1><table border="1"><tr>';
+        $html = '<h1>Rapport personnalise</h1><div class="table-responsive">
+<table border="1"><tr>';
         foreach ($selected as $col) $html .= '<th>' . htmlspecialchars($col) . '</th>';
         $html .= '</tr>';
         foreach ($rows as $row) {
@@ -56,7 +57,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             foreach ($selected as $col) $html .= '<td>' . htmlspecialchars((string)($row[$col] ?? '')) . '</td>';
             $html .= '</tr>';
         }
-        $html .= '</table>';
+        $html .= '</table>
+</div>';
         $options = new \Dompdf\Options();
         $options->set('defaultFont', 'DejaVu Sans');
         $dompdf = new Dompdf($options);

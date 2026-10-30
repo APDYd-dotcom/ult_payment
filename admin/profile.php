@@ -277,7 +277,7 @@ $twoFactorState = ultTwoFactorProfileState($bdd);
                         </div>
                         <div class="form-group">
                             <label for="email">Email</label>
-                            <input type="email" id="email" name="email" value="<?= htmlspecialchars($email) ?>" required>
+                            <input type="email" id="email" name="email" value="<?= htmlspecialchars($email) ? inputmode="email" autocomplete="email">" required>
                         </div>
                         <button type="submit" name="update_info" class="btn btn-primary">Mettre à jour</button>
                     </form>

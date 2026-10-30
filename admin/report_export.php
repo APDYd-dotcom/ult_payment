@@ -211,7 +211,8 @@ if ($format === 'pdf') {
     <div class="meta">
         Genere le <strong>' . $generatedAt . '</strong> par <strong>' . $escAdmin . '</strong> | Periode: <strong>' . $escPeriod . '</strong> | Nombre de paiements: <strong>' . $rowCount . '</strong>
     </div>
-    <table>
+    <div class="table-responsive">
+<table>
         <thead>
             <tr>
                 <th style="width:10%;">Ref.</th>
@@ -229,13 +230,16 @@ if ($format === 'pdf') {
             ' . $tableRows . '
         </tbody>
     </table>
-    <table style="margin-top:8px;">
+</div>
+    <div class="table-responsive">
+<table style="margin-top:8px;">
         <tr>
             <td colspan="5" style="text-align:right; font-weight:bold;">Montant total :</td>
             <td style="text-align:right;" class="total">' . $totalFormatted . ' BIF</td>
             <td colspan="3"></td>
         </tr>
     </table>
+</div>
     <div class="footer">
         ULT Payment System - Rapport genere a partir de vw_payment_details. Tous les montants sont en BIF.
     </div>

@@ -410,7 +410,8 @@ foreach ($departments as $d) {
                         </div>
                     </div>
 
-                    <table>
+                    <div class="table-responsive">
+<table>
                         <thead>
                             <tr>
                                 <th data-sort-index="0" data-sort-type="text">Reference</th>
@@ -448,6 +449,7 @@ foreach ($departments as $d) {
                             <?php endif; ?>
                         </tbody>
                     </table>
+</div>
 
                     <div class="pagination-controls hidden" id="payment-pagination">
                         <button type="button" id="payment-prev">Previous</button>
@@ -463,7 +465,7 @@ foreach ($departments as $d) {
                         <input id="matricule" class="readonly-input" type="text" value="<?= htmlspecialchars($currentStudent['matricule'], ENT_QUOTES, 'UTF-8') ?>" readonly>
 
                         <label for="amount">Montant</label>
-                        <input id="amount" type="number" step="0.01" name="amount" placeholder="0.00" required>
+                        <input id="amount" type="number" step="0.01" name="amount" placeholder="0.00" required inputmode="numeric">
 
                         <label for="department">Departement</label>
                         <select id="department" disabled>

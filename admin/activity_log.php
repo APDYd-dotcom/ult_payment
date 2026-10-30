@@ -56,7 +56,8 @@ $logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <h1 class="page-title">📋 Journal des activités</h1>
 
             <div class="table-section" style="overflow-x: auto;">
-                <table class="log-table">
+                <div class="table-responsive">
+<table class="log-table">
                     <thead>
                         <tr>
                             <th>#</th>
@@ -88,6 +89,7 @@ $logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         <?php endif; ?>
                     </tbody>
                 </table>
+</div>
             </div>
         </section>
     </main>

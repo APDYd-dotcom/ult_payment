@@ -274,6 +274,7 @@ try {
                             Found <strong id="counter-match">0</strong> of <span id="counter-total">0</span> students
                         </div>
                     </div>
+<div class="table-responsive">
 <table>
 <thead>
 <tr>
@@ -324,6 +325,7 @@ try {
 <?php endif; ?>
 </tbody>
 </table>
+</div>
                     <div class="pagination-controls hidden" id="payment-pagination">
                         <button type="button" id="payment-prev">Previous</button>
                         <span class="pagination-info" id="payment-page-info">Page 1 of 1</span>
@@ -338,7 +340,7 @@ try {
 <input id="fullName" type="text" name="fullName" required>
 
 <label for="age">Age</label>
-<input id="age" type="number" name="age" required min="1">
+<input id="age" type="number" name="age" required min="1" inputmode="numeric">
 
 <label for="department">Department</label>
 <select id="department" name="department" required>
@@ -386,7 +388,7 @@ try {
                 <input id="edit-fullName" type="text" name="fullName" required>
 
                 <label for="edit-age">Age</label>
-                <input id="edit-age" type="number" name="age" required min="1">
+                <input id="edit-age" type="number" name="age" required min="1" inputmode="numeric">
 
                 <label for="edit-department">Department</label>
                 <select id="edit-department" name="department" required>

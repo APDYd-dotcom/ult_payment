@@ -31,6 +31,7 @@ $rows = $bdd->query("SELECT * FROM archives ORDER BY archived_at DESC")->fetchAl
 <div class="container"><aside class="sidebar"><?php include 'sidebar.php'; ?></aside>    <?php include "topbar.php"; ?>
 <main class="main-content">
 <h1 class="page-title">Archives</h1>
+<div class="table-responsive">
 <table class="table-section"><tr><th>ID</th><th>Table</th><th>Record</th><th>Archivé le</th><th>Restauré le</th><th></th></tr>
 <?php foreach ($rows as $r): ?>
 <tr>
@@ -50,6 +51,7 @@ $rows = $bdd->query("SELECT * FROM archives ORDER BY archived_at DESC")->fetchAl
 </tr>
 <?php endforeach; ?>
 </table>
+</div>
 </main></div>    <script src="/payment/assets/js/responsive.js"></script>
 </body></html>
 PHP

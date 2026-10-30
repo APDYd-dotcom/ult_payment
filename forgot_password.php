@@ -167,7 +167,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <form method="POST" action="forgot_password.php">
             <div class="form-group">
                 <label for="email">Adresse email</label>
-                <input id="email" type="email" name="email" placeholder="you@example.com" autocomplete="email" required />
+                <input id="email" type="email" name="email" placeholder="you@example.com" autocomplete="email" required / inputmode="email" autocomplete="email">
             </div>
             <div class="buttons">
                 <button type="submit" class="btn-primary">Envoyer le lien</button>

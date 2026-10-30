@@ -127,7 +127,8 @@ try {
             <?php endif; ?>
 
             <div class="table-section">
-                <table>
+                <div class="table-responsive">
+<table>
                     <thead>
                         <tr>
                             <th>Nom</th>
@@ -179,6 +180,7 @@ try {
                         <?php endif; ?>
                     </tbody>
                 </table>
+</div>
             </div>
         </section>
     </main>

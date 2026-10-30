@@ -182,7 +182,8 @@ if ($partialTableExists) {
             <?php else: ?>
                 <div class="crud-container">
                     <div class="table-section">
-                        <table>
+                        <div class="table-responsive">
+<table>
                             <thead>
                                 <tr>
                                     <th>Reference partielle</th>
@@ -212,6 +213,7 @@ if ($partialTableExists) {
                             <?php endif; ?>
                             </tbody>
                         </table>
+</div>
                     </div>
 
                 </div>
