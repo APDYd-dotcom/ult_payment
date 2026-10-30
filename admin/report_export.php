@@ -151,6 +151,7 @@ if ($format === 'pdf') {
     $html = '<!DOCTYPE html>
 <html>
 <head>
+    <link rel="stylesheet" href="/payment/assets/css/app.css">
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <style>

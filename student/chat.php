@@ -8,6 +8,7 @@ $adminId = (int)$bdd->query("SELECT userId FROM user WHERE role='admin' ORDER BY
 ?>
 <!DOCTYPE html>
 <html><head>
+    <link rel="stylesheet" href="/payment/assets/css/app.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"><title>Chat</title><link rel="stylesheet" href="../admin/styles.css?v=1.1">
 <style>

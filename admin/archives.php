@@ -25,6 +25,7 @@ $rows = $bdd->query("SELECT * FROM archives ORDER BY archived_at DESC")->fetchAl
 ?>
 <!DOCTYPE html>
 <html><head>
+    <link rel="stylesheet" href="/payment/assets/css/app.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"><title>Archives</title><link rel="stylesheet" href="./styles.css?v=1.1">    <link rel="stylesheet" href="/payment/assets/css/responsive.css">
 </head><body>

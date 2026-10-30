@@ -32,6 +32,7 @@ rsort($files);
 ?>
 <!DOCTYPE html>
 <html><head>
+    <link rel="stylesheet" href="/payment/assets/css/app.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"><title>Sauvegardes</title><link rel="stylesheet" href="./styles.css?v=1.1">    <link rel="stylesheet" href="/payment/assets/css/responsive.css">
 </head><body>

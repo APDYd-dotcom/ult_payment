@@ -22,6 +22,7 @@ try {
 <!DOCTYPE html>
 <html>
 <head>
+    <link rel="stylesheet" href="/payment/assets/css/app.css">
     <title>ULT Payment System</title>
     <link rel="stylesheet" href="./styles.css?v=1.4">
     <?php loadTheme($bdd); ?>

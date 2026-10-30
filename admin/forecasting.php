@@ -39,6 +39,7 @@ $caution = $n < 2 ? 'Donnees insuffisantes (moins de 2 mois).' : 'Projection bas
 ?>
 <!DOCTYPE html>
 <html><head>
+    <link rel="stylesheet" href="/payment/assets/css/app.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"><title>Prevision</title>
 <link rel="stylesheet" href="./styles.css?v=1.1">

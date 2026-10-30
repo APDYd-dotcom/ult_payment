@@ -284,6 +284,7 @@ foreach ($departments as $d) {
 <!DOCTYPE html>
 <html lang="fr">
 <head>
+    <link rel="stylesheet" href="/payment/assets/css/app.css">
     <meta charset="UTF-8">
     <title>ULT Payment System</title>
     <link rel="stylesheet" href="./styles.css?v=1.4">

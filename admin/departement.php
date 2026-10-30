@@ -193,6 +193,7 @@ try {
 <html>
 
 <head>
+    <link rel="stylesheet" href="/payment/assets/css/app.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>ULT Payment System</title>

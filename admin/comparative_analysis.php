@@ -24,6 +24,7 @@ $deptTotals = $bdd->query("SELECT d.name, COALESCE(SUM(p.amount),0) AS t FROM de
 ?>
 <!DOCTYPE html>
 <html><head>
+    <link rel="stylesheet" href="/payment/assets/css/app.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"><title>Analyse comparative</title>
 <link rel="stylesheet" href="./styles.css?v=1.1">
