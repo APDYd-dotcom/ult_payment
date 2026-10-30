@@ -39,12 +39,12 @@ $caution = $n < 2 ? 'Donnees insuffisantes (moins de 2 mois).' : 'Projection bas
 ?>
 <!DOCTYPE html>
 <html><head>
-    <link rel="stylesheet" href="/payment/assets/css/app.css">
+    <link rel="stylesheet" href="/payment/assets/css/app.css?v=20261030">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"><title>Prevision</title>
-<link rel="stylesheet" href="./styles.css?v=1.1">
+<link rel="stylesheet" href="./styles.css?v=20261030">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="/payment/assets/css/responsive.css">
+    <link rel="stylesheet" href="/payment/assets/css/responsive.css?v=20261030">
 </head><body>
 <div class="container">
     <?php include 'sidebar.php'; ?>
@@ -66,5 +66,5 @@ new Chart(ctx, { type:'line', data:{ labels: labels, datasets:[
   { label:'Projete', data: projected, borderColor:'#ef4444', borderDash:[5,5], fill:false }
 ] } });
 </script>
-</main></div>    <script src="/payment/assets/js/responsive.js"></script>
+</main></div>    <script src="/payment/assets/js/responsive.js?v=20261030"></script>
 </body></html>

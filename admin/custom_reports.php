@@ -74,9 +74,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ?>
 <!DOCTYPE html>
 <html><head>
-    <link rel="stylesheet" href="/payment/assets/css/app.css">
+    <link rel="stylesheet" href="/payment/assets/css/app.css?v=20261030">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"><title>Rapport personnalise</title><link rel="stylesheet" href="./styles.css?v=1.1">    <link rel="stylesheet" href="/payment/assets/css/responsive.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"><title>Rapport personnalise</title><link rel="stylesheet" href="./styles.css?v=20261030">    <link rel="stylesheet" href="/payment/assets/css/responsive.css?v=20261030">
 </head><body>
 <div class="container">
     <?php include 'sidebar.php'; ?>
@@ -97,5 +97,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <label>Sortie</label><select name="format"><option value="pdf">PDF</option><option value="xlsx">Excel</option></select>
 <button class="btn-primary" type="submit">Generer</button>
 </form>
-</main></div>    <script src="/payment/assets/js/responsive.js"></script>
+</main></div>    <script src="/payment/assets/js/responsive.js?v=20261030"></script>
 </body></html>

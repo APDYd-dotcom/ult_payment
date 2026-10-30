@@ -103,11 +103,11 @@ function renderSystemSettingField(string $key, array $definition, array $values)
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <link rel="stylesheet" href="/payment/assets/css/app.css">
+    <link rel="stylesheet" href="/payment/assets/css/app.css?v=20261030">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Parametrage du systeme - ULT Payment System</title>
-    <link rel="stylesheet" href="./styles.css?v=1.4">
+    <link rel="stylesheet" href="./styles.css?v=20261030">
     <?php loadTheme($bdd); ?>
     <style>
         .settings-page { display: grid; gap: 18px; }
@@ -131,7 +131,7 @@ function renderSystemSettingField(string $key, array $definition, array $values)
         .btn-danger:hover { background: #b91c1c; }
         @media (max-width: 900px) { .settings-grid { grid-template-columns: 1fr; } .settings-actions { justify-content: flex-start; } }
     </style>
-    <link rel="stylesheet" href="/payment/assets/css/responsive.css">
+    <link rel="stylesheet" href="/payment/assets/css/responsive.css?v=20261030">
 </head>
 <body>
 <div class="container">
@@ -173,6 +173,6 @@ function renderSystemSettingField(string $key, array $definition, array $values)
         </section>
     </main>
 </div>
-    <script src="/payment/assets/js/responsive.js"></script>
+    <script src="/payment/assets/js/responsive.js?v=20261030"></script>
 </body>
 </html>

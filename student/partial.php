@@ -145,11 +145,11 @@ if ($partialTableExists) {
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <link rel="stylesheet" href="/payment/assets/css/app.css">
+    <link rel="stylesheet" href="/payment/assets/css/app.css?v=20261030">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Paiements partiels - ULT Payment System</title>
-    <link rel="stylesheet" href="./styles.css?v=1.4">
+    <link rel="stylesheet" href="./styles.css?v=20261030">
     <?php loadTheme($bdd); ?>
     <style>
         .message{padding:12px 20px;border-radius:8px;margin-bottom:20px;font-weight:500}
@@ -164,7 +164,7 @@ if ($partialTableExists) {
         .muted{color:#64748b;font-size:.9rem}
         @media(max-width:900px){.table-section{overflow-x:auto}}
     </style>
-    <link rel="stylesheet" href="/payment/assets/css/responsive.css">
+    <link rel="stylesheet" href="/payment/assets/css/responsive.css?v=20261030">
 </head>
 <body>
 <div class="container">
@@ -229,6 +229,6 @@ function toggleEdit(id) {
     }
 }
 </script>
-    <script src="/payment/assets/js/responsive.js"></script>
+    <script src="/payment/assets/js/responsive.js?v=20261030"></script>
 </body>
 </html>

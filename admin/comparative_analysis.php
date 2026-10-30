@@ -24,12 +24,12 @@ $deptTotals = $bdd->query("SELECT d.name, COALESCE(SUM(p.amount),0) AS t FROM de
 ?>
 <!DOCTYPE html>
 <html><head>
-    <link rel="stylesheet" href="/payment/assets/css/app.css">
+    <link rel="stylesheet" href="/payment/assets/css/app.css?v=20261030">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"><title>Analyse comparative</title>
-<link rel="stylesheet" href="./styles.css?v=1.1">
+<link rel="stylesheet" href="./styles.css?v=20261030">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="/payment/assets/css/responsive.css">
+    <link rel="stylesheet" href="/payment/assets/css/responsive.css?v=20261030">
 </head><body>
 <div class="container">
     <?php include 'sidebar.php'; ?>
@@ -56,5 +56,5 @@ new Chart(ctx1, { type:'bar', data:{ labels:['Periode A','Periode B'], datasets:
 const ctx2 = document.getElementById('chartDept').getContext('2d');
 new Chart(ctx2, { type:'bar', data:{ labels:<?= json_encode(array_column($deptTotals,'name')) ?>, datasets:[{label:'Total par departement', data:<?= json_encode(array_map('floatval', array_column($deptTotals,'t'))) ?>, backgroundColor:'#10b981' }] } });
 </script>
-</main></div>    <script src="/payment/assets/js/responsive.js"></script>
+</main></div>    <script src="/payment/assets/js/responsive.js?v=20261030"></script>
 </body></html>

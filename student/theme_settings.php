@@ -96,11 +96,11 @@ $fontOptions = getAllowedThemeFonts();
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <link rel="stylesheet" href="/payment/assets/css/app.css">
+    <link rel="stylesheet" href="/payment/assets/css/app.css?v=20261030">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestion des themes - ULT Payment System</title>
-    <link rel="stylesheet" href="./styles.css?v=1.4">
+    <link rel="stylesheet" href="./styles.css?v=20261030">
     <?php loadTheme($bdd); ?>
     <style>
         .theme-layout { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(280px, .9fr); gap: 20px; align-items: start; }
@@ -122,7 +122,7 @@ $fontOptions = getAllowedThemeFonts();
         .btn-danger:hover { background: #b91c1c; }
         @media (max-width: 900px) { .theme-layout, .theme-form-grid { grid-template-columns: 1fr; } }
     </style>
-    <link rel="stylesheet" href="/payment/assets/css/responsive.css">
+    <link rel="stylesheet" href="/payment/assets/css/responsive.css?v=20261030">
 </head>
 <body>
 <div class="container">
@@ -235,6 +235,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 </script>
-    <script src="/payment/assets/js/responsive.js"></script>
+    <script src="/payment/assets/js/responsive.js?v=20261030"></script>
 </body>
 </html>

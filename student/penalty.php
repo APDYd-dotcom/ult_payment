@@ -22,12 +22,12 @@ try {
 <!DOCTYPE html>
 <html>
 <head>
-    <link rel="stylesheet" href="/payment/assets/css/app.css">
+    <link rel="stylesheet" href="/payment/assets/css/app.css?v=20261030">
     <title>ULT Payment System</title>
-    <link rel="stylesheet" href="./styles.css?v=1.4">
+    <link rel="stylesheet" href="./styles.css?v=20261030">
     <?php loadTheme($bdd); ?>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="/payment/assets/css/responsive.css">
+    <link rel="stylesheet" href="/payment/assets/css/responsive.css?v=20261030">
 </head>
 <body>
 
@@ -220,6 +220,6 @@ document.addEventListener('DOMContentLoaded', function () {
     renderPage();
 });
 </script>
-    <script src="/payment/assets/js/responsive.js"></script>
+    <script src="/payment/assets/js/responsive.js?v=20261030"></script>
 </body>
 </html>

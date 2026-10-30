@@ -25,9 +25,9 @@ $rows = $bdd->query("SELECT * FROM archives ORDER BY archived_at DESC")->fetchAl
 ?>
 <!DOCTYPE html>
 <html><head>
-    <link rel="stylesheet" href="/payment/assets/css/app.css">
+    <link rel="stylesheet" href="/payment/assets/css/app.css?v=20261030">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"><title>Archives</title><link rel="stylesheet" href="./styles.css?v=1.1">    <link rel="stylesheet" href="/payment/assets/css/responsive.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"><title>Archives</title><link rel="stylesheet" href="./styles.css?v=20261030">    <link rel="stylesheet" href="/payment/assets/css/responsive.css?v=20261030">
 </head><body>
 <div class="container">
     <?php include 'sidebar.php'; ?>
@@ -55,6 +55,6 @@ $rows = $bdd->query("SELECT * FROM archives ORDER BY archived_at DESC")->fetchAl
 <?php endforeach; ?>
 </table>
 </div>
-</main></div>    <script src="/payment/assets/js/responsive.js"></script>
+</main></div>    <script src="/payment/assets/js/responsive.js?v=20261030"></script>
 </body></html>
 PHP

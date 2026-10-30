@@ -9,9 +9,9 @@ $students = $bdd->query("SELECT userId, fullname FROM user WHERE role='student' 
 ?>
 <!DOCTYPE html>
 <html><head>
-    <link rel="stylesheet" href="/payment/assets/css/app.css">
+    <link rel="stylesheet" href="/payment/assets/css/app.css?v=20261030">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"><title>Chat</title><link rel="stylesheet" href="./styles.css?v=1.1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"><title>Chat</title><link rel="stylesheet" href="./styles.css?v=20261030">
 <style>
 .chat-layout { display:flex; gap:16px; height:70vh; }
 .chat-sidebar { width:260px; background:#fff; border-radius:12px; padding:12px; overflow:auto; }
@@ -102,7 +102,7 @@ async function send() {
 }
 document.addEventListener('DOMContentLoaded', load);
 </script>
-    <link rel="stylesheet" href="/payment/assets/css/responsive.css">
+    <link rel="stylesheet" href="/payment/assets/css/responsive.css?v=20261030">
 </head><body>
 <div class="container">
     <?php include 'sidebar.php'; ?>
@@ -129,6 +129,6 @@ document.addEventListener('DOMContentLoaded', load);
     </div>
   </div>
 </div>
-</main></div>    <script src="/payment/assets/js/responsive.js"></script>
+</main></div>    <script src="/payment/assets/js/responsive.js?v=20261030"></script>
 </body></html>
 PHP

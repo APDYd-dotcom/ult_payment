@@ -29,8 +29,8 @@ $logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Journal des activités - ULT Payment</title>
-    <link rel="stylesheet" href="/payment/assets/css/app.css">
-    <link rel="stylesheet" href="./styles.css">
+    <link rel="stylesheet" href="/payment/assets/css/app.css?v=20261030">
+    <link rel="stylesheet" href="./styles.css?v=20261030">
     <?php loadTheme($bdd); ?>
     <style>
         .log-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
@@ -43,7 +43,7 @@ $logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
         .action-deleted { color: #dc2626; }
         .action-payment { color: #8b5cf6; }
     </style>
-    <link rel="stylesheet" href="/payment/assets/css/responsive.css">
+    <link rel="stylesheet" href="/payment/assets/css/responsive.css?v=20261030">
 </head>
 <body>
 <div class="container">
@@ -91,6 +91,6 @@ $logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
         </section>
     </main>
 </div>
-    <script src="/payment/assets/js/responsive.js"></script>
+    <script src="/payment/assets/js/responsive.js?v=20261030"></script>
 </body>
 </html>

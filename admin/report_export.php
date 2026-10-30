@@ -151,7 +151,7 @@ if ($format === 'pdf') {
     $html = '<!DOCTYPE html>
 <html>
 <head>
-    <link rel="stylesheet" href="/payment/assets/css/app.css">
+    <link rel="stylesheet" href="/payment/assets/css/app.css?v=20261030">
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <style>
@@ -204,7 +204,7 @@ if ($format === 'pdf') {
             padding-top: 6px;
         }
     </style>
-    <link rel="stylesheet" href="/payment/assets/css/responsive.css">
+    <link rel="stylesheet" href="/payment/assets/css/responsive.css?v=20261030">
 </head>
 <body>
     <h1>Universite du Lac Tanganyika - Rapport des paiements</h1>
@@ -243,7 +243,7 @@ if ($format === 'pdf') {
     <div class="footer">
         ULT Payment System - Rapport genere a partir de vw_payment_details. Tous les montants sont en BIF.
     </div>
-    <script src="/payment/assets/js/responsive.js"></script>
+    <script src="/payment/assets/js/responsive.js?v=20261030"></script>
 </body>
 </html>';
 

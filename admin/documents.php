@@ -18,9 +18,9 @@ $docs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
 <html><head>
-    <link rel="stylesheet" href="/payment/assets/css/app.css">
+    <link rel="stylesheet" href="/payment/assets/css/app.css?v=20261030">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"><title>Documents</title><link rel="stylesheet" href="./styles.css?v=1.1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"><title>Documents</title><link rel="stylesheet" href="./styles.css?v=20261030">
 <style>
 .doc-card { background:#fff; border-radius:12px; padding:16px; margin-bottom:12px; box-shadow:0 2px 8px rgba(0,0,0,.08); display:flex; justify-content:space-between; align-items:center; }
 .doc-info h3 { margin:0; font-size:1rem; color:#1e3a8a; }
@@ -29,7 +29,7 @@ $docs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 .filters { display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
 .filters input, .filters select { padding:8px; border-radius:8px; border:1px solid #cbd5e1; }
 </style>
-    <link rel="stylesheet" href="/payment/assets/css/responsive.css">
+    <link rel="stylesheet" href="/payment/assets/css/responsive.css?v=20261030">
 </head><body>
 <div class="container">
     <?php include 'sidebar.php'; ?>
@@ -62,6 +62,6 @@ $docs = $stmt->fetchAll(PDO::FETCH_ASSOC);
     </div>
   </div>
 <?php endforeach; ?>
-</main></div>    <script src="/payment/assets/js/responsive.js"></script>
+</main></div>    <script src="/payment/assets/js/responsive.js?v=20261030"></script>
 </body></html>
 PHP

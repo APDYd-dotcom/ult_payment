@@ -48,15 +48,15 @@ $students = $bdd->query("SELECT id, name, matricule FROM student ORDER BY name")
 ?>
 <!DOCTYPE html>
 <html><head>
-    <link rel="stylesheet" href="/payment/assets/css/app.css">
+    <link rel="stylesheet" href="/payment/assets/css/app.css?v=20261030">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"><title>Upload document</title><link rel="stylesheet" href="./styles.css?v=1.1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"><title>Upload document</title><link rel="stylesheet" href="./styles.css?v=20261030">
 <style>
 .upload-card { background:#fff; border-radius:12px; padding:24px; max-width:520px; box-shadow:0 2px 8px rgba(0,0,0,.08); }
 .upload-card label { display:block; margin:12px 0 6px; font-weight:600; color:#1e293b; }
 .upload-card input, .upload-card select { width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px; }
 </style>
-    <link rel="stylesheet" href="/payment/assets/css/responsive.css">
+    <link rel="stylesheet" href="/payment/assets/css/responsive.css?v=20261030">
 </head><body>
 <div class="container">
     <?php include 'sidebar.php'; ?>
@@ -75,6 +75,6 @@ $students = $bdd->query("SELECT id, name, matricule FROM student ORDER BY name")
 </form>
 </div>
 <p style="margin-top:16px;"><a href="documents.php">Liste des documents</a></p>
-</main></div>    <script src="/payment/assets/js/responsive.js"></script>
+</main></div>    <script src="/payment/assets/js/responsive.js?v=20261030"></script>
 </body></html>
 PHP

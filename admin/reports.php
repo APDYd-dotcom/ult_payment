@@ -27,9 +27,9 @@ $success = isset($_GET['exported']) ? true : false;
 <!DOCTYPE html>
 <html>
 <head>
-    <link rel="stylesheet" href="/payment/assets/css/app.css">
+    <link rel="stylesheet" href="/payment/assets/css/app.css?v=20261030">
     <title>Rapports des paiements - ULT Payment System</title>
-    <link rel="stylesheet" href="./styles.css?v=1.1">
+    <link rel="stylesheet" href="./styles.css?v=20261030">
     <?php loadTheme($bdd); ?>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
@@ -68,7 +68,7 @@ $success = isset($_GET['exported']) ? true : false;
             color: #475569;
         }
     </style>
-    <link rel="stylesheet" href="/payment/assets/css/responsive.css">
+    <link rel="stylesheet" href="/payment/assets/css/responsive.css?v=20261030">
 </head>
 <body>
 
@@ -243,6 +243,6 @@ $success = isset($_GET['exported']) ? true : false;
     </main>
 </div>
 
-    <script src="/payment/assets/js/responsive.js"></script>
+    <script src="/payment/assets/js/responsive.js?v=20261030"></script>
 </body>
 </html>
