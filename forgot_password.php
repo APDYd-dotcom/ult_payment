@@ -1,4 +1,10 @@
 <?php
+// 1. FORCER L'AFFICHAGE DES ERREURS TOUT EN HAUT
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+ini_set('pcre.jit', '0');
+
 session_start();
 
 require_once __DIR__ . '/functions.php';
@@ -6,25 +12,22 @@ require_once __DIR__ . '/functions.php';
 use PHPMailer\PHPMailer\Exception;
 use PHPMailer\PHPMailer\PHPMailer;
 
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-ini_set('pcre.jit', '0');
-
 $message = '';
 $messageType = '';
 
-// --- Configuration SMTP (à centraliser) ---
+// --- Configuration SMTP ---
 $smtpHost = 'smtp.gmail.com';
 $smtpPort = 587;
 $smtpUsername = 'arakazaprincedestinyvan@gmail.com';
-$smtpPassword = 'nahnnpxmjwxcbaua';
+$smtpPassword = 'nahnnpxmjwxcbaua'; 
 $smtpEncryption = 'tls';
 
 try {
-    $bdd = new PDO('mysql:host=localhost;dbname=ult_payment;charset=utf8', 'app_user', 'secure_password_123');
+    // Connexion à la base locale (XAMPP/WAMP)
+    $bdd = new PDO('mysql:host=localhost;dbname=ult_payment;charset=utf8mb4', 'app_user', 'secure_password_123');
     $bdd->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 } catch (PDOException $e) {
-    die('Database connection failed: ' . $e->getMessage());
+    die('Erreur de connexion à la base de données : ' . $e->getMessage());
 }
 
 function buildResetUrl(string $token): string
@@ -32,7 +35,6 @@ function buildResetUrl(string $token): string
     $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
     $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
     $path = rtrim(dirname($_SERVER['SCRIPT_NAME'] ?? '/payment'), '/\\');
-
     return $scheme . '://' . $host . $path . '/reset_password.php?token=' . urlencode($token);
 }
 
@@ -42,7 +44,7 @@ function sendPasswordResetEmail(string $toEmail, string $toName, string $resetUr
 
     $autoload = __DIR__ . '/vendor/autoload.php';
     if (!file_exists($autoload)) {
-        throw new RuntimeException('PHPMailer is not installed. Run: composer require phpmailer/phpmailer');
+        throw new RuntimeException('PHPMailer n\'est pas installé. Exécutez : composer require phpmailer/phpmailer');
     }
 
     require_once $autoload;
@@ -107,7 +109,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $message = 'Si cette adresse existe, un lien de réinitialisation vient d\'être envoyé.';
             $messageType = 'success';
         } catch (Throwable $e) {
-            $message = 'Une erreur est survenue. Veuillez réessayer plus tard.';
+            $message = 'Erreur technique : ' . $e->getMessage();
             $messageType = 'error';
         }
     }
@@ -168,7 +170,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <form method="POST" action="forgot_password.php">
             <div class="form-group">
                 <label for="email">Adresse email</label>
-                <input id="email" type="email" name="email" placeholder="you@example.com" autocomplete="email" required / inputmode="email" autocomplete="email">
+                <input id="email" type="email" name="email" placeholder="you@example.com" inputmode="email" autocomplete="email" required>
             </div>
             <div class="buttons">
                 <button type="submit" class="btn-primary">Envoyer le lien</button>

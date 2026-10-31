@@ -34,10 +34,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Validation basique
         if (empty($Name)) {
-            $message = '⚠ Le nom du département est obligatoire.';
+            $message = ' Le nom du département est obligatoire.';
             $messageType = 'error';
         } elseif ($minerval <= 0) {
-            $message = '⚠ Le montant du minerval doit être supérieur à 0.';
+            $message = 'Le montant du minerval doit être supérieur à 0.';
             $messageType = 'error';
         } else {
             // Vérifier l'unicité du nom du département
