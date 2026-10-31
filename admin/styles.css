@@ -2,6 +2,54 @@
    DESIGN SYSTEM ULT PAYMENT
    ========================================= */
 
+.search-container { margin-bottom: 16px; }
+.search-bar {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: #fff;
+    border: 1px solid var(--gray-200);
+    border-radius: 10px;
+    max-width: 420px;
+    height: 44px;
+}
+.search-bar .search-icon {
+    position: absolute;
+    left: 14px;
+    color: #64748b;
+    pointer-events: none; /* L'icône ne bloque pas le clic sur l'input */
+}
+.search-bar input {
+    width: 100%;
+    height: 100%;
+    border: none;
+    outline: none;
+    padding: 0 40px 0 42px; /* 42px à gauche pour laisser la place à l'icône */
+    font-size: 0.95rem;
+    background: transparent;
+    border-radius: 10px;
+}
+.search-bar input::placeholder {
+    color: #94a3b8;
+}
+.search-clear {
+    position: absolute;
+    right: 10px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #64748b;
+    display: none;
+    padding: 4px;
+}
+.search-clear.visible {
+    display: block;
+}
+.search-results-counter {
+    font-size: 0.85rem;
+    color: var(--gray-600);
+    margin-top: 8px;
+}
 :root {
     --primary: #1e3a8a;
     --primary-light: #2563eb;
@@ -289,11 +337,40 @@ body {
         padding-top: 60px;
     }
 
+.row-quick-actions {
+    display: none; /* Caché par défaut, apparaît au survol */
+    gap: 4px;
+}
+.student-name-cell:hover .row-quick-actions {
+    display: flex;
+}
+.quick-action-btn {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    transition: all 0.2s;
+}
+.quick-action-btn:hover {
+    background: #f1f5f9;
+    color: #1e3a8a;
+}
+.quick-delete-btn:hover {
+    color: #dc2626;
+    border-color: #fca5a5;
+    background: #fef2f2;
+}
     .sidebar ul li a {
         color: #334155;
     }
     .sidebar ul li a:hover {
         background: #f1f5f9;
+
         color: #2563eb;
     }
     .sidebar .logo h2 {
