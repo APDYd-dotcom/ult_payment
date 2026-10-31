@@ -13,17 +13,12 @@ $messageType = ''; // success / error
 // --- Custom error translation for department operations ---
 function translateDepartmentError($message)
 {
-    $translations = [
-        'Duplicate entry' => ' Ce nom de département existe déjà. Veuillez en choisir un autre.',
-        // Add other specific translations if needed
-    ];
-    foreach ($translations as $key => $value) {
-        if (strpos($message, $key) !== false) {
-            return $value;
-        }
+    // Vérifier d'abord si c'est une erreur de département
+    if (strpos($message, "for key 'name'") !== false && strpos($message, 'department') !== false) {
+        return 'Ce nom de département existe déjà. Veuillez en choisir un autre.';
     }
-    // Fallback: return the raw database message safely escaped
-    return htmlspecialchars($message);
+    // Erreur de trigger (tranche en double) ou autre
+    return 'Une erreur est survenue : ' . htmlspecialchars($message);
 }
 
 // --- Gestion du formulaire (INSERT, UPDATE, DELETE) ---

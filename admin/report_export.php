@@ -1,5 +1,4 @@
 <?php
-<?php
 declare(strict_types=1); // <-- DOIT ETRE LA PREMIERE LIGNE
 error_reporting(E_ALL & ~E_DEPRECATED);
 ini_set('display_errors', 0);

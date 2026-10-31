@@ -21,39 +21,55 @@
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
     <div class="logo"><h2>ULT Payment</h2></div>
-    
+    <!-- Notifications (grand écran) : la cloche de la barre du haut sert sur mobile -->
     <button type="button" class="notification-toggle" id="notification-toggle" aria-expanded="false" aria-controls="notification-menu">
-        <span>Notifications</span>
+        <span><span class="notification-bell" aria-hidden="true">🔔</span> Notifications</span>
         <span class="notification-badge" id="notification-badge">0</span>
     </button>
-    
     <ul>
-        <li><a href="dashboard.php">Dashboard</a></li>
-        <li><a href="student.php">Étudiants</a></li>
-        <li><a href="departement.php">Départements</a></li>
-        <li><a href="payment.php">Paiements</a></li>
-        <li><a href="partial.php">Paiements partiels</a></li>
-        <li><a href="penalty.php">Pénalités</a></li>
-        <li><a href="documents.php">Documents</a></li>
-        <li><a href="reports.php">Rapports</a></li>
-        <li><a href="manage_users.php">Gestion utilisateurs</a></li>
-        <li><a href="activity_log.php">Journal d'activité</a></li>
-        <li><a href="login_history.php">Historique connexions</a></li>
-        <li><a href="system_settings.php">Paramètres</a></li>
-        <li><a href="backups.php">Sauvegardes</a></li>
-        <li><a href="profile.php">Mon profil</a></li>
-        
-        <!-- BOUTON DE DECONNEXION -->
-        <li>
-            <form method="POST" action="/payment/logout.php">
-                <input type="hidden" name="logout_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
-                <button type="submit" class="logout-btn">Déconnexion</button>
-            </form>
-        </li>
+
+
+
+
+
+    <li><a href="dashboard.php">Dashboard</a></li>
+    <li><a href="departement.php">Departement</a></li>
+    <li><a href="student.php">Students</a></li>
+    <li><a href="payment.php">Payments</a></li>
+    <li><a href="reports.php">Rapports</a></li>
+    <li><a href="documents.php">Documents</a></li>
+    <li><a href="periodic_reports.php">Rapport periodique</a></li>
+    <li><a href="custom_reports.php">Rapport personnalise</a></li>
+    <li><a href="comparative_analysis.php">Analyse comparative</a></li>
+    <li><a href="forecasting.php">Prevision</a></li>
+    <li><a href="partial.php">Partial Payments</a></li>
+    <li><a href="penalty.php">Penalties</a></li>
+    <li><a href="login_history.php">Login History</a></li>
+    <li><a href="manage_users.php">Manage Users</a></li>
+    <li><a href="system_settings.php">System Settings</a></li>
+    <li><a href="theme_settings.php">Theme Settings</a></li>
+    <li><a href="mailing.php">Mailing List</a></li>
+    <li><a href="activity_log.php">Activity Log</a></li>
+    <li><a href="chat.php">Chat</a></li>
+    <li><a href="archives.php">Archives</a></li>
+    <li><a href="backups.php">Sauvegardes</a></li>
+    <li><a href="restore.php">Restauration</a></li>
+    <li><a href="profile.php">Profile</a></li>
+    <li>
+        <form method="POST" action="/payment/logout.php">
+            <input type="hidden" name="logout_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
+            <button type="submit">Logout</button>
+        </form>
+    </li>
+
+    
+    
+    
+    
     </ul>
 </aside>
 
-<!-- Panneau de notifications -->
+<!-- Panneau de notifications : volontairement HORS de l'<aside> (position:fixed) -->
 <?php include_once __DIR__ . '/../notification_assets.php'; ?>
 
 <script>
