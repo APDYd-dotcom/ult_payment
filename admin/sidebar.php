@@ -48,7 +48,7 @@
     <li><a href="manage_users.php">Manage Users</a></li>
     <li><a href="system_settings.php">System Settings</a></li>
     <li><a href="theme_settings.php">Theme Settings</a></li>
-    <li><a href="mailing.php">Mailing List</a></li>
+<!--    <li><a href="mailing.php">Mailing List</a></li> -->
     <li><a href="activity_log.php">Activity Log</a></li>
     <li><a href="chat.php">Chat</a></li>
     <li><a href="archives.php">Archives</a></li>

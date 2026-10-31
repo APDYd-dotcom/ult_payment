@@ -1,249 +1,306 @@
 <?php
-declare(strict_types=1);
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+ini_set('pcre.jit', '0');
+ini_set('memory_limit', '256M');
 
 define('REQUIRED_ROLE', 'admin');
 require __DIR__ . '/../auth_check.php';
-require_once __DIR__ . '/report_helpers.php';
 require_once __DIR__ . '/../functions.php';
 
-$filters = getReportFilters();
+// --- Récupération des filtres ---
+$filterDepartment = $_GET['department'] ?? '';
+$filterTranche    = $_GET['tranche'] ?? '';
+$filterDateStart  = $_GET['date_start'] ?? '';
+$filterDateEnd    = $_GET['date_end'] ?? '';
+$filterMethod     = $_GET['payment_method'] ?? '';
 
-// Listes pour les selects de filtre
-$departments = $bdd->query("SELECT id, name FROM department ORDER BY name")->fetchAll(PDO::FETCH_ASSOC);
-$tranches = $bdd->query("SELECT id, name, department_id FROM tranche ORDER BY name")->fetchAll(PDO::FETCH_ASSOC);
+// --- Construction de la requête (sans vues) ---
+$sql = "
+    SELECT 
+        CONCAT('P-', LPAD(p.id, 4, '0')) AS payment_reference,
+        s.name AS student_name,
+        s.matricule,
+        d.name AS department_name,
+        t.name AS tranche_name,
+        p.amount,
+        p.payment_method,
+        p.reference_number,
+        p.created_at AS payment_date
+    FROM payment p
+    JOIN student s ON p.student_id = s.id
+    JOIN tranche t ON p.tranche_id = t.id
+    JOIN department d ON t.department_id = d.id
+";
 
-$rows = getPaymentReport($bdd, $filters);
-$summary = summarizeReport($rows);
-$periodLabel = reportPeriodLabel($filters);
+$where = [];
+$params = [];
 
-// Chaîne de requête courante (sans format) pour les liens d'exportation
-$exportQuery = $_GET;
-unset($exportQuery['format']);
-$queryString = http_build_query($exportQuery);
+if ($filterDepartment !== '') {
+    $where[] = 'd.name = ?';
+    $params[] = $filterDepartment;
+}
+if ($filterTranche !== '') {
+    $where[] = 't.name = ?';
+    $params[] = $filterTranche;
+}
+if ($filterMethod !== '') {
+    $where[] = 'p.payment_method = ?';
+    $params[] = $filterMethod;
+}
+if ($filterDateStart !== '') {
+    $where[] = 'p.created_at >= ?';
+    $params[] = $filterDateStart . ' 00:00:00';
+}
+if ($filterDateEnd !== '') {
+    $where[] = 'p.created_at <= ?';
+    $params[] = $filterDateEnd . ' 23:59:59';
+}
 
-$success = isset($_GET['exported']) ? true : false;
+if ($where) {
+    $sql .= ' WHERE ' . implode(' AND ', $where);
+}
+$sql .= ' ORDER BY p.created_at DESC';
 
+try {
+    $stmt = $bdd->prepare($sql);
+    $stmt->execute($params);
+    $payments = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    die('Erreur lors du chargement des rapports : ' . $e->getMessage());
+}
+
+// --- Calcul des statistiques ---
+$totalPayments = count($payments);
+$totalAmount = array_sum(array_column($payments, 'amount'));
+$byMethod = [];
+foreach ($payments as $p) {
+    $method = $p['payment_method'] ?: 'OTHER';
+    if (!isset($byMethod[$method])) {
+        $byMethod[$method] = ['count' => 0, 'total' => 0];
+    }
+    $byMethod[$method]['count']++;
+    $byMethod[$method]['total'] += $p['amount'];
+}
+
+// --- Listes pour les filtres ---
+$departments = $bdd->query("SELECT name FROM department ORDER BY name")->fetchAll(PDO::FETCH_ASSOC);
+$tranches = $bdd->query("SELECT name FROM tranche ORDER BY name")->fetchAll(PDO::FETCH_ASSOC);
+$paymentMethods = ['IBBM+', 'BANKOBU', 'OTHER'];
+
+// --- Gestion des exports (logique inchangée) ---
+$exportFormat = $_GET['export'] ?? '';
+if ($exportFormat === 'pdf' || $exportFormat === 'excel') {
+    require_once __DIR__ . '/../vendor/autoload.php';
+    if (ob_get_length()) ob_end_clean();
+
+    if ($exportFormat === 'excel') {
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setCellValue('A1', 'Référence');
+        $sheet->setCellValue('B1', 'Étudiant');
+        $sheet->setCellValue('C1', 'Matricule');
+        $sheet->setCellValue('D1', 'Département');
+        $sheet->setCellValue('E1', 'Tranche');
+        $sheet->setCellValue('F1', 'Montant');
+        $sheet->setCellValue('G1', 'Méthode');
+        $sheet->setCellValue('H1', 'Date');
+        $rowNum = 2;
+        foreach ($payments as $p) {
+            $sheet->setCellValue('A' . $rowNum, $p['payment_reference']);
+            $sheet->setCellValue('B' . $rowNum, $p['student_name']);
+            $sheet->setCellValue('C' . $rowNum, $p['matricule']);
+            $sheet->setCellValue('D' . $rowNum, $p['department_name']);
+            $sheet->setCellValue('E' . $rowNum, $p['tranche_name']);
+            $sheet->setCellValue('F' . $rowNum, $p['amount']);
+            $sheet->setCellValue('G' . $rowNum, $p['payment_method']);
+            $sheet->setCellValue('H' . $rowNum, date('d/m/Y H:i', strtotime($p['payment_date'])));
+            $rowNum++;
+        }
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment;filename="rapport_paiements.xlsx"');
+        header('Cache-Control: max-age=0');
+        $writer->save('php://output');
+        exit();
+    } elseif ($exportFormat === 'pdf') {
+        $html = '<h1 style="text-align:center;color:#1e3a8a;">Rapport des paiements</h1>';
+        $html .= '<table border="1" cellpadding="5" cellspacing="0" style="width:100%;border-collapse:collapse;font-family:sans-serif;font-size:12px;">';
+        $html .= '<thead><tr style="background:#1e3a8a;color:white;">';
+        $html .= '<th>Référence</th><th>Étudiant</th><th>Matricule</th><th>Département</th><th>Tranche</th><th>Montant</th><th>Méthode</th><th>Date</th>';
+        $html .= '</tr></thead><tbody>';
+        foreach ($payments as $p) {
+            $html .= '<tr>';
+            $html .= '<td>' . htmlspecialchars($p['payment_reference']) . '</td>';
+            $html .= '<td>' . htmlspecialchars($p['student_name']) . '</td>';
+            $html .= '<td>' . htmlspecialchars($p['matricule']) . '</td>';
+            $html .= '<td>' . htmlspecialchars($p['department_name']) . '</td>';
+            $html .= '<td>' . htmlspecialchars($p['tranche_name']) . '</td>';
+            $html .= '<td>' . number_format($p['amount'], 2) . ' BIF</td>';
+            $html .= '<td>' . htmlspecialchars($p['payment_method']) . '</td>';
+            $html .= '<td>' . date('d/m/Y H:i', strtotime($p['payment_date'])) . '</td>';
+            $html .= '</tr>';
+        }
+        $html .= '</tbody></table>';
+        $html .= '<p style="text-align:right;font-weight:bold;margin-top:20px;">Total: ' . number_format($totalAmount, 2) . ' BIF</p>';
+        $dompdf = new \Dompdf\Dompdf();
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'landscape');
+        $dompdf->render();
+        $dompdf->stream('rapport_paiements.pdf', ['Attachment' => true]);
+        exit();
+    }
+}
 ?>
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Rapports - ULT Payment</title>
     <link rel="stylesheet" href="/payment/assets/css/app.css?v=20261030">
-    <title>Rapports des paiements - ULT Payment System</title>
     <link rel="stylesheet" href="./styles.css?v=20261030">
     <?php loadTheme($bdd); ?>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        .summary-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
-            margin-bottom: 20px;
-        }
-        .summary-card {
-            background: white;
-            padding: 16px;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-        .summary-card .value {
-            font-size: 24px;
-            font-weight: 700;
-            color: var(--primary-color, #1e3a8a);
-        }
-        .summary-card .label {
-            color: #64748b;
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-        }
-        .export-actions {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 16px;
-            flex-wrap: wrap;
-        }
-        .method-total {
-            margin-top: 8px;
-            font-size: 0.9rem;
-            color: #475569;
-        }
-    </style>
     <link rel="stylesheet" href="/payment/assets/css/responsive.css?v=20261030">
     <link rel="stylesheet" href="/payment/assets/ui.css">
+    <style>
+        .reports-layout { display: flex; flex-direction: column; gap: 24px; }
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+        .kpi-card { background: #fff; border: 1px solid var(--gray-200); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 8px; }
+        .kpi-label { font-size: 0.85rem; color: var(--gray-600); font-weight: 500; }
+        .kpi-value { font-size: 1.8rem; font-weight: 700; color: var(--primary); line-height: 1.2; }
+        .kpi-sub { font-size: 0.8rem; color: var(--gray-600); }
+        .filters-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; align-items: end; }
+        .filters-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+        .table-modern th, .table-modern td { vertical-align: middle; }
+        .table-modern td:nth-child(2) { white-space: normal; max-width: 220px; }
+        .export-badge { margin-left: 8px; }
+    </style>
 </head>
 <body>
-
 <div class="container">
-    <?php include 'sidebar.php'; ?>
+    <?php include __DIR__ . '/sidebar.php'; ?>
     <main id="main-content" class="main-content">
-        <section id="reports" class="page active">
+        <section class="page active">
             <h1 class="page-title">Rapports des paiements</h1>
 
-            <?php if ($success): ?>
-                <div class="message message-success">
-                    <span class="message-icon">&#x2705;</span>
-                    <span>Le rapport a ete exporte avec succes.</span>
-                </div>
-            <?php endif; ?>
-
-            <form class="advanced-filters" method="GET" action="reports.php">
-                <div class="filters-header">
-                    <div>
-                        <h2>Filtres du rapport</h2>
-                        <p><?= count($rows) ?> paiement<?= count($rows) > 1 ? 's' : '' ?> trouvé<?= count($rows) > 1 ? 's' : '' ?></p>
-                    </div>
-                    <?php $activeFilterCount = count(array_filter([
-                        $filters['period'],
-                        $filters['date_from'],
-                        $filters['date_to'],
-                        $filters['department'],
-                        $filters['tranche'],
-                        $filters['method'],
-                        $filters['q'],
-                    ], fn($value) => $value !== '')); ?>
-                    <?php if ($activeFilterCount > 0): ?>
-                        <span class="filters-badge"><?= $activeFilterCount ?> filtre<?= $activeFilterCount > 1 ? 's' : '' ?> actif<?= $activeFilterCount > 1 ? 's' : '' ?></span>
-                    <?php endif; ?>
-                </div>
-
-                <div class="filter-field">
-                    <label for="filter_period">Periode</label>
-                    <select id="filter_period" name="period">
-                        <option value="" <?= $filters['period'] === '' ? 'selected' : '' ?>>Aucune (tout)</option>
-                        <option value="day" <?= $filters['period'] === 'day' ? 'selected' : '' ?>>Jour</option>
-                        <option value="week" <?= $filters['period'] === 'week' ? 'selected' : '' ?>>Semaine</option>
-                        <option value="month" <?= $filters['period'] === 'month' ? 'selected' : '' ?>>Mois</option>
-                        <option value="year" <?= $filters['period'] === 'year' ? 'selected' : '' ?>>Annee</option>
-                    </select>
-                </div>
-
-                <div class="filter-field">
-                    <label for="filter_date_from">Date de debut</label>
-                    <input id="filter_date_from" type="date" name="date_from" value="<?= htmlspecialchars($filters['date_from'], ENT_QUOTES, 'UTF-8') ?>">
-                </div>
-
-                <div class="filter-field">
-                    <label for="filter_date_to">Date de fin</label>
-                    <input id="filter_date_to" type="date" name="date_to" value="<?= htmlspecialchars($filters['date_to'], ENT_QUOTES, 'UTF-8') ?>">
-                </div>
-
-                <div class="filter-field">
-                    <label for="filter_department">Departement</label>
-                    <select id="filter_department" name="department">
-                        <option value="">Tous les departements</option>
-                        <?php foreach ($departments as $dept): ?>
-                            <option value="<?= htmlspecialchars($dept['name'], ENT_QUOTES, 'UTF-8') ?>" <?= $filters['department'] === $dept['name'] ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($dept['name'], ENT_QUOTES, 'UTF-8') ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-
-                <div class="filter-field">
-                    <label for="filter_tranche">Tranche</label>
-                    <select id="filter_tranche" name="tranche">
-                        <option value="">Toutes les tranches</option>
-                        <?php foreach ($tranches as $t): ?>
-                            <option value="<?= htmlspecialchars($t['name'], ENT_QUOTES, 'UTF-8') ?>" data-dept="<?= (int) $t['department_id'] ?>" <?= $filters['tranche'] === $t['name'] ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($t['name'], ENT_QUOTES, 'UTF-8') ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-
-                <div class="filter-field">
-                    <label for="filter_method">Mode de paiement</label>
-                    <select id="filter_method" name="method">
-                        <option value="">Tous les modes</option>
-                        <option value="IBBM+" <?= $filters['method'] === 'IBBM+' ? 'selected' : '' ?>>IBBM+</option>
-                        <option value="BANKOBU" <?= $filters['method'] === 'BANKOBU' ? 'selected' : '' ?>>BANKOBU</option>
-                        <option value="OTHER" <?= $filters['method'] === 'OTHER' ? 'selected' : '' ?>>Autre</option>
-                    </select>
-                </div>
-
-                <div class="filter-field">
-                    <label for="filter_q">Recherche</label>
-                    <input id="filter_q" type="search" name="q" placeholder="Nom, matricule, ref. paiement, ref. transaction" value="<?= htmlspecialchars($filters['q'], ENT_QUOTES, 'UTF-8') ?>">
-                </div>
-
-                <div class="filter-actions">
-                    <button type="submit" class="btn btn-primary">Filtrer</button>
-                    <a href="reports.php" class="btn btn-secondary">Réinitialiser</a>
-                </div>
-            </form>
-
-            <div class="export-actions">
-                <a href="report_export.php?format=pdf&<?= $queryString ?>" class="btn btn-primary">Export PDF</a>
-                <a href="report_export.php?format=xlsx&<?= $queryString ?>" class="btn btn-primary">Export Excel</a>
-            </div>
-
-            <div class="crud-container">
-                <div class="table-section">
-                    <div class="summary-grid">
-                        <div class="summary-card">
-                            <div class="label">Nombre de paiements</div>
-                            <div class="value"><?= (int) $summary['count'] ?></div>
+            <div class="reports-layout">
+                <!-- Bloc Filtres -->
+                <div class="page-card">
+                    <h2>Filtres du rapport</h2>
+                    <form method="GET" action="reports.php" class="filters-grid">
+                        <div class="form-group">
+                            <label for="date_start">Date début</label>
+                            <input type="date" id="date_start" name="date_start" value="<?= htmlspecialchars($filterDateStart) ?>">
                         </div>
-                        <div class="summary-card">
-                            <div class="label">Montant total</div>
-                            <div class="value"><?= number_format($summary['total'], 2, ',', ' ') ?> BIF</div>
+                        <div class="form-group">
+                            <label for="date_end">Date fin</label>
+                            <input type="date" id="date_end" name="date_end" value="<?= htmlspecialchars($filterDateEnd) ?>">
                         </div>
-                        <div class="summary-card">
-                            <div class="label">Periode</div>
-                            <div class="value" style="font-size: 16px;"><?= htmlspecialchars($periodLabel) ?></div>
-                        </div>
-                    </div>
-
-                    <?php if ($summary['by_method']): ?>
-                        <div class="method-total"><strong>Totaux par mode :</strong>
-                            <?php foreach ($summary['by_method'] as $method => $data): ?>
-                                <span style="margin-right: 16px;"><?= htmlspecialchars($method) ?>: <?= number_format($data['total'], 2, ',', ' ') ?> BIF (<?= (int) $data['count'] ?>)</span>
-                            <?php endforeach; ?>
-                        </div>
-                    <?php endif; ?>
-
-                    <div class="table-responsive">
-<table>
-                        <thead>
-                            <tr>
-                                <th>Ref.</th>
-                                <th>Etudiant</th>
-                                <th>Matricule</th>
-                                <th>Departement</th>
-                                <th>Tranche</th>
-                                <th>Montant</th>
-                                <th>Mode</th>
-                                <th>N° transaction</th>
-                                <th>Date</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php if ($rows): ?>
-                                <?php foreach ($rows as $row): ?>
-                                    <tr>
-                                        <td><?= htmlspecialchars($row['payment_reference']) ?></td>
-                                        <td><?= htmlspecialchars($row['student_name']) ?></td>
-                                        <td><?= htmlspecialchars($row['matricule']) ?></td>
-                                        <td><?= htmlspecialchars($row['department_name']) ?></td>
-                                        <td><?= htmlspecialchars($row['tranche_name']) ?></td>
-                                        <td><?= number_format((float) $row['amount'], 2, ',', ' ') ?> BIF</td>
-                                        <td><?= htmlspecialchars($row['payment_method']) ?></td>
-                                        <td><?= htmlspecialchars($row['reference_number'] ?? '') ?></td>
-                                        <td><?= date('Y-m-d H:i', strtotime($row['payment_date'])) ?></td>
-                                    </tr>
+                        <div class="form-group">
+                            <label for="department">Département</label>
+                            <select id="department" name="department">
+                                <option value="">Tous</option>
+                                <?php foreach ($departments as $d): ?>
+                                    <option value="<?= htmlspecialchars($d['name']) ?>" <?= $filterDepartment == $d['name'] ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars($d['name']) ?>
+                                    </option>
                                 <?php endforeach; ?>
-                            <?php else: ?>
-                                <tr><td colspan="9">Aucun resultat.</td></tr>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
-</div>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="tranche">Tranche</label>
+                            <select id="tranche" name="tranche">
+                                <option value="">Toutes</option>
+                                <?php foreach ($tranches as $t): ?>
+                                    <option value="<?= htmlspecialchars($t['name']) ?>" <?= $filterTranche == $t['name'] ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars($t['name']) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="payment_method">Mode de paiement</label>
+                            <select id="payment_method" name="payment_method">
+                                <option value="">Tous</option>
+                                <?php foreach ($paymentMethods as $m): ?>
+                                    <option value="<?= $m ?>" <?= $filterMethod == $m ? 'selected' : '' ?>><?= $m ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="filters-actions" style="grid-column: 1 / -1;">
+                            <button type="submit" class="btn btn-primary">Filtrer</button>
+                            <a href="reports.php" class="btn btn-secondary">Réinitialiser</a>
+                            <a href="?<?= http_build_query(array_merge($_GET, ['export' => 'pdf'])) ?>" class="btn btn-secondary">Export PDF</a>
+                            <a href="?<?= http_build_query(array_merge($_GET, ['export' => 'excel'])) ?>" class="btn btn-secondary">Export Excel</a>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Bloc KPI -->
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <span class="kpi-label">Nombre de paiements</span>
+                        <span class="kpi-value"><?= $totalPayments ?></span>
+                        <span class="kpi-sub">sur la période filtrée</span>
+                    </div>
+                    <div class="kpi-card">
+                        <span class="kpi-label">Montant total</span>
+                        <span class="kpi-value"><?= number_format($totalAmount, 2, ',', ' ') ?> BIF</span>
+                        <span class="kpi-sub">cumul des paiements</span>
+                    </div>
+                    <?php foreach ($byMethod as $method => $data): ?>
+                    <div class="kpi-card">
+                        <span class="kpi-label"><?= htmlspecialchars($method) ?></span>
+                        <span class="kpi-value"><?= number_format($data['total'], 2, ',', ' ') ?> BIF</span>
+                        <span class="kpi-sub"><?= $data['count'] ?> paiement(s)</span>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+
+                <!-- Bloc Tableau -->
+                <div class="page-card">
+                    <h2>Détail des paiements</h2>
+                    <div class="table-responsive">
+                        <table class="table-modern">
+                            <thead>
+                                <tr>
+                                    <th>Référence</th>
+                                    <th>Étudiant</th>
+                                    <th>Matricule</th>
+                                    <th>Département</th>
+                                    <th>Tranche</th>
+                                    <th>Montant</th>
+                                    <th>Mode</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php if ($payments): ?>
+                                    <?php foreach ($payments as $p): ?>
+                                        <tr>
+                                            <td><?= htmlspecialchars($p['payment_reference']) ?></td>
+                                            <td><?= htmlspecialchars($p['student_name']) ?></td>
+                                            <td><?= htmlspecialchars($p['matricule']) ?></td>
+                                            <td><?= htmlspecialchars($p['department_name']) ?></td>
+                                            <td><?= htmlspecialchars($p['tranche_name']) ?></td>
+                                            <td><?= number_format($p['amount'], 2) ?> BIF</td>
+                                            <td><?= htmlspecialchars($p['payment_method']) ?></td>
+                                            <td><?= date('d/m/Y H:i', strtotime($p['payment_date'])) ?></td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <tr><td colspan="8" style="text-align: center; padding: 20px;">Aucun paiement trouvé avec ces critères.</td></tr>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </section>
     </main>
 </div>
-
-    <script src="/payment/assets/js/responsive.js?v=20261030"></script>
+<script src="/payment/assets/js/responsive.js?v=20261030"></script>
 </body>
 </html>

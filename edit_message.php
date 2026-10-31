@@ -1,28 +1,43 @@
 <?php
-declare(strict_types=1);
-define('REQUIRED_ROLE', 'any');
-require __DIR__ . '/auth_check.php';
-require_once __DIR__ . '/functions.php';
+session_start();
+header('Content-Type: application/json');
+if (ob_get_length()) ob_end_clean();
 
-const EDIT_WINDOW = 120;
+if (!isset($_SESSION['userId'])) {
+    echo json_encode(['success' => false, 'error' => 'Session expirée.']);
+    exit;
+}
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') { http_response_code(405); exit(); }
-if (!hash_equals($_SESSION['csrf_token'] ?? '', $_POST['csrf_token'] ?? '')) { http_response_code(403); exit('CSRF'); }
+$currentUserId = (int) $_SESSION['userId'];
+$messageId = (int) ($_POST['message_id'] ?? 0);
+$newMessage = trim($_POST['message'] ?? '');
+$csrf = $_POST['csrf_token'] ?? '';
 
-$id = (int)($_POST['id'] ?? 0);
-$msg = trim($_POST['message'] ?? '');
-if ($id <= 0 || $msg === '' || strlen($msg) > 2000) { http_response_code(400); exit(); }
+if (!is_string($csrf) || !hash_equals($_SESSION['csrf_token'] ?? '', $csrf)) {
+    echo json_encode(['success' => false, 'error' => 'Token invalide.']);
+    exit;
+}
 
-$stmt = $bdd->prepare("SELECT sender_id, TIMESTAMPDIFF(SECOND, created_at, NOW()) AS age_seconds FROM messages WHERE id=?");
-$stmt->execute([$id]);
-$row = $stmt->fetch(PDO::FETCH_ASSOC);
-if (!$row) { http_response_code(404); echo json_encode(['error'=>'Message introuvable']); exit(); }
-$sender = (int)$row['sender_id'];
-$age = (int)$row['age_seconds'];
-if ($sender !== (int)$_SESSION['userId']) { http_response_code(403); exit(); }
-if ($age > EDIT_WINDOW) { http_response_code(403); echo json_encode(['error'=>'Delai de 2 minutes depasse']); exit(); }
+if (!$messageId || empty($newMessage)) {
+    echo json_encode(['success' => false, 'error' => 'Données manquantes.']);
+    exit;
+}
 
-$bdd->prepare("UPDATE messages SET message=? WHERE id=?")->execute([$msg, $id]);
-logActivity($bdd, $_SESSION['userId'] ?? null, $_SESSION['fullname'] ?? '', $_SESSION['email'] ?? '', 'EDIT_MESSAGE', (string)$id);
-echo json_encode(['ok' => true]);
-exit();
+try {
+    $bdd = new PDO('mysql:host=127.0.0.1;dbname=ult_payment;charset=utf8mb4', 'app_user', 'secure_password_123');
+    $bdd->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    
+    // Mise à jour uniquement si c'est l'auteur
+    $stmt = $bdd->prepare("UPDATE messages SET message = ? WHERE id = ? AND sender_id = ?");
+    $stmt->execute([$newMessage, $messageId, $currentUserId]);
+
+    if ($stmt->rowCount() > 0) {
+        echo json_encode(['success' => true]);
+    } else {
+        echo json_encode(['success' => false, 'error' => 'Message non trouvé ou non autorisé.']);
+    }
+} catch (PDOException $e) {
+    echo json_encode(['success' => false, 'error' => 'Erreur SQL : ' . $e->getMessage()]);
+}
+exit;
+?>

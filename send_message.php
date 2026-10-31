@@ -1,25 +1,47 @@
 <?php
-declare(strict_types=1);
-define('REQUIRED_ROLE', 'any');
-require __DIR__ . '/auth_check.php';
-require_once __DIR__ . '/functions.php';
+// --- DÉBOGAGE (À retirer plus tard) ---
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') { http_response_code(405); exit(); }
-if (!hash_equals($_SESSION['csrf_token'] ?? '', $_POST['csrf_token'] ?? '')) { http_response_code(403); exit('CSRF'); }
+session_start();
+header('Content-Type: application/json');
 
-$receiver = (int)($_POST['receiver_id'] ?? 0);
-$message = trim($_POST['message'] ?? '');
-if ($receiver <= 0 || $message === '' || strlen($message) > 2000) { http_response_code(400); exit(); }
-
-// student can only talk to admins
-if (($_SESSION['role'] ?? '') === 'student') {
-    $st = $bdd->prepare("SELECT role FROM user WHERE userId=?");
-    $st->execute([$receiver]);
-    if ($st->fetchColumn() !== 'admin') { http_response_code(403); exit(); }
+if (ob_get_length()) {
+    ob_end_clean();
 }
 
-$stmt = $bdd->prepare("INSERT INTO messages (sender_id, receiver_id, message) VALUES (?,?,?)");
-$stmt->execute([$_SESSION['userId'], $receiver, $message]);
-logActivity($bdd, $_SESSION['userId'] ?? null, $_SESSION['fullname'] ?? '', $_SESSION['email'] ?? '', 'SEND_MESSAGE', 'to=' . $receiver);
-echo json_encode(['ok' => true]);
-exit();
+if (!isset($_SESSION['userId'])) {
+    echo json_encode(['success' => false, 'error' => 'Session expirée. Reconnectez-vous.']);
+    exit;
+}
+
+$currentUserId = (int) $_SESSION['userId'];
+$receiverId = (int) ($_POST['receiver_id'] ?? 0);
+$message = trim($_POST['message'] ?? '');
+$csrf = $_POST['csrf_token'] ?? '';
+
+if (!is_string($csrf) || !hash_equals($_SESSION['csrf_token'] ?? '', $csrf)) {
+    echo json_encode(['success' => false, 'error' => 'Token invalide. Rechargez la page.']);
+    exit;
+}
+
+if (!$receiverId || empty($message)) {
+    echo json_encode(['success' => false, 'error' => 'Données manquantes.']);
+    exit;
+}
+
+try {
+    // Connexion PDO
+    $bdd = new PDO('mysql:host=127.0.0.1;dbname=ult_payment;charset=utf8mb4', 'app_user', 'secure_password_123');
+    $bdd->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    
+    // Insertion
+    $stmt = $bdd->prepare("INSERT INTO messages (sender_id, receiver_id, message, created_at) VALUES (?, ?, ?, NOW())");
+    $stmt->execute([$currentUserId, $receiverId, $message]);
+    
+    echo json_encode(['success' => true]);
+} catch (PDOException $e) {
+    echo json_encode(['success' => false, 'error' => 'Erreur SQL : ' . $e->getMessage()]);
+}
+exit;
+?>

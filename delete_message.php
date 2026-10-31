@@ -1,23 +1,42 @@
 <?php
-declare(strict_types=1);
-define('REQUIRED_ROLE', 'any');
-require __DIR__ . '/auth_check.php';
-require_once __DIR__ . '/functions.php';
+session_start();
+header('Content-Type: application/json');
+if (ob_get_length()) ob_end_clean();
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') { http_response_code(405); exit(); }
-if (!hash_equals($_SESSION['csrf_token'] ?? '', $_POST['csrf_token'] ?? '')) { http_response_code(403); exit('CSRF'); }
+if (!isset($_SESSION['userId'])) {
+    echo json_encode(['success' => false, 'error' => 'Session expirée.']);
+    exit;
+}
 
-$id = (int)($_POST['id'] ?? 0);
-if ($id <= 0) { http_response_code(400); exit(); }
+$currentUserId = (int) $_SESSION['userId'];
+$messageId = (int) ($_POST['message_id'] ?? 0);
+$csrf = $_POST['csrf_token'] ?? '';
 
-$stmt = $bdd->prepare("SELECT sender_id FROM messages WHERE id=?");
-$stmt->execute([$id]);
-$sender = (int)$stmt->fetchColumn();
-$isAdmin = ($_SESSION['role'] ?? '') === 'admin';
-if (!$isAdmin && $sender !== (int)$_SESSION['userId']) { http_response_code(403); exit(); }
+if (!is_string($csrf) || !hash_equals($_SESSION['csrf_token'] ?? '', $csrf)) {
+    echo json_encode(['success' => false, 'error' => 'Token invalide.']);
+    exit;
+}
 
-$bdd->prepare("DELETE FROM messages WHERE id=?")->execute([$id]);
-logActivity($bdd, $_SESSION['userId'] ?? null, $_SESSION['fullname'] ?? '', $_SESSION['email'] ?? '', 'DELETE_MESSAGE', (string)$id);
-echo json_encode(['ok' => true]);
-exit();
+if (!$messageId) {
+    echo json_encode(['success' => false, 'error' => 'ID manquant.']);
+    exit;
+}
 
+try {
+    $bdd = new PDO('mysql:host=127.0.0.1;dbname=ult_payment;charset=utf8mb4', 'app_user', 'secure_password_123');
+    $bdd->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+    // Suppression uniquement si c'est l'auteur
+    $stmt = $bdd->prepare("DELETE FROM messages WHERE id = ? AND sender_id = ?");
+    $stmt->execute([$messageId, $currentUserId]);
+
+    if ($stmt->rowCount() > 0) {
+        echo json_encode(['success' => true]);
+    } else {
+        echo json_encode(['success' => false, 'error' => 'Message non trouvé ou non autorisé.']);
+    }
+} catch (PDOException $e) {
+    echo json_encode(['success' => false, 'error' => 'Erreur SQL : ' . $e->getMessage()]);
+}
+exit;
+?>

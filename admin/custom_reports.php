@@ -1,82 +1,161 @@
 <?php
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+ini_set('pcre.jit', '0');
+ini_set('memory_limit', '256M');
+
 define('REQUIRED_ROLE', 'admin');
 require __DIR__ . '/../auth_check.php';
 require_once __DIR__ . '/../functions.php';
-require_once __DIR__ . '/../vendor/autoload.php';
 
-use Dompdf\Dompdf;
+// --- Colonnes disponibles ---
+$availableColumns = [
+    'payment_reference' => 'Référence',
+    'student_name'      => 'Étudiant',
+    'matricule'         => 'Matricule',
+    'department_name'   => 'Département',
+    'tranche_name'      => 'Tranche',
+    'amount'            => 'Montant',
+    'payment_method'    => 'Méthode',
+    'payment_date'      => 'Date',
+];
 
-$allowedCols = ['matricule','student_name','department_name','amount','payment_date','payment_method','tranche_name','reference','school_year','note'];
-$departments = $bdd->query('SELECT DISTINCT name FROM department ORDER BY name')->fetchAll(PDO::FETCH_COLUMN);
-$tranches = $bdd->query('SELECT DISTINCT tranche_name FROM vw_payment_details WHERE tranche_name IS NOT NULL ORDER BY tranche_name')->fetchAll(PDO::FETCH_COLUMN);
+$selectedColumns = $_GET['columns'] ?? array_keys($availableColumns);
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (empty($_POST['csrf_token']) || !hash_equals($_SESSION['csrf_token'] ?? '', $_POST['csrf_token'])) {
-        die('CSRF invalide');
-    }
-    $selected = $_POST['columns'] ?? [];
-    $selected = array_values(array_intersect($selected, $allowedCols));
-    if (empty($selected)) {
-        $errorMsg = 'Choisissez au moins une colonne.';
-    } else {
-        $where = [];
-        $params = [];
-        if (!empty($_POST['date_from'])) { $where[] = 'payment_date >= ?'; $params[] = $_POST['date_from']; }
-        if (!empty($_POST['date_to'])) { $where[] = 'payment_date <= ?'; $params[] = $_POST['date_to']; }
-        if (!empty($_POST['department'])) { $where[] = 'department_name = ?'; $params[] = $_POST['department']; }
-        if (!empty($_POST['tranche'])) { $where[] = 'tranche_name = ?'; $params[] = $_POST['tranche']; }
-        if (!empty($_POST['method'])) { $where[] = 'payment_method = ?'; $params[] = $_POST['method']; }
-        $sql = 'SELECT ' . implode(',', array_map(function($c){return $c;}, $selected)) . ' FROM vw_payment_details';
-        if ($where) $sql .= ' WHERE ' . implode(' AND ', $where);
-        $sql .= ' ORDER BY payment_date DESC';
-        $stmt = $bdd->prepare($sql);
-        $stmt->execute($params);
-        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+// --- Filtres ---
+$filterDepartment = $_GET['department'] ?? '';
+$filterTranche    = $_GET['tranche'] ?? '';
+$filterDateStart  = $_GET['date_start'] ?? '';
+$filterDateEnd    = $_GET['date_end'] ?? '';
+$filterMethod     = $_GET['payment_method'] ?? '';
 
-        $format = $_POST['format'] ?? 'pdf';
-        if ($format === 'xlsx') {
-            $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
-            $sheet = $spreadsheet->getActiveSheet();
-            $col = 1;
-            foreach ($selected as $c) {
-                $sheet->setCellValueByColumnAndRow($col++, 1, $c);
-            }
-            $r = 2;
-            foreach ($rows as $row) {
-                $c2 = 1;
-                foreach ($selected as $colName) {
-                    $sheet->setCellValueByColumnAndRow($c2++, $r, $row[$colName] ?? '');
-                }
-                $r++;
-            }
-            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-            header('Content-Disposition: attachment;filename="rapport_custom.xlsx"');
-            header('Cache-Control: max-age=0');
-            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
-            $writer->save('php://output');
-            exit();
-        } else {
-            $html = '<html><head><meta charset="UTF-8"><style>body{font-family:DejaVu Sans;font-size:10px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccc;padding:4px}th{background:#f0f0f0}</style>    <link rel="stylesheet" href="/payment/assets/ui.css">
-</head><body><h1>Rapport personnalise</h1><table><tr>';
-            foreach ($selected as $col) $html .= '<th>' . htmlspecialchars($col) . '</th>';
-            $html .= '</tr>';
-            foreach ($rows as $row) {
-                $html .= '<tr>';
-                foreach ($selected as $col) $html .= '<td>' . htmlspecialchars((string)($row[$col] ?? '')) . '</td>';
-                $html .= '</tr>';
-            }
-            $html .= '</table></body></html>';
-            $options = new \Dompdf\Options();
-            $options->set('defaultFont', 'DejaVu Sans');
-            $dompdf = new Dompdf($options);
-            $dompdf->loadHtml($html, 'UTF-8');
-            $dompdf->setPaper('A4', 'landscape');
-            $dompdf->render();
-            header('Content-Type: application/pdf');
-            header('Content-Disposition: attachment; filename="rapport_custom.pdf"');
-            echo $dompdf->output();
-            exit();
+// --- Construction de la requête SQL ---
+$sql = "
+    SELECT 
+        CONCAT('P-', LPAD(p.id, 4, '0')) AS payment_reference,
+        s.name AS student_name,
+        s.matricule,
+        d.name AS department_name,
+        t.name AS tranche_name,
+        p.amount,
+        p.payment_method,
+        p.created_at AS payment_date
+    FROM payment p
+    JOIN student s ON p.student_id = s.id
+    JOIN tranche t ON p.tranche_id = t.id
+    JOIN department d ON t.department_id = d.id
+";
+
+$where = [];
+$params = [];
+
+if ($filterDepartment !== '') {
+    $where[] = 'd.name = ? COLLATE utf8mb4_unicode_ci';
+    $params[] = $filterDepartment;
+}
+if ($filterTranche !== '') {
+    $where[] = 't.name = ? COLLATE utf8mb4_unicode_ci';
+    $params[] = $filterTranche;
+}
+if ($filterMethod !== '') {
+    $where[] = 'p.payment_method = ?';
+    $params[] = $filterMethod;
+}
+if ($filterDateStart !== '') {
+    $where[] = 'p.created_at >= ?';
+    $params[] = $filterDateStart . ' 00:00:00';
+}
+if ($filterDateEnd !== '') {
+    $where[] = 'p.created_at <= ?';
+    $params[] = $filterDateEnd . ' 23:59:59';
+}
+
+if ($where) {
+    $sql .= ' WHERE ' . implode(' AND ', $where);
+}
+$sql .= ' ORDER BY p.created_at DESC';
+
+try {
+    $stmt = $bdd->prepare($sql);
+    $stmt->execute($params);
+    $allPayments = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    die('Erreur lors du chargement des données : ' . $e->getMessage());
+}
+
+// --- Listes pour les filtres ---
+$departments = $bdd->query("SELECT name FROM department ORDER BY name")->fetchAll(PDO::FETCH_ASSOC);
+$tranches = $bdd->query("SELECT name FROM tranche ORDER BY name")->fetchAll(PDO::FETCH_ASSOC);
+$paymentMethods = ['IBBM+', 'BANKOBU', 'OTHER'];
+
+// --- Gestion des exports (logique inchangée) ---
+$exportFormat = $_GET['export'] ?? '';
+if ($exportFormat === 'pdf' || $exportFormat === 'excel') {
+    require_once __DIR__ . '/../vendor/autoload.php';
+    if (ob_get_length()) ob_end_clean();
+
+    if ($exportFormat === 'excel') {
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        $colLetter = 'A';
+        foreach ($selectedColumns as $colKey) {
+            $sheet->setCellValue($colLetter . '1', $availableColumns[$colKey]);
+            $colLetter++;
         }
+
+        $rowNum = 2;
+        foreach ($allPayments as $p) {
+            $colLetter = 'A';
+            foreach ($selectedColumns as $colKey) {
+                $value = $p[$colKey] ?? '';
+                if ($colKey === 'payment_date') {
+                    $value = date('d/m/Y H:i', strtotime($value));
+                }
+                $sheet->setCellValue($colLetter . $rowNum, $value);
+                $colLetter++;
+            }
+            $rowNum++;
+        }
+
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment;filename="rapport_personnalise.xlsx"');
+        header('Cache-Control: max-age=0');
+        $writer->save('php://output');
+        exit();
+    } elseif ($exportFormat === 'pdf') {
+        $html = '<h1 style="text-align:center;color:#1e3a8a;">Rapport personnalisé</h1>';
+        $html .= '<table border="1" cellpadding="5" cellspacing="0" style="width:100%;border-collapse:collapse;font-family:sans-serif;font-size:12px;">';
+
+        $html .= '<thead><tr style="background:#1e3a8a;color:white;">';
+        foreach ($selectedColumns as $colKey) {
+            $html .= '<th>' . htmlspecialchars($availableColumns[$colKey]) . '</th>';
+        }
+        $html .= '</tr></thead><tbody>';
+
+        foreach ($allPayments as $p) {
+            $html .= '<tr>';
+            foreach ($selectedColumns as $colKey) {
+                $value = $p[$colKey] ?? '';
+                if ($colKey === 'payment_date') {
+                    $value = date('d/m/Y H:i', strtotime($value));
+                } elseif ($colKey === 'amount') {
+                    $value = number_format($value, 2) . ' BIF';
+                }
+                $html .= '<td>' . htmlspecialchars($value) . '</td>';
+            }
+            $html .= '</tr>';
+        }
+        $html .= '</tbody></table>';
+
+        $dompdf = new \Dompdf\Dompdf();
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'landscape');
+        $dompdf->render();
+        $dompdf->stream('rapport_personnalise.pdf', ['Attachment' => true]);
+        exit();
     }
 }
 ?>
@@ -90,112 +169,209 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="./styles.css?v=20261030">
     <?php loadTheme($bdd); ?>
     <link rel="stylesheet" href="/payment/assets/css/responsive.css?v=20261030">
-    <style>
-        .report-grid { display:grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
-        .report-card { background:#fff; padding:20px; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,.08); margin-bottom:16px; }
-        .report-card-head h2 { margin:0 0 12px 0; color:#1e3a8a; font-size:1.1rem; }
-        .option { display:flex; align-items:center; gap:8px; padding:8px 0; }
-        .option input { width:18px; height:18px; }
-        .filters-row { display:grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap:12px; }
-        .filters-row label { display:flex; flex-direction:column; gap:6px; }
-        .report-actions { display:flex; justify-content:flex-end; }
-        .btn-generate { background:#1e3a8a; color:#fff; border:none; padding:12px 18px; border-radius:10px; cursor:pointer; }
-        .report-error { background:#fee2e2; color:#991b1b; padding:10px 14px; border-radius:8px; margin-bottom:12px; }
-        @media (max-width: 1024px){ .report-grid { grid-template-columns: repeat(2, 1fr); } }
-        @media (max-width: 640px){ .report-grid { grid-template-columns: 1fr; } }
-    </style>
     <link rel="stylesheet" href="/payment/assets/ui.css">
+    <style>
+        .custom-report-layout { display: flex; flex-direction: column; gap: 24px; }
+        .columns-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 12px;
+        }
+        .columns-grid label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: normal;
+            cursor: pointer;
+            padding: 8px 12px;
+            background: var(--gray-50);
+            border-radius: 8px;
+            border: 1px solid var(--gray-200);
+        }
+        .columns-grid input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--primary-light);
+        }
+        .filters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            align-items: end;
+        }
+        .format-options {
+            display: flex;
+            gap: 20px;
+            margin-top: 12px;
+        }
+        .format-options label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .format-options input[type="radio"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--primary-light);
+        }
+        .export-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+    </style>
 </head>
 <body>
 <div class="container">
-    <?php include 'sidebar.php'; ?>
+    <?php include __DIR__ . '/sidebar.php'; ?>
     <main id="main-content" class="main-content">
         <section class="page active">
             <h1 class="page-title">Rapport personnalisé</h1>
-            <?php if (!empty($errorMsg)): ?>
-                <div class="report-error" id="report-error"><?= htmlspecialchars($errorMsg) ?></div>
-            <?php else: ?>
-                <div class="report-error" id="report-error" hidden></div>
-            <?php endif; ?>
-            <form method="POST" id="report-form">
-                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
-                <section class="report-card">
-                    <div class="report-card-head">
-                        <div>
-                            <h2>Colonnes à inclure</h2>
-                            <div style="display:flex; gap:10px;">
-                                <button type="button" id="cols-all" class="btn-secondary">Tout sélectionner</button>
-                                <button type="button" id="cols-none" class="btn-secondary">Tout désélectionner</button>
+
+            <div class="custom-report-layout">
+                <!-- Bloc Configuration -->
+                <div class="page-card">
+                    <h2>Configuration du rapport</h2>
+                    <form method="GET" action="custom_reports.php" id="report-form">
+                        <h3>Colonnes à inclure</h3>
+                        <div class="columns-grid">
+                            <?php foreach ($availableColumns as $key => $label): ?>
+                                <label>
+                                    <input type="checkbox" name="columns[]" value="<?= $key ?>" 
+                                        <?= in_array($key, $selectedColumns) ? 'checked' : '' ?>>
+                                    <?= htmlspecialchars($label) ?>
+                                </label>
+                            <?php endforeach; ?>
+                        </div>
+
+                        <h3 style="margin-top: 32px;">Filtres</h3>
+                        <div class="filters-grid">
+                            <div class="form-group">
+                                <label for="date_start">Date début</label>
+                                <input type="date" id="date_start" name="date_start" value="<?= htmlspecialchars($filterDateStart) ?>">
+                            </div>
+                            <div class="form-group">
+                                <label for="date_end">Date fin</label>
+                                <input type="date" id="date_end" name="date_end" value="<?= htmlspecialchars($filterDateEnd) ?>">
+                            </div>
+                            <div class="form-group">
+                                <label for="department">Département</label>
+                                <select id="department" name="department">
+                                    <option value="">Tous</option>
+                                    <?php foreach ($departments as $d): ?>
+                                        <option value="<?= htmlspecialchars($d['name']) ?>" <?= $filterDepartment == $d['name'] ? 'selected' : '' ?>>
+                                            <?= htmlspecialchars($d['name']) ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="tranche">Tranche</label>
+                                <select id="tranche" name="tranche">
+                                    <option value="">Toutes</option>
+                                    <?php foreach ($tranches as $t): ?>
+                                        <option value="<?= htmlspecialchars($t['name']) ?>" <?= $filterTranche == $t['name'] ? 'selected' : '' ?>>
+                                            <?= htmlspecialchars($t['name']) ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="payment_method">Mode de paiement</label>
+                                <select id="payment_method" name="payment_method">
+                                    <option value="">Tous</option>
+                                    <?php foreach ($paymentMethods as $m): ?>
+                                        <option value="<?= $m ?>" <?= $filterMethod == $m ? 'selected' : '' ?>><?= $m ?></option>
+                                    <?php endforeach; ?>
+                                </select>
                             </div>
                         </div>
-                    </div>
-                    <div class="report-grid">
-                        <?php foreach ($allowedCols as $col): ?>
-                            <label class="option"><input type="checkbox" name="columns[]" value="<?= htmlspecialchars($col) ?>" <?= in_array($col, $selected ?? [], true) ? 'checked' : '' ?>><span><?= htmlspecialchars($col) ?></span></label>
-                        <?php endforeach; ?>
-                    </div>
-                </section>
-                <section class="report-card">
-                    <div class="report-card-head"><h2>Filtres</h2></div>
-                    <div class="filters-row">
-                        <label>Date de début <input type="date" name="date_from"></label>
-                        <label>Date de fin <input type="date" name="date_to"></label>
-                        <label>Département
-                            <select name="department"><option value="">Tous</option><?php foreach ($departments as $d): ?><option value="<?= htmlspecialchars($d) ?>"><?= htmlspecialchars($d) ?></option><?php endforeach; ?></select>
-                        </label>
-                        <label>Tranche
-                            <select name="tranche"><option value="">Toutes</option><?php foreach ($tranches as $t): ?><option value="<?= htmlspecialchars($t) ?>"><?= htmlspecialchars($t) ?></option><?php endforeach; ?></select>
-                        </label>
-                        <label>Mode de paiement
-                            <select name="method"><option value="">Tous</option><option value="IBBM+">IBBM+</option><option value="BANKOBU">BANKOBU</option><option value="OTHER">OTHER</option></select>
-                        </label>
-                    </div>
-                </section>
-                <section class="report-card">
-                    <div class="report-card-head"><h2>Format de sortie</h2></div>
-                    <div class="format-options" style="display:flex; gap:16px; flex-wrap:wrap;">
-                        <label class="option"><input type="radio" name="format" value="pdf" checked><span>PDF</span></label>
-                        <label class="option"><input type="radio" name="format" value="xlsx"><span>Excel (.xlsx)</span></label>
-                    </div>
-                </section>
-                <div class="report-actions">
-                    <button class="btn-generate" type="submit">Générer le rapport</button>
+
+                        <h3 style="margin-top: 32px;">Format de sortie</h3>
+                        <div class="format-options">
+                            <label>
+                                <input type="radio" name="export" value="pdf" <?= ($exportFormat === 'pdf' || $exportFormat === '') ? 'checked' : '' ?>>
+                                PDF
+                            </label>
+                            <label>
+                                <input type="radio" name="export" value="excel" <?= $exportFormat === 'excel' ? 'checked' : '' ?>>
+                                Excel (.xlsx)
+                            </label>
+                        </div>
+
+                        <div class="export-actions">
+                            <button type="submit" class="btn btn-primary">Générer le rapport</button>
+                            <a href="custom_reports.php" class="btn btn-secondary">Réinitialiser</a>
+                        </div>
+                    </form>
                 </div>
-            </form>
+
+                <!-- Bloc Aperçu -->
+                <div class="page-card">
+                    <h2>Aperçu des données</h2>
+                    <div class="table-responsive">
+                        <table class="table-modern" id="preview-table">
+                            <thead>
+                                <tr>
+                                    <?php foreach ($availableColumns as $colKey => $colLabel): ?>
+                                        <th data-col="<?= $colKey ?>" style="<?= in_array($colKey, $selectedColumns) ? '' : 'display:none;' ?>">
+                                            <?= htmlspecialchars($colLabel) ?>
+                                        </th>
+                                    <?php endforeach; ?>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php if ($allPayments): ?>
+                                    <?php foreach ($allPayments as $p): ?>
+                                        <tr>
+                                            <?php foreach ($availableColumns as $colKey => $colLabel): ?>
+                                                <td data-col="<?= $colKey ?>" style="<?= in_array($colKey, $selectedColumns) ? '' : 'display:none;' ?>">
+                                                    <?php 
+                                                    $value = $p[$colKey] ?? '';
+                                                    if ($colKey === 'payment_date') {
+                                                        echo date('d/m/Y H:i', strtotime($value));
+                                                    } elseif ($colKey === 'amount') {
+                                                        echo number_format($value, 2) . ' BIF';
+                                                    } else {
+                                                        echo htmlspecialchars($value);
+                                                    }
+                                                    ?>
+                                                </td>
+                                            <?php endforeach; ?>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <tr><td colspan="<?= count($availableColumns) ?>" style="text-align:center; padding:20px;">Aucune donnée trouvée avec ces critères.</td></tr>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </section>
     </main>
 </div>
-<script>
-(function () {
-    var form = document.getElementById('report-form');
-    if (!form) return;
-    var boxes = form.querySelectorAll('input[name="columns[]"]');
-    var errorBox = document.getElementById('report-error');
-    function showError(message) {
-        errorBox.textContent = message;
-        errorBox.hidden = false;
-    }
-    var allBtn = document.getElementById('cols-all');
-    var noneBtn = document.getElementById('cols-none');
-    if (allBtn) allBtn.addEventListener('click', function () { boxes.forEach(function (b) { b.checked = true; }); });
-    if (noneBtn) noneBtn.addEventListener('click', function () { boxes.forEach(function (b) { b.checked = false; }); });
-    form.addEventListener('submit', function (event) {
-        if (errorBox) errorBox.hidden = true;
-        var anyChecked = Array.prototype.some.call(boxes, function (b) { return b.checked; });
-        var from = form.date_from ? form.date_from.value : '';
-        var to = form.date_to ? form.date_to.value : '';
-        if (!anyChecked) {
-            event.preventDefault();
-            if (errorBox) { showError('Choisissez au moins une colonne.'); errorBox.scrollIntoView({behavior:'smooth', block:'center'}); }
-            return;
-        }
-        if (from && to && from > to) {
-            event.preventDefault();
-            if (errorBox) { showError('La date de début doit être antérieure à la date de fin.'); errorBox.scrollIntoView({behavior:'smooth', block:'center'}); }
-        }
-    });
-})();
-</script>
 <script src="/payment/assets/js/responsive.js?v=20261030"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const checkboxes = document.querySelectorAll('input[name="columns[]"]');
+    
+    checkboxes.forEach(cb => {
+        cb.addEventListener('change', function() {
+            const colKey = this.value;
+            const isChecked = this.checked;
+            const cells = document.querySelectorAll(`#preview-table [data-col="${colKey}"]`);
+            
+            cells.forEach(cell => {
+                cell.style.display = isChecked ? '' : 'none';
+            });
+        });
+    });
+});
+</script>
 </body>
 </html>
