@@ -13,21 +13,17 @@ if (empty($_SESSION['csrf_token'])) {
 $success = '';
 $error = '';
 
-// --- GESTION DES ACTIONS (Déverrouillage / Changement de rôle) ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
     $csrfToken = $_POST['csrf_token'] ?? '';
 
     if (!hash_equals($_SESSION['csrf_token'], $csrfToken)) {
-        $error = 'Requête invalide. Veuillez réessayer.';
+        $error = 'Requête invalide.';
     } else {
         $userId = filter_input(INPUT_POST, 'userId', FILTER_VALIDATE_INT);
-
         if (!$userId) {
             $error = 'Utilisateur invalide.';
-        } 
-        // ACTION 1 : Déverrouiller
-        elseif ($action === 'unlock') {
+        } elseif ($action === 'unlock') {
             try {
                 $stmt = $bdd->prepare("UPDATE user SET is_locked = 0, failed_attempts = 0, last_failed_attempt = NULL, unlock_time = NULL WHERE userId = ?");
                 $stmt->execute([$userId]);
@@ -36,33 +32,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } catch (PDOException $e) {
                 $error = 'Erreur lors du déverrouillage.';
             }
-        }
-        // ACTION 2 : Changer le rôle
-        elseif ($action === 'change_role') {
+        } elseif ($action === 'change_role') {
             $newRole = $_POST['new_role'] ?? '';
             if (!in_array($newRole, ['admin', 'student'], true)) {
                 $error = 'Rôle invalide.';
-            } 
-            // Sécurité : empêcher de modifier son propre rôle
-            elseif ($userId == ($_SESSION['userId'] ?? 0)) {
+            } elseif ($userId == ($_SESSION['userId'] ?? 0)) {
                 $error = 'Vous ne pouvez pas modifier votre propre rôle.';
-            } 
-            else {
+            } else {
                 try {
-                    // Vérifier le rôle actuel
                     $stmtCheck = $bdd->prepare("SELECT role FROM user WHERE userId = ?");
                     $stmtCheck->execute([$userId]);
                     $currentRole = $stmtCheck->fetchColumn();
-
-                    // Si on retire le rôle admin, vérifier qu'il reste au moins un autre admin
                     if ($currentRole === 'admin' && $newRole !== 'admin') {
                         $stmtCount = $bdd->query("SELECT COUNT(*) FROM user WHERE role = 'admin'");
-                        $adminCount = $stmtCount->fetchColumn();
-                        if ($adminCount <= 1) {
-                            $error = 'Impossible de retirer le rôle du dernier administrateur restant.';
+                        if ($stmtCount->fetchColumn() <= 1) {
+                            $error = 'Impossible de retirer le rôle du dernier administrateur.';
                         }
                     }
-
                     if (empty($error)) {
                         $stmt = $bdd->prepare("UPDATE user SET role = ? WHERE userId = ?");
                         $stmt->execute([$newRole, $userId]);
@@ -70,14 +56,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         logActivity($bdd, $_SESSION['userId'] ?? null, $_SESSION['fullname'] ?? '', $_SESSION['email'] ?? '', 'USER_ROLE_CHANGE', "ID: $userId -> $newRole");
                     }
                 } catch (PDOException $e) {
-                    $error = 'Erreur lors du changement de rôle : ' . $e->getMessage();
+                    $error = 'Erreur lors du changement de rôle.';
                 }
             }
         }
     }
 }
 
-// --- RÉCUPÉRATION DES UTILISATEURS ---
 try {
     $stmt = $bdd->prepare("SELECT userId, fullname, email, role, created_at, failed_attempts, is_locked, last_failed_attempt FROM user ORDER BY is_locked DESC, failed_attempts DESC, fullname ASC");
     $stmt->execute();
@@ -89,24 +74,12 @@ try {
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <link rel="stylesheet" href="/payment/assets/css/app.css?v=20261030">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestion des utilisateurs - ULT Payment</title>
+    <link rel="stylesheet" href="/payment/assets/css/app.css?v=20261030">
     <link rel="stylesheet" href="./styles.css?v=20261030">
     <?php loadTheme($bdd); ?>
-    <style>
-        .status-badge { display: inline-flex; align-items: center; min-height: 28px; padding: 4px 10px; border-radius: 999px; font-size: 0.85rem; font-weight: 700; }
-        .status-locked { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
-        .status-active { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
-        .inline-form { display: inline-flex; width: auto; gap: 5px; align-items: center; }
-        .btn-unlock { min-height: 34px; padding: 7px 12px; background: #16a34a; color: white; border: none; border-radius: 6px; cursor: pointer; }
-        .btn-unlock:hover { background: #15803d; }
-        .muted-text { color: #64748b; }
-        .select-role { padding: 5px; border-radius: 4px; border: 1px solid #cbd5e1; }
-        .btn-save-role { padding: 5px 10px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        .btn-save-role:hover { background: #1d4ed8; }
-    </style>
     <link rel="stylesheet" href="/payment/assets/css/responsive.css?v=20261030">
     <link rel="stylesheet" href="/payment/assets/ui.css">
 </head>
@@ -118,22 +91,23 @@ try {
             <h1 class="page-title">Gestion des utilisateurs</h1>
 
             <?php if ($success): ?>
-                <div class="message message-success"><span class="message-icon">✓</span> <?= htmlspecialchars($success, ENT_QUOTES, 'UTF-8') ?></div>
+                <div class="alert alert-success"><span>✓</span> <?= htmlspecialchars($success, ENT_QUOTES, 'UTF-8') ?></div>
             <?php endif; ?>
             <?php if ($error): ?>
-                <div class="message message-error"><span class="message-icon">!</span> <?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></div>
+                <div class="alert alert-danger"><span>!</span> <?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></div>
             <?php endif; ?>
 
-            <div class="table-section">
+            <div class="page-card">
+                <h2>Liste des comptes</h2>
                 <div class="table-responsive">
-                    <table>
+                    <table class="table-modern">
                         <thead>
                             <tr>
                                 <th>Nom</th>
                                 <th>Email</th>
                                 <th>Rôle</th>
                                 <th>Statut</th>
-                                <th>Tentatives échouées / 3</th>
+                                <th>Tentatives / 3</th>
                                 <th>Dernière tentative</th>
                                 <th>Création</th>
                                 <th>Actions</th>
@@ -147,39 +121,35 @@ try {
                                         <td><?= htmlspecialchars($user['fullname'], ENT_QUOTES, 'UTF-8') ?></td>
                                         <td><?= htmlspecialchars($user['email'], ENT_QUOTES, 'UTF-8') ?></td>
                                         <td>
-                                            <form method="POST" class="inline-form">
+                                            <form method="POST" style="display:flex;gap:6px;align-items:center;">
                                                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
                                                 <input type="hidden" name="action" value="change_role">
                                                 <input type="hidden" name="userId" value="<?= (int) $user['userId'] ?>">
-                                                <select name="new_role" class="select-role">
+                                                <select name="new_role" class="select-role" style="padding:4px;border-radius:4px;border:1px solid #cbd5e1;">
                                                     <option value="student" <?= $user['role'] === 'student' ? 'selected' : '' ?>>Étudiant</option>
-                                                    <option value="admin" <?= $user['role'] === 'admin' ? 'selected' : '' ?>>Administrateur</option>
+                                                    <option value="admin" <?= $user['role'] === 'admin' ? 'selected' : '' ?>>Admin</option>
                                                 </select>
-                                                <button type="submit" class="btn-save-role">OK</button>
+                                                <button type="submit" class="btn btn-primary" style="padding:4px 10px;font-size:0.8rem;">OK</button>
                                             </form>
                                         </td>
                                         <td>
-                                            <span class="status-badge <?= $isLocked ? 'status-locked' : 'status-active' ?>">
-                                                <?= $isLocked ? 'Verrouillé' : 'Déverrouillé' ?>
+                                            <span class="badge <?= $isLocked ? 'badge-danger' : 'badge-success' ?>">
+                                                <?= $isLocked ? 'Verrouillé' : 'Actif' ?>
                                             </span>
                                         </td>
                                         <td><?= (int) $user['failed_attempts'] ?></td>
-                                        <td>
-                                            <?= $user['last_failed_attempt']
-                                                ? date('d/m/Y H:i', strtotime($user['last_failed_attempt']))
-                                                : '<span class="muted-text">-</span>' ?>
-                                        </td>
+                                        <td><?= $user['last_failed_attempt'] ? date('d/m/Y H:i', strtotime($user['last_failed_attempt'])) : '-' ?></td>
                                         <td><?= date('d/m/Y', strtotime($user['created_at'])) ?></td>
                                         <td>
                                             <?php if ($isLocked): ?>
-                                                <form method="POST" class="inline-form">
+                                                <form method="POST" style="display:inline;">
                                                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
                                                     <input type="hidden" name="action" value="unlock">
                                                     <input type="hidden" name="userId" value="<?= (int) $user['userId'] ?>">
-                                                    <button type="submit" class="btn-unlock">Déverrouiller</button>
+                                                    <button type="submit" class="btn btn-success" style="padding:4px 10px;font-size:0.8rem;">Déverrouiller</button>
                                                 </form>
                                             <?php else: ?>
-                                                <span class="muted-text">-</span>
+                                                -
                                             <?php endif; ?>
                                         </td>
                                     </tr>
