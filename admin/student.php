@@ -257,7 +257,7 @@ try {
 <div class="crud-container">
 <div class="table-section">
                     <div class="search-container">
-                        <div class="search-box">
+                        <div class="search-bar">
                             <span class="search-icon">🔍</span>
                             <input
                                 id="payment-search"
@@ -265,7 +265,7 @@ try {
                                 placeholder="Search by name, matricule, department..."
                                 aria-label="Search students"
                             />
-                            <button type="button" id="clear-payment-search" class="clear-btn" aria-label="Clear search">
+                            <button type="button" id="clear-payment-search" class="search-clear" aria-label="Clear search">
                                 <span class="clear-icon">✕</span>
                             </button>
                         </div>
