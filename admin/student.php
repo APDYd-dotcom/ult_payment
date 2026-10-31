@@ -7,6 +7,7 @@ ini_set('pcre.jit', '0');
 define('REQUIRED_ROLE', 'admin');
 require __DIR__ . '/../auth_check.php';
 require_once __DIR__ . '/../functions.php';
+$bdd->exec("SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci");
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'archive') {
     if (hash_equals($_SESSION['csrf_token'] ?? '', $_POST['csrf_token'] ?? '')) {
