@@ -100,6 +100,7 @@ async function send() {
 document.addEventListener('DOMContentLoaded', load);
 </script>
     <link rel="stylesheet" href="/payment/assets/css/responsive.css?v=20261030">
+    <link rel="stylesheet" href="/payment/assets/ui.css">
 </head><body>
 <div class="container">
     <?php include 'sidebar.php'; ?>

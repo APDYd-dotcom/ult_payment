@@ -56,7 +56,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $writer->save('php://output');
             exit();
         } else {
-            $html = '<html><head><meta charset="UTF-8"><style>body{font-family:DejaVu Sans;font-size:10px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccc;padding:4px}th{background:#f0f0f0}</style></head><body><h1>Rapport personnalise</h1><table><tr>';
+            $html = '<html><head><meta charset="UTF-8"><style>body{font-family:DejaVu Sans;font-size:10px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccc;padding:4px}th{background:#f0f0f0}</style>    <link rel="stylesheet" href="/payment/assets/ui.css">
+</head><body><h1>Rapport personnalise</h1><table><tr>';
             foreach ($selected as $col) $html .= '<th>' . htmlspecialchars($col) . '</th>';
             $html .= '</tr>';
             foreach ($rows as $row) {
@@ -103,6 +104,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         @media (max-width: 1024px){ .report-grid { grid-template-columns: repeat(2, 1fr); } }
         @media (max-width: 640px){ .report-grid { grid-template-columns: 1fr; } }
     </style>
+    <link rel="stylesheet" href="/payment/assets/ui.css">
 </head>
 <body>
 <div class="container">

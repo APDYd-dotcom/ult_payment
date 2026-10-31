@@ -69,6 +69,7 @@ $success = isset($_GET['exported']) ? true : false;
         }
     </style>
     <link rel="stylesheet" href="/payment/assets/css/responsive.css?v=20261030">
+    <link rel="stylesheet" href="/payment/assets/ui.css">
 </head>
 <body>
 

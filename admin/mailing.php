@@ -26,6 +26,7 @@ try {
     <link rel="stylesheet" href="./styles.css?v=20261030">
     <?php loadTheme($bdd); ?>
     <link rel="stylesheet" href="/payment/assets/css/responsive.css?v=20261030">
+    <link rel="stylesheet" href="/payment/assets/ui.css">
 </head>
 <body>
 

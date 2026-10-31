@@ -30,6 +30,7 @@ $docs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 .filters input, .filters select { padding:8px; border-radius:8px; border:1px solid #cbd5e1; }
 </style>
     <link rel="stylesheet" href="/payment/assets/css/responsive.css?v=20261030">
+    <link rel="stylesheet" href="/payment/assets/ui.css">
 </head><body>
 <div class="container">
     <?php include 'sidebar.php'; ?>

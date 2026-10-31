@@ -44,6 +44,7 @@ $logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
         .action-payment { color: #8b5cf6; }
     </style>
     <link rel="stylesheet" href="/payment/assets/css/responsive.css?v=20261030">
+    <link rel="stylesheet" href="/payment/assets/ui.css">
 </head>
 <body>
 <div class="container">

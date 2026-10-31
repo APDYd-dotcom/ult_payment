@@ -20,6 +20,7 @@ $docs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 .btn { padding:8px 14px; border-radius:8px; text-decoration:none; color:#fff; background:#1e3a8a; }
 </style>
     <link rel="stylesheet" href="/payment/assets/css/responsive.css?v=20261030">
+    <link rel="stylesheet" href="/payment/assets/ui.css">
 </head><body>
 <div class="container">
     <?php include 'sidebar.php'; ?>

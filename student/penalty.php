@@ -28,6 +28,7 @@ try {
     <?php loadTheme($bdd); ?>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/payment/assets/css/responsive.css?v=20261030">
+    <link rel="stylesheet" href="/payment/assets/ui.css">
 </head>
 <body>
 

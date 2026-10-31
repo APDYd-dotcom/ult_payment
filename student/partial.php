@@ -165,6 +165,7 @@ if ($partialTableExists) {
         @media(max-width:900px){.table-section{overflow-x:auto}}
     </style>
     <link rel="stylesheet" href="/payment/assets/css/responsive.css?v=20261030">
+    <link rel="stylesheet" href="/payment/assets/ui.css">
 </head>
 <body>
 <div class="container">

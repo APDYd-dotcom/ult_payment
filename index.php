@@ -460,6 +460,7 @@ if (isset($_GET['expired']) && $_GET['expired'] === '1') {
         }
     </style>
     <link rel="stylesheet" href="/payment/assets/css/app.css">
+    <link rel="stylesheet" href="/payment/assets/ui.css?v=1793424603">
     <link rel="stylesheet" href="/payment/assets/css/responsive.css">
 </head>
 <body>

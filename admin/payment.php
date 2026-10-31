@@ -324,6 +324,7 @@ foreach ($departments as $d) {
         /* Les styles responsive sont dans styles.css */
     </style>
     <link rel="stylesheet" href="/payment/assets/css/responsive.css?v=20261030">
+    <link rel="stylesheet" href="/payment/assets/ui.css">
 </head>
 <body>
 

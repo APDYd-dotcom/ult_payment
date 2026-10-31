@@ -57,6 +57,7 @@ $students = $bdd->query("SELECT id, name, matricule FROM student ORDER BY name")
 .upload-card input, .upload-card select { width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px; }
 </style>
     <link rel="stylesheet" href="/payment/assets/css/responsive.css?v=20261030">
+    <link rel="stylesheet" href="/payment/assets/ui.css">
 </head><body>
 <div class="container">
     <?php include 'sidebar.php'; ?>

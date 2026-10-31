@@ -132,6 +132,7 @@ function renderSystemSettingField(string $key, array $definition, array $values)
         @media (max-width: 900px) { .settings-grid { grid-template-columns: 1fr; } .settings-actions { justify-content: flex-start; } }
     </style>
     <link rel="stylesheet" href="/payment/assets/css/responsive.css?v=20261030">
+    <link rel="stylesheet" href="/payment/assets/ui.css">
 </head>
 <body>
 <div class="container">

@@ -155,6 +155,7 @@ $formData = [
         .profile-summary p{margin:8px 0;color:#1e293b}
     </style>
     <link rel="stylesheet" href="/payment/assets/css/responsive.css?v=20261030">
+    <link rel="stylesheet" href="/payment/assets/ui.css">
 </head>
 <body>
 <div class="container">

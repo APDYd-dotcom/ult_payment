@@ -30,6 +30,7 @@ $deptTotals = $bdd->query("SELECT d.name, COALESCE(SUM(p.amount),0) AS t FROM de
 <link rel="stylesheet" href="./styles.css?v=20261030">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="/payment/assets/css/responsive.css?v=20261030">
+    <link rel="stylesheet" href="/payment/assets/ui.css">
 </head><body>
 <div class="container">
     <?php include 'sidebar.php'; ?>

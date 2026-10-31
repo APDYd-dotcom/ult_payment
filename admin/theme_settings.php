@@ -124,6 +124,7 @@ $fontOptions = getAllowedThemeFonts();
         @media (max-width: 900px) { .theme-layout, .theme-form-grid { grid-template-columns: 1fr; } }
     </style>
     <link rel="stylesheet" href="/payment/assets/css/responsive.css?v=20261030">
+    <link rel="stylesheet" href="/payment/assets/ui.css">
 </head>
 <body>
 <div class="container">

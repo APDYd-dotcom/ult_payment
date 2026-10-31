@@ -192,6 +192,7 @@ if (substr($displayEmail, -strlen($studentEmailSuffix)) === $studentEmailSuffix)
         }
     </style>
     <link rel="stylesheet" href="/payment/assets/css/responsive.css?v=20261030">
+    <link rel="stylesheet" href="/payment/assets/ui.css">
 </head>
 <body>
 <div class="container">

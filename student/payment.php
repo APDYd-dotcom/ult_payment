@@ -306,6 +306,7 @@ foreach ($departments as $d) {
         .readonly-input { background: #f1f5f9; color: #475569; }
     </style>
     <link rel="stylesheet" href="/payment/assets/css/responsive.css?v=20261030">
+    <link rel="stylesheet" href="/payment/assets/ui.css">
 </head>
 <body>
 

@@ -134,6 +134,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     </style>
     <link rel="stylesheet" href="/payment/assets/css/app.css">
+    <link rel="stylesheet" href="/payment/assets/ui.css?v=1793424603">
     <link rel="stylesheet" href="/payment/assets/css/responsive.css">
 </head>
 <body>

@@ -45,6 +45,7 @@ $caution = $n < 2 ? 'Donnees insuffisantes (moins de 2 mois).' : 'Projection bas
 <link rel="stylesheet" href="./styles.css?v=20261030">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="/payment/assets/css/responsive.css?v=20261030">
+    <link rel="stylesheet" href="/payment/assets/ui.css">
 </head><body>
 <div class="container">
     <?php include 'sidebar.php'; ?>
