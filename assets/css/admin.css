@@ -1,0 +1,87 @@
+
+
+/* Departement page improvements */
+.form-section form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.form-section form label {
+    font-weight: 600;
+    color: #1e293b;
+}
+.form-section form input {
+    padding: 10px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+}
+.form-section .buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+.form-section .buttons button {
+    padding: 10px 16px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+}
+.form-section .buttons button[type="submit"] {
+    background: #1e3a8a;
+    color: #fff;
+}
+.form-section .buttons button[type="reset"] {
+    background: #64748b;
+    color: #fff;
+}
+.action-buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.action-buttons .btn-edit,
+.action-buttons .btn-delete {
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    background: #fff;
+    cursor: pointer;
+}
+.action-buttons .btn-delete {
+    color: #dc2626;
+}
+.pagination-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
+    margin-top: 16px;
+}
+.pagination-controls button {
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    background: #fff;
+    cursor: pointer;
+}
+.search-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 6px 10px;
+    max-width: 320px;
+}
+.search-box input {
+    border: none;
+    outline: none;
+    flex: 1;
+}
+.search-box button {
+    background: none;
+    border: none;
+    cursor: pointer;
+}
