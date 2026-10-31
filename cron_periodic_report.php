@@ -5,7 +5,7 @@ if (php_sapi_name() !== 'cli') {
     echo 'CLI only';
     exit(1);
 }
-$bdd = new PDO('mysql:host=localhost;dbname=ult_payment;charset=utf8mb4', 'app_user', 'secure_password_123');
+$bdd = new PDO('mysql:host=127.0.0.1;dbname=ult_payment;charset=utf8mb4', 'app_user', 'secure_password_123');
 $bdd->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 require_once __DIR__ . '/functions.php';
 require_once __DIR__ . '/admin/report_helpers.php';

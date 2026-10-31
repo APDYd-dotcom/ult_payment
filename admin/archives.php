@@ -58,4 +58,3 @@ $rows = $bdd->query("SELECT * FROM archives ORDER BY archived_at DESC")->fetchAl
 </div>
 </main></div>    <script src="/payment/assets/js/responsive.js?v=20261030"></script>
 </body></html>
-PHP

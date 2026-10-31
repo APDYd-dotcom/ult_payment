@@ -24,7 +24,7 @@ $smtpEncryption = 'tls';
 
 try {
     // Connexion à la base locale (XAMPP/WAMP)
-    $bdd = new PDO('mysql:host=localhost;dbname=ult_payment;charset=utf8mb4', 'app_user', 'secure_password_123');
+    $bdd = new PDO('mysql:host=127.0.0.1;dbname=ult_payment;charset=utf8mb4', 'app_user', 'secure_password_123');
     $bdd->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 } catch (PDOException $e) {
     die('Erreur de connexion à la base de données : ' . $e->getMessage());
@@ -34,10 +34,15 @@ function buildResetUrl(string $token): string
 {
     $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
     $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-    $path = rtrim(dirname($_SERVER['SCRIPT_NAME'] ?? '/payment'), '/\\');
-    return $scheme . '://' . $host . $path . '/reset_password.php?token=' . urlencode($token);
+    
+    // On force le dossier /payment dans l'URL générée
+    $basePath = '/payment'; 
+    
+    // Si vous voulez que ça marche aussi en local, décommentez la ligne ci-dessous :
+    // $basePath = rtrim(dirname($_SERVER['SCRIPT_NAME'] ?? ''), '/\\');
+    
+    return $scheme . '://' . $host . $basePath . '/reset_password.php?token=' . urlencode($token);
 }
-
 function sendPasswordResetEmail(string $toEmail, string $toName, string $resetUrl): void
 {
     global $smtpHost, $smtpPort, $smtpUsername, $smtpPassword, $smtpEncryption;

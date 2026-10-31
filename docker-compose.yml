@@ -1,0 +1,34 @@
+services:
+  web:
+    build: .
+    container_name: ult_web
+    network_mode: "service:db"  # web utilise le réseau de db
+    environment:
+      # C'est ici qu'on force l'utilisation de 127.0.0.1
+      - DB_HOST=127.0.0.1
+      - DB_NAME=ult_payment
+      - DB_USER=app_user
+      - DB_PASS=secure_password_123
+    volumes:
+      - .:/var/www/html
+    depends_on:
+      - db
+    restart: unless-stopped
+  db:
+    image: mariadb:11.4
+    container_name: ult_db
+    # Cette ligne force le serveur à utiliser utf8mb4_unicode_ci par défaut
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    ports:
+      - "8080:80"
+    environment:
+      MARIADB_ROOT_PASSWORD: root_password_secret
+      MARIADB_DATABASE: ult_payment
+      MARIADB_USER: app_user
+      MARIADB_PASSWORD: secure_password_123
+    volumes:
+      - db_data:/var/lib/mysql
+    restart: unless-stopped
+
+volumes:
+  db_data:

@@ -1,5 +1,8 @@
 <?php
-declare(strict_types=1);
+<?php
+declare(strict_types=1); // <-- DOIT ETRE LA PREMIERE LIGNE
+error_reporting(E_ALL & ~E_DEPRECATED);
+ini_set('display_errors', 0);
 
 define('REQUIRED_ROLE', 'admin');
 require __DIR__ . '/../auth_check.php';

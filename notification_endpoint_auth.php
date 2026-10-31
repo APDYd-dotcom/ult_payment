@@ -33,7 +33,7 @@ function requireNotificationSession(bool $touchActivity = false): PDO
     }
 
     try {
-        $bdd = new PDO('mysql:host=localhost;dbname=ult_payment;charset=utf8', 'app_user', 'secure_password_123');
+        $bdd = new PDO('mysql:host=127.0.0.1;dbname=ult_payment;charset=utf8', 'app_user', 'secure_password_123');
         $bdd->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         if (!defined('SESSION_TIMEOUT')) {
             define('SESSION_TIMEOUT', getSessionTimeoutSeconds($bdd));

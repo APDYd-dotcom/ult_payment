@@ -1,11 +1,10 @@
 <?php
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 session_start();
 
 require_once __DIR__ . '/functions.php';
-
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-ini_set('pcre.jit', '0');
 
 $message = '';
 $messageType = '';
@@ -14,7 +13,7 @@ $tokenIsValid = false;
 $tokenRow = null;
 
 try {
-    $bdd = new PDO('mysql:host=localhost;dbname=ult_payment;charset=utf8', 'app_user', 'secure_password_123');
+    $bdd = new PDO('mysql:host=127.0.0.1;dbname=ult_payment;charset=utf8', 'app_user', 'secure_password_123');
     $bdd->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 } catch (PDOException $e) {
     die('Database connection failed: ' . $e->getMessage());

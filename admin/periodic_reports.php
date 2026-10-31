@@ -1,5 +1,8 @@
 <?php
-declare(strict_types=1);
+declare(strict_types=1); // <-- DOIT ETRE LA PREMIERE LIGNE
+error_reporting(E_ALL & ~E_DEPRECATED);
+ini_set('display_errors', 0);
+
 
 define('REQUIRED_ROLE', 'admin');
 require __DIR__ . '/../auth_check.php';
@@ -46,26 +49,30 @@ $stuStmt->execute([$first . ' 00:00:00', $last . ' 23:59:59']);
 $newStudents = (int) $stuStmt->fetchColumn();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'generate') {
-    $html = include __DIR__ . '/report_templates/periodic.php';
-    // template returns HTML string via variable? We'll capture
-    // Actually template should return string; handle both
-    if (!is_string($html)) {
-        ob_start();
-        include __DIR__ . '/report_templates/periodic.php';
-        $html = ob_get_clean();
-    }
+    
+    // On nettoie tout ce qui a pu être affiché avant
+    if (ob_get_length()) ob_end_clean();
 
-    $options = new Options();
-    $options->set('defaultFont', 'DejaVu Sans');
-    $dompdf = new Dompdf($options);
-    $dompdf->loadHtml($html, 'UTF-8');
-    $dompdf->setPaper('A4', 'portrait');
-    $dompdf->render();
-    $filename = 'rapport_periodique_' . $month . '.pdf';
-    header('Content-Type: application/pdf');
-    header('Content-Disposition: attachment; filename="' . $filename . '"');
-    echo $dompdf->output();
-    exit();
+    $html = '<h1 style="color:#1e3a8a; text-align:center;">Rapport Périodique</h1>';
+    $html .= '<p>Ceci est un test de génération PDF.</p>';
+
+    try {
+        $options = new \Dompdf\Options();
+        $options->set('defaultFont', 'DejaVu Sans');
+        $dompdf = new \Dompdf\Dompdf($options);
+        
+        $dompdf->loadHtml($html, 'UTF-8');
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+        
+        $filename = 'rapport_periodique_test.pdf';
+        header('Content-Type: application/pdf');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        echo $dompdf->output();
+        exit();
+    } catch (Throwable $e) {
+        die('Erreur Dompdf : ' . $e->getMessage());
+    }
 }
 ?>
 <!DOCTYPE html>

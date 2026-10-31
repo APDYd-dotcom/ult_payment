@@ -65,4 +65,3 @@ $docs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <?php endforeach; ?>
 </main></div>    <script src="/payment/assets/js/responsive.js?v=20261030"></script>
 </body></html>
-PHP

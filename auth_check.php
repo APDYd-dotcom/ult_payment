@@ -19,16 +19,19 @@ if (!function_exists('ultDestroyCurrentSession')) {
     }
 }
 
- try {
-        // Database connection
-        $bdd = new PDO('mysql:host=localhost;dbname=ult_payment;charset=utf8', 'app_user', 'secure_password_123');
-        $bdd->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        if (!defined('SESSION_TIMEOUT')) {
-            define('SESSION_TIMEOUT', getSessionTimeoutSeconds($bdd));
-        }
-    } catch (PDOException $e) {
-        die('Database connection failed: ' . $e->getMessage());
+try {
+    // Connexion avec charset=utf8mb4
+    $bdd = new PDO('mysql:host=127.0.0.1;dbname=ult_payment;charset=utf8mb4;collation=utf8mb4_unicode_ci', 'app_user', 'secure_password_123');
+    $bdd->exec("SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci");
+    $bdd->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+
+    if (!defined('SESSION_TIMEOUT')) {
+        define('SESSION_TIMEOUT', getSessionTimeoutSeconds($bdd));
     }
+} catch (PDOException $e) {
+    die('Database connection failed: ' . $e->getMessage());
+}
 
 // 1. Must be logged in
 if (!isset($_SESSION['email'])) {

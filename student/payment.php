@@ -7,6 +7,9 @@ ini_set('pcre.jit', '0');
 require_once __DIR__ . '/auth_check.php';
 require_once __DIR__ . '/../functions.php';
 
+// Force la collation de la session pour cette page
+$bdd->exec("SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci");
+
 $error = '';
 $success = false;
 $filterDepartment = trim($_GET['department'] ?? '');
@@ -220,13 +223,13 @@ try {
     ";
     $params = [$studentId];
 
-    if ($filterDepartment !== '') {
-        $sql .= ' AND d.name = ?';
+if ($filterDepartment !== '') {
+        $sql .= ' AND d.name = ? COLLATE utf8mb4_unicode_ci';
         $params[] = $filterDepartment;
     }
 
     if ($filterTranche !== '') {
-        $sql .= ' AND t.name = ?';
+        $sql .= ' AND t.name = ? COLLATE utf8mb4_unicode_ci';
         $params[] = $filterTranche;
     }
 

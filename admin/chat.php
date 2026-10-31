@@ -132,4 +132,3 @@ document.addEventListener('DOMContentLoaded', load);
 </div>
 </main></div>    <script src="/payment/assets/js/responsive.js?v=20261030"></script>
 </body></html>
-PHP

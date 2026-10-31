@@ -25,7 +25,7 @@ if (!isset($_POST['logout_token']) || !isset($_SESSION['csrf_token']) ||
 if (isset($_SESSION['userId'])) {
     try {
         // Connexion à la base de données (utilise les mêmes identifiants que ton application)
-        $bdd = new PDO('mysql:host=localhost;dbname=ult_payment;charset=utf8', 'app_user', 'secure_password_123');
+        $bdd = new PDO('mysql:host=127.0.0.1;dbname=ult_payment;charset=utf8', 'app_user', 'secure_password_123');
         $bdd->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         
         // Appeler la fonction logLogout (définie dans functions.php)
