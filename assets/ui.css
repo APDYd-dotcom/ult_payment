@@ -291,3 +291,89 @@
   background: var(--ui-wash);
   font-weight: 600;
 }
+
+
+/* Table action buttons modern */
+.three-dots-btn {
+  background: transparent;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+.three-dots-btn:hover {
+  background: var(--ui-wash);
+}
+.options-menu {
+  position: absolute;
+  background: #fff;
+  border: 1px solid var(--ui-line);
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+  overflow: hidden;
+  z-index: 50;
+}
+.menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px 14px;
+  background: #fff;
+  border: none;
+  cursor: pointer;
+}
+.menu-item:hover {
+  background: var(--ui-wash);
+}
+.dropdown-hidden { display: none; }
+.options-cell { position: relative; }
+
+/* Action buttons in tables */
+.action-buttons button,
+.action-buttons a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--ui-line);
+  background: #fff;
+  text-decoration: none;
+  color: var(--ui-ink);
+  cursor: pointer;
+}
+.action-buttons button:hover,
+.action-buttons a:hover {
+  background: var(--ui-wash);
+}
+
+/* Bulk bar */
+.floating-bulk-bar {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--ui-primary);
+  color: #fff;
+  display: none;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  box-shadow: 0 10px 30px rgba(30,58,138,0.25);
+  z-index: 100;
+}
+.floating-bulk-bar.visible { display: flex; }
+.bulk-btn {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.4);
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.bulk-btn-danger {
+  background: rgba(220,38,38,0.9);
+  border-color: transparent;
+}
