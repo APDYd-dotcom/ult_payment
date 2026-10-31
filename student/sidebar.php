@@ -41,8 +41,8 @@
     <li><a href="profile.php">Compte</a></li>
     <li><a href="chat.php">Chat</a></li>
     <li>
-        <form method="POST" action="/payment/logout.php">
-            <input type="hidden" name="logout_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+	<form method="POST" action="/payment/logout.php">
+            <input type="hidden" name="logout_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
             <button type="submit">Logout</button>
         </form>
     </li>
