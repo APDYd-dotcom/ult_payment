@@ -133,6 +133,84 @@ $chartData = [
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="/payment/assets/css/responsive.css?v=20261030">
     <link rel="stylesheet" href="/payment/assets/ui.css">
+    
+    <!-- ✨ NEW CSS FOR THE SEARCH BAR ✨ -->
+    <style>
+        .dashboard-table h3 {
+            font-size: 1.2rem;
+            color: #1e3a8a;
+            margin-bottom: 12px;
+        }
+
+        .search-container {
+            margin-bottom: 20px;
+        }
+
+        .search-box {
+            position: relative;
+            display: flex;
+            align-items: center;
+            width: 100%;
+            max-width: 450px;
+            margin-bottom: 8px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 10px 36px 10px 36px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            color: #374151;
+            outline: none;
+            transition: all 0.2s ease;
+            background-color: #fff;
+        }
+
+        .search-box input:focus {
+            border-color: #1e3a8a;
+            box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.15);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            color: #9ca3af;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .clear-btn {
+            position: absolute;
+            right: 10px;
+            background: none;
+            border: none;
+            color: #9ca3af;
+            cursor: pointer;
+            display: none; /* Hidden until JS adds .visible */
+            align-items: center;
+            justify-content: center;
+            padding: 4px;
+            border-radius: 50%;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .clear-btn.visible {
+            display: flex;
+        }
+
+        .clear-btn:hover {
+            background-color: #f3f4f6;
+            color: #ef4444;
+        }
+
+        .search-results-counter {
+            font-size: 0.85rem;
+            color: #6b7280;
+        }
+    </style>
 </head>
 <body>
 
@@ -197,15 +275,26 @@ $chartData = [
                 <h3>All Students</h3>
                 <div class="search-container">
                     <div class="search-box">
-                        <span class="search-icon">🔍</span>
+                        <!-- ✨ Replaced Emoji with SVG for perfect alignment ✨ -->
+                        <span class="search-icon">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                            </svg>
+                        </span>
+                        
                         <input
                             id="payment-search"
                             type="text"
                             placeholder="Search by name, matricule, department..."
                             aria-label="Search students"
                         />
+                        
                         <button type="button" id="clear-payment-search" class="clear-btn" aria-label="Clear search">
-                            <span class="clear-icon">✕</span>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
                         </button>
                     </div>
                     <div class="search-results-counter" id="search-counter">
@@ -213,35 +302,35 @@ $chartData = [
                     </div>
                 </div>
                 <div class="table-responsive">
-<table>
-                    <thead>
-                        <tr>
-                            <th>Matricule</th>
-                            <th>Name</th>
-                            <th>Age</th>
-                            <th>Department</th>
-                            <th>Minerval Total</th>
-                            <th>Created At</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if ($students): ?>
-                            <?php foreach ($students as $row): ?>
-                                <tr>
-                                    <td><?= htmlspecialchars($row['matricule'], ENT_QUOTES, 'UTF-8') ?></td>
-                                    <td><?= htmlspecialchars($row['student_name'], ENT_QUOTES, 'UTF-8') ?></td>
-                                    <td><?= htmlspecialchars($row['age'], ENT_QUOTES, 'UTF-8') ?></td>
-                                    <td><?= htmlspecialchars($row['department_name'], ENT_QUOTES, 'UTF-8') ?></td>
-                                    <td><?= number_format((float) $row['minerval_total'], 2, ',', ' ') ?> BIF</td>
-                                    <td><?= date('Y-m-d', strtotime($row['student_created_at'])) ?></td>
-                                </tr>
-                            <?php endforeach; ?>
-                        <?php else: ?>
-                            <tr><td colspan="6">No students found.</td></tr>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
-</div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Matricule</th>
+                                <th>Name</th>
+                                <th>Age</th>
+                                <th>Department</th>
+                                <th>Minerval Total</th>
+                                <th>Created At</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if ($students): ?>
+                                <?php foreach ($students as $row): ?>
+                                    <tr>
+                                        <td><?= htmlspecialchars($row['matricule'], ENT_QUOTES, 'UTF-8') ?></td>
+                                        <td><?= htmlspecialchars($row['student_name'], ENT_QUOTES, 'UTF-8') ?></td>
+                                        <td><?= htmlspecialchars($row['age'], ENT_QUOTES, 'UTF-8') ?></td>
+                                        <td><?= htmlspecialchars($row['department_name'], ENT_QUOTES, 'UTF-8') ?></td>
+                                        <td><?= number_format((float) $row['minerval_total'], 2, ',', ' ') ?> BIF</td>
+                                        <td><?= date('Y-m-d', strtotime($row['student_created_at'])) ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <tr><td colspan="6">No students found.</td></tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
                 <div class="pagination-controls hidden" id="payment-pagination">
                     <button type="button" id="payment-prev">Previous</button>
                     <span class="pagination-info" id="payment-page-info">Page 1 of 1</span>
