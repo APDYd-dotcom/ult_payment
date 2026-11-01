@@ -47,10 +47,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['signup'])) {
                 // Hasher le mot de passe
                 $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
 
-                // Insérer l'utilisateur
-                $stmt = $bdd->prepare("INSERT INTO user (fullname, email, password, role) VALUES (?, ?, ?, ?)");
-                $stmt->execute([$fullname, $email, $hashedPassword, $role]);
+		// 1. Insérer l'utilisateur (sans matricule)
+		$stmt = $bdd->prepare("INSERT INTO user (fullname, email, password, role) VALUES (?, ?, ?, ?)");
+		$stmt->execute([$fullname, $email, $hashedPassword, $role]);
+		$newUserId = $bdd->lastInsertId();
 
+		// 2. Générer et mettre à jour le matricule
+		$prefix = ($role === 'student') ? 'S' : 'A';
+		$matricule = $prefix . '-' . str_pad((string)$newUserId, 3, '0', STR_PAD_LEFT);
+		$update = $bdd->prepare("UPDATE user SET matricule = ? WHERE userId = ?");
+		$update->execute([$matricule, $newUserId]); 
                 $success = '✅ Inscription réussie ! Vous pouvez maintenant vous connecter.';
                 // Réinitialiser les champs
                 $fullname = $email = '';
