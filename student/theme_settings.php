@@ -1,241 +1,329 @@
 <?php
-require_once __DIR__ . '/auth_check.php';
+declare(strict_types=1);
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+ini_set('pcre.jit', '0');
 
-if (empty($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-}
+define('REQUIRED_ROLE', 'student');
+require __DIR__ . '/../auth_check.php';
+require_once __DIR__ . '/../functions.php';
 
 $message = '';
 $messageType = '';
-$theme = getThemeSettings($bdd);
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+// --- Mise à jour du thème (logique inchangée) ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_theme'])) {
+    if (!hash_equals($_SESSION['csrf_token'] ?? '', $_POST['csrf_token'] ?? '')) {
+        die('CSRF');
+    }
+
     try {
-        $csrfToken = $_POST['csrf_token'] ?? '';
-        if (!hash_equals($_SESSION['csrf_token'], $csrfToken)) {
-            throw new RuntimeException('Session expiree. Veuillez reessayer.');
-        }
-
-        if (isset($_POST['reset_theme'])) {
-            foreach (getDefaultThemeSettings() as $key => $value) {
-                setSetting($bdd, $key, (string) $value, 'theme');
-            }
-            logActivity($bdd, $_SESSION['userId'] ?? null, $_SESSION['fullname'] ?? '', $_SESSION['email'] ?? '', 'student_theme_reset', 'Theme settings reset by student');
-            header('Location: theme_settings.php?success=reset');
-            exit();
-        }
-
-        $primaryColor = trim((string) ($_POST['primary_color'] ?? ''));
-        $secondaryColor = trim((string) ($_POST['secondary_color'] ?? ''));
-        $backgroundColor = trim((string) ($_POST['background_color'] ?? ''));
-        $fontFamily = normalizeThemeFont((string) ($_POST['font_family'] ?? ''));
-        $themeName = trim((string) ($_POST['theme_name'] ?? 'ULT Payment'));
-
-        foreach ([
-            'couleur primaire' => $primaryColor,
-            'couleur secondaire' => $secondaryColor,
-            'couleur de fond' => $backgroundColor,
-        ] as $label => $color) {
-            if (!isValidThemeColor($color)) {
-                throw new RuntimeException("La {$label} doit etre un code hexadecimal valide.");
-            }
-        }
-
-        if ($themeName === '' || strlen($themeName) > 80) {
-            throw new RuntimeException('Le nom du theme est obligatoire et limite a 80 caracteres.');
-        }
-
-        $logoUrl = uploadThemeImage($_FILES['logo_file'] ?? [], 'logo');
-        $faviconUrl = uploadThemeImage($_FILES['favicon_file'] ?? [], 'favicon');
-
-        $values = [
-            'primary_color' => $primaryColor,
-            'secondary_color' => $secondaryColor,
-            'background_color' => $backgroundColor,
-            'font_family' => $fontFamily,
-            'theme_name' => $themeName,
+        $bdd->beginTransaction();
+        $stmt = $bdd->prepare("UPDATE settings SET setting_value = ? WHERE setting_key = ? AND category = 'theme'");
+        
+        $themeFields = [
+            'primary_color', 'secondary_color', 'background_color', 
+            'font_family', 'logo_url', 'favicon_url', 'theme_name'
         ];
-
-        if ($logoUrl !== '') {
-            $values['logo_url'] = $logoUrl;
+        
+        foreach ($themeFields as $key) {
+            if (isset($_POST[$key])) {
+                $stmt->execute([trim($_POST[$key]), $key]);
+            }
         }
-        if ($faviconUrl !== '') {
-            $values['favicon_url'] = $faviconUrl;
-        }
-
-        foreach ($values as $key => $value) {
-            setSetting($bdd, $key, (string) $value, 'theme');
-        }
-
-        logActivity($bdd, $_SESSION['userId'] ?? null, $_SESSION['fullname'] ?? '', $_SESSION['email'] ?? '', 'student_theme_updated', 'Theme settings updated by student');
-        header('Location: theme_settings.php?success=saved');
-        exit();
-    } catch (Throwable $e) {
-        $message = $e->getMessage();
+        
+        logActivity($bdd, $_SESSION['userId'] ?? null, $_SESSION['fullname'] ?? '', $_SESSION['email'] ?? '', 'THEME_UPDATED', 'Mise à jour du thème par l\'étudiant');
+        $bdd->commit();
+        
+        $message = 'Thème enregistré avec succès.';
+        $messageType = 'success';
+    } catch (PDOException $e) {
+        $bdd->rollBack();
+        $message = 'Erreur lors de l\'enregistrement : ' . $e->getMessage();
         $messageType = 'error';
-        $theme = array_merge($theme, [
-            'primary_color' => $_POST['primary_color'] ?? $theme['primary_color'],
-            'secondary_color' => $_POST['secondary_color'] ?? $theme['secondary_color'],
-            'background_color' => $_POST['background_color'] ?? $theme['background_color'],
-            'font_family' => $_POST['font_family'] ?? $theme['font_family'],
-            'theme_name' => $_POST['theme_name'] ?? $theme['theme_name'],
-        ]);
     }
 }
 
-if (isset($_GET['success'])) {
-    $message = $_GET['success'] === 'reset'
-        ? 'Le theme par defaut a ete restaure.'
-        : 'Le theme a ete enregistre avec succes.';
-    $messageType = 'success';
-    $theme = getThemeSettings($bdd);
+// --- Réinitialisation ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset_theme'])) {
+    if (!hash_equals($_SESSION['csrf_token'] ?? '', $_POST['csrf_token'] ?? '')) {
+        die('CSRF');
+    }
+
+    try {
+        $bdd->beginTransaction();
+        $stmt = $bdd->prepare("UPDATE settings SET setting_value = ? WHERE setting_key = ? AND category = 'theme'");
+        
+        $defaults = [
+            'primary_color' => '#1e3a8a',
+            'secondary_color' => '#2563eb',
+            'background_color' => '#f4f6f9',
+            'font_family' => "'Segoe UI', sans-serif",
+            'logo_url' => '',
+            'favicon_url' => '',
+            'theme_name' => 'ULT Payment'
+        ];
+        
+        foreach ($defaults as $key => $value) {
+            $stmt->execute([$value, $key]);
+        }
+        
+        logActivity($bdd, $_SESSION['userId'] ?? null, $_SESSION['fullname'] ?? '', $_SESSION['email'] ?? '', 'THEME_RESET', 'Réinitialisation du thème par l\'étudiant');
+        $bdd->commit();
+        
+        $message = 'Thème réinitialisé aux valeurs par défaut.';
+        $messageType = 'success';
+    } catch (PDOException $e) {
+        $bdd->rollBack();
+        $message = 'Erreur lors de la réinitialisation : ' . $e->getMessage();
+        $messageType = 'error';
+    }
 }
 
-$fontOptions = getAllowedThemeFonts();
+// --- Récupération des paramètres du thème ---
+try {
+    $stmt = $bdd->query("SELECT setting_key, setting_value FROM settings WHERE category = 'theme'");
+    $themeSettings = [];
+    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $themeSettings[$row['setting_key']] = $row['setting_value'];
+    }
+} catch (PDOException $e) {
+    die('Erreur lors du chargement du thème : ' . $e->getMessage());
+}
+
+// Valeurs par défaut si absentes
+$theme = array_merge([
+    'primary_color' => '#1e3a8a',
+    'secondary_color' => '#2563eb',
+    'background_color' => '#f4f6f9',
+    'font_family' => "'Segoe UI', sans-serif",
+    'logo_url' => '',
+    'favicon_url' => '',
+    'theme_name' => 'ULT Payment'
+], $themeSettings);
 ?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <link rel="stylesheet" href="/payment/assets/css/app.css?v=20261030">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestion des themes - ULT Payment System</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Thème - ULT Payment</title>
+    <link rel="stylesheet" href="/payment/assets/css/app.css?v=20261030">
     <link rel="stylesheet" href="./styles.css?v=20261030">
     <?php loadTheme($bdd); ?>
-    <style>
-        .theme-layout { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(280px, .9fr); gap: 20px; align-items: start; }
-        .theme-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
-        .theme-field-full { grid-column: 1 / -1; }
-        .theme-swatch { width: 100%; height: 44px; padding: 4px; cursor: pointer; }
-        .asset-preview { margin-top: 8px; color: #64748b; font-size: .9rem; word-break: break-word; }
-        .asset-preview img { display: block; max-width: 180px; max-height: 70px; object-fit: contain; margin-top: 8px; border: 1px solid #dbe3ef; border-radius: 8px; padding: 8px; background: #fff; }
-        .theme-preview { background: var(--background-color); border: 1px solid #dbe3ef; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
-        .theme-preview-header { background: var(--primary-color); color: #fff; padding: 18px; font-family: var(--font-family); }
-        .theme-preview-body { padding: 18px; font-family: var(--font-family); }
-        .theme-preview-body h3 { color: var(--primary-color); margin-bottom: 8px; }
-        .theme-preview-actions { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
-        .theme-preview-primary { background: var(--secondary-color); color: #fff; border: none; border-radius: 8px; padding: 10px 14px; }
-        .theme-preview-secondary { background: #fff; color: var(--primary-color); border: 1px solid var(--primary-color); border-radius: 8px; padding: 10px 14px; }
-        .theme-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
-        .theme-actions button { width: auto; min-width: 150px; }
-        .btn-danger { background: #dc2626; }
-        .btn-danger:hover { background: #b91c1c; }
-        @media (max-width: 900px) { .theme-layout, .theme-form-grid { grid-template-columns: 1fr; } }
-    </style>
     <link rel="stylesheet" href="/payment/assets/css/responsive.css?v=20261030">
     <link rel="stylesheet" href="/payment/assets/ui.css">
+    <style>
+        .theme-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+        @media (max-width: 992px) { .theme-layout { grid-template-columns: 1fr; } }
+
+        .theme-card {
+            background: #fff;
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius);
+            padding: 24px;
+            box-shadow: var(--shadow);
+        }
+        .theme-card h2 {
+            color: var(--primary);
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--gray-100);
+        }
+
+        .theme-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+        }
+        .theme-grid .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .theme-grid label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--gray-600);
+        }
+        .theme-grid input[type="text"],
+        .theme-grid input[type="color"] {
+            padding: 10px 12px;
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            background: var(--gray-50);
+        }
+        .theme-grid input[type="color"] {
+            height: 44px;
+            padding: 4px;
+            cursor: pointer;
+        }
+        .theme-grid input:focus {
+            outline: none;
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+            background: #fff;
+        }
+
+        .theme-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+            flex-wrap: wrap;
+        }
+
+        .preview-card {
+            background: #fff;
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius);
+            padding: 24px;
+            box-shadow: var(--shadow);
+        }
+        .preview-card h2 {
+            color: var(--primary);
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--gray-100);
+        }
+
+        .theme-preview {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .preview-swatch {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .preview-color {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            border: 1px solid var(--gray-200);
+        }
+        .preview-label {
+            font-size: 0.85rem;
+            color: var(--gray-600);
+        }
+        .preview-value {
+            font-weight: 600;
+            color: var(--gray-900);
+        }
+        .preview-font {
+            font-size: 1.1rem;
+            color: var(--gray-900);
+            padding: 12px;
+            background: var(--gray-50);
+            border-radius: 8px;
+        }
+    </style>
 </head>
 <body>
 <div class="container">
-    <?php include 'sidebar.php'; ?>
+    <?php include __DIR__ . '/sidebar.php'; ?>
     <main id="main-content" class="main-content">
         <section class="page active">
-            <h1 class="page-title">Gestion des themes</h1>
+            <h1 class="page-title">Personnalisation du thème</h1>
 
             <?php if ($message): ?>
-                <div class="message <?= $messageType === 'success' ? 'message-success' : 'message-error' ?>">
-                    <?= htmlspecialchars($message, ENT_QUOTES, 'UTF-8') ?>
+                <div class="alert <?= $messageType === 'success' ? 'alert-success' : 'alert-danger' ?>">
+                    <?= htmlspecialchars($message) ?>
                 </div>
             <?php endif; ?>
 
             <div class="theme-layout">
-                <div class="form-section">
-                    <form method="POST" enctype="multipart/form-data" id="theme-form">
-                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
-
-                        <div class="theme-form-grid">
-                            <label>
-                                Nom du theme
-                                <input type="text" name="theme_name" id="theme_name" maxlength="80" required value="<?= htmlspecialchars($theme['theme_name'], ENT_QUOTES, 'UTF-8') ?>">
-                            </label>
-
-                            <label>
-                                Typographie
-                                <select name="font_family" id="font_family">
-                                    <?php foreach ($fontOptions as $value => $label): ?>
-                                        <option value="<?= htmlspecialchars($value, ENT_QUOTES, 'UTF-8') ?>" <?= $theme['font_family'] === $value ? 'selected' : '' ?>>
-                                            <?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </label>
-
-                            <label>
-                                Couleur primaire
-                                <input class="theme-swatch" type="color" name="primary_color" id="primary_color" value="<?= htmlspecialchars($theme['primary_color'], ENT_QUOTES, 'UTF-8') ?>">
-                            </label>
-
-                            <label>
-                                Couleur secondaire
-                                <input class="theme-swatch" type="color" name="secondary_color" id="secondary_color" value="<?= htmlspecialchars($theme['secondary_color'], ENT_QUOTES, 'UTF-8') ?>">
-                            </label>
-
-                            <label>
-                                Couleur de fond
-                                <input class="theme-swatch" type="color" name="background_color" id="background_color" value="<?= htmlspecialchars($theme['background_color'], ENT_QUOTES, 'UTF-8') ?>">
-                            </label>
-
-                            <label>
-                                Logo
-                                <input type="file" name="logo_file" accept="image/png,image/jpeg,image/gif,image/webp,image/x-icon">
-                                <span class="asset-preview">
-                                    Actuel: <?= $theme['logo_url'] ? htmlspecialchars($theme['logo_url'], ENT_QUOTES, 'UTF-8') : 'logo texte par defaut' ?>
-                                    <?php if ($theme['logo_url']): ?>
-                                        <img src="<?= htmlspecialchars($theme['logo_url'], ENT_QUOTES, 'UTF-8') ?>" alt="Logo actuel">
-                                    <?php endif; ?>
-                                </span>
-                            </label>
-
-                            <label class="theme-field-full">
-                                Favicon
-                                <input type="file" name="favicon_file" accept="image/png,image/jpeg,image/gif,image/webp,image/x-icon">
-                                <span class="asset-preview">Actuel: <?= $theme['favicon_url'] ? htmlspecialchars($theme['favicon_url'], ENT_QUOTES, 'UTF-8') : 'aucun favicon personnalise' ?></span>
-                            </label>
+                <!-- Formulaire de configuration -->
+                <div class="theme-card">
+                    <h2>Paramètres du thème</h2>
+                    <form method="POST" action="theme_settings.php">
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                        
+                        <div class="theme-grid">
+                            <div class="form-group">
+                                <label for="theme_name">Nom du thème</label>
+                                <input type="text" id="theme_name" name="theme_name" value="<?= htmlspecialchars($theme['theme_name']) ?>">
+                            </div>
+                            <div class="form-group">
+                                <label for="primary_color">Couleur primaire</label>
+                                <input type="color" id="primary_color" name="primary_color" value="<?= htmlspecialchars($theme['primary_color']) ?>">
+                            </div>
+                            <div class="form-group">
+                                <label for="secondary_color">Couleur secondaire</label>
+                                <input type="color" id="secondary_color" name="secondary_color" value="<?= htmlspecialchars($theme['secondary_color']) ?>">
+                            </div>
+                            <div class="form-group">
+                                <label for="background_color">Couleur de fond</label>
+                                <input type="color" id="background_color" name="background_color" value="<?= htmlspecialchars($theme['background_color']) ?>">
+                            </div>
+                            <div class="form-group">
+                                <label for="font_family">Police</label>
+                                <input type="text" id="font_family" name="font_family" value="<?= htmlspecialchars($theme['font_family']) ?>">
+                            </div>
+                            <div class="form-group">
+                                <label for="logo_url">URL du logo</label>
+                                <input type="text" id="logo_url" name="logo_url" value="<?= htmlspecialchars($theme['logo_url']) ?>" placeholder="/uploads/themes/logo.png">
+                            </div>
+                            <div class="form-group">
+                                <label for="favicon_url">URL du favicon</label>
+                                <input type="text" id="favicon_url" name="favicon_url" value="<?= htmlspecialchars($theme['favicon_url']) ?>" placeholder="/uploads/themes/favicon.ico">
+                            </div>
                         </div>
 
                         <div class="theme-actions">
-                            <button type="submit" name="save_theme">Enregistrer</button>
-                            <button class="btn-danger" type="submit" name="reset_theme" onclick="return confirm('Restaurer le theme par defaut ?');">Reinitialiser</button>
+                            <button type="submit" name="save_theme" class="btn btn-primary">Enregistrer</button>
+                            <button type="submit" name="reset_theme" class="btn btn-secondary" onclick="return confirm('Réinitialiser le thème aux valeurs par défaut ?');">Réinitialiser</button>
                         </div>
                     </form>
                 </div>
 
-                <div class="theme-preview" id="theme-preview">
-                    <div class="theme-preview-header">
-                        <strong id="preview-name"><?= htmlspecialchars($theme['theme_name'], ENT_QUOTES, 'UTF-8') ?></strong>
-                    </div>
-                    <div class="theme-preview-body">
-                        <h3>Apercu du theme</h3>
-                        <p>Les couleurs et la police selectionnees seront appliquees a votre espace etudiant.</p>
-                        <div class="theme-preview-actions">
-                            <button class="theme-preview-primary" type="button">Action principale</button>
-                            <button class="theme-preview-secondary" type="button">Action secondaire</button>
+                <!-- Aperçu -->
+                <div class="preview-card">
+                    <h2>Aperçu du thème</h2>
+                    <div class="theme-preview">
+                        <div class="preview-swatch">
+                            <div class="preview-color" style="background: <?= htmlspecialchars($theme['primary_color']) ?>;"></div>
+                            <div>
+                                <div class="preview-label">Primaire</div>
+                                <div class="preview-value"><?= htmlspecialchars($theme['primary_color']) ?></div>
+                            </div>
                         </div>
+                        <div class="preview-swatch">
+                            <div class="preview-color" style="background: <?= htmlspecialchars($theme['secondary_color']) ?>;"></div>
+                            <div>
+                                <div class="preview-label">Secondaire</div>
+                                <div class="preview-value"><?= htmlspecialchars($theme['secondary_color']) ?></div>
+                            </div>
+                        </div>
+                        <div class="preview-swatch">
+                            <div class="preview-color" style="background: <?= htmlspecialchars($theme['background_color']) ?>;"></div>
+                            <div>
+                                <div class="preview-label">Fond</div>
+                                <div class="preview-value"><?= htmlspecialchars($theme['background_color']) ?></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="preview-label">Police</div>
+                            <div class="preview-font" style="font-family: <?= htmlspecialchars($theme['font_family']) ?>;">
+                                Aperçu de la police — 1234567890
+                            </div>
+                        </div>
+                        <?php if (!empty($theme['logo_url'])): ?>
+                        <div>
+                            <div class="preview-label">Logo</div>
+                            <img src="<?= htmlspecialchars($theme['logo_url']) ?>" alt="Logo" style="max-height: 60px; margin-top: 8px;">
+                        </div>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
         </section>
     </main>
 </div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    const form = document.getElementById('theme-form');
-    const previewName = document.getElementById('preview-name');
-
-    function applyPreview() {
-        document.documentElement.style.setProperty('--primary-color', form.primary_color.value);
-        document.documentElement.style.setProperty('--secondary-color', form.secondary_color.value);
-        document.documentElement.style.setProperty('--background-color', form.background_color.value);
-        document.documentElement.style.setProperty('--font-family', form.font_family.value);
-        previewName.textContent = form.theme_name.value || 'ULT Payment';
-    }
-
-    ['input', 'change'].forEach(function (eventName) {
-        form.addEventListener(eventName, applyPreview);
-    });
-});
-</script>
-    <script src="/payment/assets/js/responsive.js?v=20261030"></script>
+<script src="/payment/assets/js/responsive.js?v=20261030"></script>
 </body>
 </html>

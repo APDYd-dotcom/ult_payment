@@ -4,40 +4,56 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 ini_set('pcre.jit', '0');
 
-require_once __DIR__ . '/auth_check.php';
+define('REQUIRED_ROLE', 'student');
+require __DIR__ . '/../auth_check.php';
 require_once __DIR__ . '/../functions.php';
 
-// Force la collation de la session pour cette page
+// --- RÉCUPÉRATION DE L'ÉTUDIANT CONNECTÉ ---
+$currentUserId = (int) ($_SESSION['userId'] ?? 0);
+$stmtStudent = $bdd->prepare("
+    SELECT s.*, d.name AS department_name 
+    FROM student s 
+    JOIN department d ON s.department_id = d.id 
+    WHERE s.matricule = (SELECT matricule FROM user WHERE userId = ?) 
+    LIMIT 1
+");
+$stmtStudent->execute([$currentUserId]);
+$currentStudent = $stmtStudent->fetch(PDO::FETCH_ASSOC);
+
+if (!$currentStudent) {
+    // L'utilisateur n'a pas de dossier étudiant associé
+    die("Votre dossier étudiant est introuvable. Veuillez contacter l'administration.");
+}
+
+$studentId = (int) $currentStudent['id'];
+
+// Force la collation pour éviter les conflits
 $bdd->exec("SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci");
 
 $error = '';
 $success = false;
-$filterDepartment = trim($_GET['department'] ?? '');
-$filterTranche = trim($_GET['tranche'] ?? '');
-$filterDateStart = trim($_GET['date_start'] ?? '');
-$filterDateEnd = trim($_GET['date_end'] ?? '');
-$activeFilterCount = count(array_filter([
-    $filterDepartment,
-    $filterTranche,
-    $filterDateStart,
-    $filterDateEnd,
-], fn($value) => $value !== ''));
 
+// --- Filtres ---
+$filterDepartment = trim($_GET['department'] ?? '');
+$filterTranche    = trim($_GET['tranche'] ?? '');
+$filterDateStart  = trim($_GET['date_start'] ?? '');
+$filterDateEnd    = trim($_GET['date_end'] ?? '');
+$activeFilterCount = count(array_filter([$filterDepartment, $filterTranche, $filterDateStart, $filterDateEnd], fn($v) => $v !== ''));
+
+// --- Traduction des erreurs ---
 function translateStudentPaymentError(string $message): string
 {
     $translations = [
-        'Étudiant introuvable.' => 'Votre dossier etudiant est introuvable.',
-        'Tranche introuvable pour ce département.' => 'La tranche specifiee n existe pas pour votre departement.',
-        'Impossible de créer le paiement.' => 'Une erreur est survenue lors de la creation du paiement.',
+        'Étudiant introuvable.' => 'Votre dossier étudiant est introuvable.',
+        'Tranche introuvable pour ce département.' => 'La tranche spécifiée n\'existe pas pour votre département.',
+        'Impossible de créer le paiement.' => 'Une erreur est survenue lors de la création du paiement.',
+        'Ce paiement ne peut pas etre supprime.' => 'Ce paiement ne peut pas être supprimé.',
+        'Ce paiement ne peut pas etre modifie.' => 'Ce paiement ne peut pas être modifié.',
     ];
-
     foreach ($translations as $key => $value) {
-        if (strpos($message, $key) !== false) {
-            return $value;
-        }
+        if (strpos($message, $key) !== false) return $value;
     }
-
-    return 'X' . htmlspecialchars($message, ENT_QUOTES, 'UTF-8');
+    return '❌ ' . htmlspecialchars($message, ENT_QUOTES, 'UTF-8');
 }
 
 function studentPaymentCanChange(PDO $bdd, int $paymentId, int $studentId): bool
@@ -52,7 +68,6 @@ function studentPaymentCanChange(PDO $bdd, int $paymentId, int $studentId): bool
           AND p.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
     ");
     $stmt->execute([$paymentId, $studentId]);
-
     return (int) $stmt->fetchColumn() === 1;
 }
 
@@ -60,100 +75,65 @@ function studentPaymentGetTranche(PDO $bdd, int $trancheId, int $departmentId): 
 {
     $stmt = $bdd->prepare('SELECT id, name FROM tranche WHERE id = ? AND department_id = ? LIMIT 1');
     $stmt->execute([$trancheId, $departmentId]);
-    $tranche = $stmt->fetch(PDO::FETCH_ASSOC);
-
-    return $tranche ?: null;
+    return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
 }
 
+// --- SUPPRESSION ---
 if (isset($_GET['delete'])) {
     $paymentId = (int) $_GET['delete'];
-
     try {
         if ($paymentId <= 0 || !studentPaymentCanChange($bdd, $paymentId, $studentId)) {
             throw new RuntimeException('Ce paiement ne peut pas etre supprime.');
         }
-
         $bdd->beginTransaction();
-
         $partialTableStmt = $bdd->prepare("
-            SELECT COUNT(*)
-            FROM INFORMATION_SCHEMA.TABLES
-            WHERE TABLE_SCHEMA = DATABASE()
-              AND TABLE_NAME = 'partial_payment'
+            SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES 
+            WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'partial_payment'
         ");
         $partialTableStmt->execute();
         if ((int) $partialTableStmt->fetchColumn() > 0) {
             $partialDelete = $bdd->prepare('DELETE FROM partial_payment WHERE payment_id = ? AND student_id = ?');
             $partialDelete->execute([$paymentId, $studentId]);
         }
-
         $stmt = $bdd->prepare('DELETE FROM payment WHERE id = ? AND student_id = ?');
         $stmt->execute([$paymentId, $studentId]);
-
         $bdd->commit();
 
-        logActivity(
-            $bdd,
-            $_SESSION['userId'] ?? null,
-            $_SESSION['fullname'] ?? '',
-            $_SESSION['email'] ?? '',
-            'student_payment_deleted',
-            "Payment ID: {$paymentId}"
-        );
-
+        logActivity($bdd, $_SESSION['userId'] ?? null, $_SESSION['fullname'] ?? '', $_SESSION['email'] ?? '', 'student_payment_deleted', "Payment ID: {$paymentId}");
         header('Location: payment.php?success=3');
         exit();
     } catch (Throwable $e) {
-        if ($bdd->inTransaction()) {
-            $bdd->rollBack();
-        }
+        if ($bdd->inTransaction()) $bdd->rollBack();
         $error = translateStudentPaymentError($e->getMessage());
     }
 }
 
+// --- CRÉATION / MODIFICATION ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $amount = (float) ($_POST['amount'] ?? 0);
-    $trancheId = (int) ($_POST['tranche_id'] ?? 0);
+    $amount        = (float) ($_POST['amount'] ?? 0);
+    $trancheId     = (int) ($_POST['tranche_id'] ?? 0);
     $paymentMethod = trim($_POST['payment_method'] ?? '');
-    $reference = trim($_POST['reference_number'] ?? '');
+    $reference     = trim($_POST['reference_number'] ?? '');
 
     if ($amount <= 0 || $trancheId <= 0 || $paymentMethod === '' || $reference === '') {
-        $error = 'Tous les champs sont obligatoires et le montant doit etre > 0.';
+        $error = 'Tous les champs sont obligatoires et le montant doit être > 0.';
     } else {
         try {
             $tranche = studentPaymentGetTranche($bdd, $trancheId, (int) $currentStudent['department_id']);
-            if (!$tranche) {
-                throw new RuntimeException('Tranche introuvable pour ce département.');
-            }
+            if (!$tranche) throw new RuntimeException('Tranche introuvable pour ce département.');
 
             if (isset($_POST['Create'])) {
-                // Meme logique que l'admin : creation via la procedure stockee.
-                // Le matricule et le departement viennent du dossier etudiant connecte.
                 $stmt = $bdd->prepare("CALL sp_payment_create_full(?, ?, ?, ?, ?, ?)");
-                $stmt->execute([
-                    $currentStudent['matricule'],
-                    $amount,
-                    $currentStudent['department_name'],
-                    $tranche['name'],
-                    $paymentMethod,
-                    $reference,
-                ]);
+                $stmt->execute([$currentStudent['matricule'], $amount, $currentStudent['department_name'], $tranche['name'], $paymentMethod, $reference]);
                 $stmt->closeCursor();
 
-                logActivity(
-                    $bdd,
-                    $_SESSION['userId'] ?? null,
-                    $_SESSION['fullname'] ?? '',
-                    $_SESSION['email'] ?? '',
-                    'student_payment_created',
-                    "Matricule: {$currentStudent['matricule']}, Montant: {$amount}, Tranche: {$tranche['name']}"
-                );
+                logActivity($bdd, $_SESSION['userId'] ?? null, $_SESSION['fullname'] ?? '', $_SESSION['email'] ?? '', 'student_payment_created', "Matricule: {$currentStudent['matricule']}, Montant: {$amount}, Tranche: {$tranche['name']}");
 
                 try {
                     sendPaymentCreatedNotification($bdd, $currentStudent['matricule'], $reference);
                     createPaymentInAppNotification($bdd, $currentStudent['matricule'], $reference);
-                } catch (Throwable $notificationError) {
-                    error_log('Student payment notification error: ' . $notificationError->getMessage());
+                } catch (Throwable $e) {
+                    error_log('Notification error: ' . $e->getMessage());
                 }
 
                 header('Location: payment.php?success=1');
@@ -165,22 +145,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($paymentId <= 0 || !studentPaymentCanChange($bdd, $paymentId, $studentId)) {
                     throw new RuntimeException('Ce paiement ne peut pas etre modifie.');
                 }
-
-                $stmt = $bdd->prepare("
-                    UPDATE payment
-                    SET tranche_id = ?, amount = ?, payment_method = ?, reference_number = ?
-                    WHERE id = ? AND student_id = ?
-                ");
+                $stmt = $bdd->prepare("UPDATE payment SET tranche_id = ?, amount = ?, payment_method = ?, reference_number = ? WHERE id = ? AND student_id = ?");
                 $stmt->execute([$trancheId, $amount, $paymentMethod, $reference, $paymentId, $studentId]);
 
-                logActivity(
-                    $bdd,
-                    $_SESSION['userId'] ?? null,
-                    $_SESSION['fullname'] ?? '',
-                    $_SESSION['email'] ?? '',
-                    'student_payment_updated',
-                    "Payment ID: {$paymentId}, Montant: {$amount}, Tranche: {$tranche['name']}"
-                );
+                logActivity($bdd, $_SESSION['userId'] ?? null, $_SESSION['fullname'] ?? '', $_SESSION['email'] ?? '', 'student_payment_updated', "Payment ID: {$paymentId}");
 
                 header('Location: payment.php?success=2');
                 exit();
@@ -191,6 +159,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+// --- RÉCUPÉRATION DES DONNÉES ---
 try {
     $departments = [[
         'id' => (int) $currentStudent['department_id'],
@@ -204,16 +173,10 @@ try {
     $sql = "
         SELECT p.id,
                CONCAT('PAY-', LPAD(p.id, 5, '0')) AS payment_reference,
-               s.name AS student_name,
-               s.matricule,
-               d.name AS department_name,
-               t.name AS tranche_name,
-               p.tranche_id,
-               p.amount,
-               p.payment_method,
-               p.reference_number,
-               p.created_at AS payment_date,
-               COUNT(pe.id) AS penalty_count
+               s.name AS student_name, s.matricule,
+               d.name AS department_name, t.name AS tranche_name,
+               p.tranche_id, p.amount, p.payment_method, p.reference_number,
+               p.created_at AS payment_date, COUNT(pe.id) AS penalty_count
         FROM payment p
         JOIN student s ON s.id = p.student_id
         LEFT JOIN tranche t ON t.id = p.tranche_id
@@ -223,280 +186,304 @@ try {
     ";
     $params = [$studentId];
 
-if ($filterDepartment !== '') {
-        $sql .= ' AND d.name = ? COLLATE utf8mb4_unicode_ci';
-        $params[] = $filterDepartment;
-    }
+    if ($filterDepartment !== '') { $sql .= ' AND d.name = ? COLLATE utf8mb4_unicode_ci'; $params[] = $filterDepartment; }
+    if ($filterTranche !== '') { $sql .= ' AND t.name = ? COLLATE utf8mb4_unicode_ci'; $params[] = $filterTranche; }
+    if ($filterDateStart !== '') { $sql .= ' AND p.created_at >= ?'; $params[] = $filterDateStart . ' 00:00:00'; }
+    if ($filterDateEnd !== '') { $sql .= ' AND p.created_at <= ?'; $params[] = $filterDateEnd . ' 23:59:59'; }
 
-    if ($filterTranche !== '') {
-        $sql .= ' AND t.name = ? COLLATE utf8mb4_unicode_ci';
-        $params[] = $filterTranche;
-    }
-
-    if ($filterDateStart !== '') {
-        $sql .= ' AND p.created_at >= ?';
-        $params[] = $filterDateStart . ' 00:00:00';
-    }
-
-    if ($filterDateEnd !== '') {
-        $sql .= ' AND p.created_at <= ?';
-        $params[] = $filterDateEnd . ' 23:59:59';
-    }
-
-    $sql .= "
-        GROUP BY p.id, s.name, s.matricule, d.name, t.name, p.tranche_id,
-                 p.amount, p.payment_method, p.reference_number, p.created_at
-        ORDER BY p.created_at DESC, p.id DESC
-    ";
+    $sql .= " GROUP BY p.id, s.name, s.matricule, d.name, t.name, p.tranche_id, p.amount, p.payment_method, p.reference_number, p.created_at
+              ORDER BY p.created_at DESC, p.id DESC";
 
     $stmtPayments = $bdd->prepare($sql);
     $stmtPayments->execute($params);
     $payments = $stmtPayments->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
-    die('Erreur lors du chargement des paiements : ' . htmlspecialchars($e->getMessage(), ENT_QUOTES, 'UTF-8'));
+    die('Erreur lors du chargement des paiements : ' . htmlspecialchars($e->getMessage()));
 }
 
+// --- MÉTHODES DE PAIEMENT ---
 $paymentMethods = [];
 try {
     $stmt = $bdd->query("SHOW COLUMNS FROM payment LIKE 'payment_method'");
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
     if ($row) {
         $enumStr = substr((string) $row['Type'], 5, -1);
-        $paymentMethods = array_map(static function ($value) {
-            return trim($value, "'");
-        }, explode(',', $enumStr));
+        $paymentMethods = array_map(fn($v) => trim($v, "'"), explode(',', $enumStr));
     }
-} catch (PDOException $e) {
-    $paymentMethods = [];
-}
+} catch (PDOException $e) {}
+if (!$paymentMethods) $paymentMethods = ['IBBM+', 'BANKOBU', 'CASH', 'VIREMENT'];
 
-if (!$paymentMethods) {
-    $paymentMethods = ['IBBM+', 'BANKOBU', 'CASH', 'VIREMENT'];
-}
-
-if (isset($_GET['success'])) {
-    $success = true;
-}
+if (isset($_GET['success'])) $success = true;
 
 $deptMap = [];
-foreach ($departments as $d) {
-    $deptMap[$d['name']] = $d['id'];
-}
+foreach ($departments as $d) { $deptMap[$d['name']] = $d['id']; }
 ?>
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <link rel="stylesheet" href="/payment/assets/css/app.css?v=20261030">
     <meta charset="UTF-8">
-    <title>ULT Payment System</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Mes paiements - ULT Payment</title>
+    <link rel="stylesheet" href="/payment/assets/css/app.css?v=20261030">
     <link rel="stylesheet" href="./styles.css?v=20261030">
     <?php loadTheme($bdd); ?>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        .message { padding: 12px 20px; border-radius: 8px; margin-bottom: 20px; font-weight: 500; display: flex; align-items: center; gap: 10px; }
-        .message-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-        .message-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-        .message-icon { font-size: 1.4rem; }
-        .form-section select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 6px; }
-        .row-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-        .danger-link { display: inline-block; padding: 10px; border-radius: 6px; background: #dc2626; color: #fff; text-decoration: none; }
-        .danger-link:hover { background: #b91c1c; }
-        .edit-panel { display: none; background: #f8fafc; }
-        .edit-panel form { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; align-items: end; }
-        .edit-panel label { margin-top: 0; }
-        .muted { color: #64748b; font-size: 0.9rem; }
-        .readonly-input { background: #f1f5f9; color: #475569; }
-    </style>
     <link rel="stylesheet" href="/payment/assets/css/responsive.css?v=20261030">
     <link rel="stylesheet" href="/payment/assets/ui.css">
+    <style>
+        /* ... (tout le CSS précédent inchangé) ... */
+        .payment-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; }
+        @media (max-width: 992px) { .payment-layout { grid-template-columns: 1fr; } }
+        .search-container { margin-bottom: 16px; }
+        .search-bar { position: relative; display: flex; align-items: center; background: #fff; border: 1px solid var(--gray-200); border-radius: 10px; max-width: 420px; height: 44px; }
+        .search-bar .search-icon { position: absolute; left: 14px; color: #64748b; pointer-events: none; }
+        .search-bar input { width: 100%; height: 100%; border: none; outline: none; padding: 0 40px 0 42px; font-size: 0.95rem; background: transparent; border-radius: 10px; }
+        .search-clear { position: absolute; right: 10px; background: none; border: none; cursor: pointer; color: #64748b; display: none; padding: 4px; }
+        .search-clear.visible { display: block; }
+        .search-results-counter { font-size: 0.85rem; color: var(--gray-600); margin-top: 8px; }
+        .filters-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 16px; }
+        .filters-grid .form-group { margin: 0; }
+        .filters-actions { display: flex; gap: 10px; margin-top: 12px; }
+        .options-cell { position: relative; text-align: right; }
+        .three-dots-btn { background: none; border: none; cursor: pointer; color: var(--gray-600); padding: 4px 8px; border-radius: 6px; }
+        .three-dots-btn:hover { background: var(--gray-100); }
+        .options-menu { position: absolute; right: 0; top: 100%; z-index: 10; background: #fff; border: 1px solid var(--gray-200); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); min-width: 140px; padding: 4px; }
+        .options-menu.dropdown-hidden { display: none; }
+        .menu-item { display: block; width: 100%; text-align: left; padding: 8px 12px; background: none; border: none; cursor: pointer; font-size: 0.9rem; color: var(--gray-900); border-radius: 6px; }
+        .menu-item:hover { background: var(--gray-50); }
+        .row-quick-actions { display: none; gap: 4px; }
+        .student-name-cell:hover .row-quick-actions { display: flex; }
+        .quick-action-btn { background: #fff; border: 1px solid var(--gray-200); border-radius: 6px; cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; color: var(--gray-600); }
+        .quick-action-btn:hover { background: var(--gray-50); color: var(--primary); }
+        .quick-delete-btn:hover { color: var(--danger); border-color: #fca5a5; background: #fef2f2; }
+        .floating-bulk-bar { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--gray-900); color: #fff; padding: 12px 20px; border-radius: 999px; display: none; align-items: center; gap: 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.25); z-index: 1000; }
+        .floating-bulk-bar.visible { display: flex; }
+        .bulk-actions { display: flex; gap: 8px; }
+        .bulk-btn { background: rgba(255,255,255,0.1); color: #fff; border: none; padding: 8px 14px; border-radius: 999px; cursor: pointer; font-size: 0.85rem; font-weight: 600; }
+        .bulk-btn:hover { background: rgba(255,255,255,0.2); }
+        .bulk-btn-danger { background: var(--danger); }
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.5); z-index: 2000; align-items: center; justify-content: center; padding: 20px; }
+        .modal-overlay.open { display: flex; }
+        .modal-card { background: #fff; border-radius: 16px; max-width: 480px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,0.2); overflow: hidden; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid var(--gray-100); }
+        .modal-header h3 { color: var(--primary); font-size: 1.1rem; }
+        .modal-close-btn { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--gray-600); }
+        .modal-body { padding: 24px; }
+        .modal-body label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--gray-600); margin-bottom: 6px; margin-top: 12px; }
+        .modal-body input, .modal-body select { width: 100%; padding: 10px 12px; border: 1px solid var(--gray-200); border-radius: 8px; font-size: 0.95rem; }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 16px 24px; border-top: 1px solid var(--gray-100); }
+        .modal-btn { padding: 9px 18px; border-radius: 8px; font-weight: 600; cursor: pointer; border: none; }
+        .modal-cancel-btn { background: var(--gray-200); color: var(--gray-900); }
+        .modal-btn-primary { background: var(--primary-light); color: #fff; }
+        .modal-btn-danger { background: var(--danger); color: #fff; }
+    </style>
 </head>
 <body>
-
 <div class="container">
-    <?php include 'sidebar.php'; ?>
+    <?php include __DIR__ . '/sidebar.php'; ?>
     <main id="main-content" class="main-content">
         <section id="payment" class="page active">
-            <h1 class="page-title">Payments</h1>
+            <h1 class="page-title">Mes paiements</h1>
 
             <?php if ($success): ?>
-                <div class="message message-success">
-                    <span class="message-icon">✓</span>
-                    <span>
-                        <?php
-                        if ($_GET['success'] == 1) {
-                            echo 'Paiement cree avec succes.';
-                        } elseif ($_GET['success'] == 2) {
-                            echo 'Paiement mis a jour avec succes.';
-                        } elseif ($_GET['success'] == 3) {
-                            echo 'Paiement supprime avec succes.';
-                        }
-                        ?>
-                    </span>
+                <div class="alert alert-success">
+                    <span>✓</span>
+                    <?php
+                    if (isset($_GET['success']) && $_GET['success'] == 1) echo 'Paiement créé avec succès.';
+                    elseif (isset($_GET['success']) && $_GET['success'] == 2) echo 'Paiement mis à jour avec succès.';
+                    elseif (isset($_GET['success']) && $_GET['success'] == 3) echo 'Paiement supprimé avec succès.';
+                    ?>
                 </div>
             <?php endif; ?>
-
             <?php if (!empty($error)): ?>
-                <div class="message message-error">
-                    <span class="message-icon">⚠</span>
-                    <span><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></span>
+                <div class="alert alert-danger">
+                    <span>!</span> <?= htmlspecialchars($error) ?>
                 </div>
             <?php endif; ?>
 
-            <form class="advanced-filters" method="GET" action="payment.php">
-                <div class="filters-header">
-                    <div>
-                        <h2>Filtres avances</h2>
-                        <p><?= count($payments) ?> paiement<?= count($payments) > 1 ? 's' : '' ?> trouve<?= count($payments) > 1 ? 's' : '' ?></p>
+            <!-- Filtres avancés -->
+            <div class="page-card">
+                <h2>Filtres avancés <?php if ($activeFilterCount > 0): ?><span class="badge badge-info"><?= $activeFilterCount ?> actif(s)</span><?php endif; ?></h2>
+                <form method="GET" action="payment.php" class="filters-grid">
+                    <div class="form-group">
+                        <label for="filter_department">Département</label>
+                        <select id="filter_department" name="department">
+                            <option value="">Tous</option>
+                            <?php foreach ($departments as $dept): ?>
+                                <option value="<?= htmlspecialchars($dept['name']) ?>" <?= $filterDepartment === $dept['name'] ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($dept['name']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
-                    <?php if ($activeFilterCount > 0): ?>
-                        <span class="filters-badge"><?= $activeFilterCount ?> filtre<?= $activeFilterCount > 1 ? 's' : '' ?> actif<?= $activeFilterCount > 1 ? 's' : '' ?></span>
-                    <?php endif; ?>
-                </div>
+                    <div class="form-group">
+                        <label for="filter_tranche">Tranche</label>
+                        <select id="filter_tranche" name="tranche">
+                            <option value="">Toutes</option>
+                            <?php foreach ($tranches as $t): ?>
+                                <option value="<?= htmlspecialchars($t['name']) ?>" data-dept="<?= $t['department_id'] ?>" <?= $filterTranche === $t['name'] ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($t['name']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="date_start">Date début</label>
+                        <input id="date_start" type="date" name="date_start" value="<?= htmlspecialchars($filterDateStart) ?>">
+                    </div>
+                    <div class="form-group">
+                        <label for="date_end">Date fin</label>
+                        <input id="date_end" type="date" name="date_end" value="<?= htmlspecialchars($filterDateEnd) ?>">
+                    </div>
+                    <div class="filters-actions" style="grid-column: 1 / -1;">
+                        <button type="submit" class="btn btn-primary">Appliquer</button>
+                        <a href="payment.php" class="btn btn-secondary">Réinitialiser</a>
+                    </div>
+                </form>
+            </div>
 
-                <div class="filter-field">
-                    <label for="filter_department">Departement</label>
-                    <select id="filter_department" name="department">
-                        <option value="">Tous les departements</option>
-                        <?php foreach ($departments as $dept): ?>
-                            <option value="<?= htmlspecialchars($dept['name'], ENT_QUOTES, 'UTF-8') ?>" <?= $filterDepartment === $dept['name'] ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($dept['name'], ENT_QUOTES, 'UTF-8') ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-
-                <div class="filter-field">
-                    <label for="filter_tranche">Tranche</label>
-                    <select id="filter_tranche" name="tranche">
-                        <option value="">Toutes les tranches</option>
-                        <?php foreach ($tranches as $t): ?>
-                            <option value="<?= htmlspecialchars($t['name'], ENT_QUOTES, 'UTF-8') ?>" data-dept="<?= (int) $t['department_id'] ?>" <?= $filterTranche === $t['name'] ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($t['name'], ENT_QUOTES, 'UTF-8') ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-
-                <div class="filter-field">
-                    <label for="date_start">Date de debut</label>
-                    <input id="date_start" type="date" name="date_start" value="<?= htmlspecialchars($filterDateStart, ENT_QUOTES, 'UTF-8') ?>">
-                </div>
-
-                <div class="filter-field">
-                    <label for="date_end">Date de fin</label>
-                    <input id="date_end" type="date" name="date_end" value="<?= htmlspecialchars($filterDateEnd, ENT_QUOTES, 'UTF-8') ?>">
-                </div>
-
-                <div class="filter-actions">
-                    <button type="submit" class="btn btn-primary">Appliquer</button>
-                    <a href="payment.php" class="btn btn-secondary">Reinitialiser</a>
-                </div>
-            </form>
-
-            <div class="crud-container">
-                <div class="table-section">
+            <div class="payment-layout">
+                <!-- Liste des paiements -->
+                <div class="page-card">
+                    <h2>Liste de mes paiements</h2>
                     <div class="search-container">
                         <div class="search-bar">
-                            <svg class="search-icon" aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                            <input id="payment-search" type="text" placeholder="Search by matricule, name, or department..." aria-label="Search payments">
-                            <button type="button" id="clear-payment-search" class="search-clear" aria-label="Clear search">
+                            <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                            <input id="payment-search" type="text" placeholder="Rechercher par référence, tranche...">
+                            <button type="button" id="clear-payment-search" class="search-clear">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                             </button>
                         </div>
-                        <div class="search-results-counter" id="search-counter">
-                            Found <strong id="counter-match">0</strong> of <span id="counter-total">0</span> payments
+                        <div class="search-results-counter">
+                            <strong id="counter-match">0</strong> sur <span id="counter-total">0</span> paiements
                         </div>
                     </div>
 
                     <div class="table-responsive">
-<table>
-                        <thead>
-                            <tr>
-                                <th data-sort-index="0" data-sort-type="text">Reference</th>
-                                <th data-sort-index="1" data-sort-type="text">Etudiant</th>
-                                <th data-sort-index="2" data-sort-type="text">Matricule</th>
-                                <th data-sort-index="3" data-sort-type="text">Departement</th>
-                                <th data-sort-index="4" data-sort-type="text">Tranche</th>
-                                <th data-sort-index="5" data-sort-type="number">Montant</th>
-                                <th data-sort-index="6" data-sort-type="text">Methode</th>
-                                <th data-sort-index="7" data-sort-type="text">Ref. externe</th>
-                                <th data-sort-index="8" data-sort-type="date">Date</th>
-                            </tr>
-                        </thead>
-                        <tbody id="payment-table-body">
-                            <?php if ($payments): ?>
-                                <?php foreach ($payments as $row): ?>
-                                    <?php
-                                    $canChange = (int) $row['penalty_count'] === 0 && strtotime((string) $row['payment_date']) >= strtotime('-30 days');
-                                    ?>
-                                    <tr>
-                                        <td><?= htmlspecialchars($row['payment_reference'], ENT_QUOTES, 'UTF-8') ?></td>
-                                        <td><?= htmlspecialchars($row['student_name'], ENT_QUOTES, 'UTF-8') ?></td>
-                                        <td><?= htmlspecialchars($row['matricule'], ENT_QUOTES, 'UTF-8') ?></td>
-                                        <td><?= htmlspecialchars($row['department_name'], ENT_QUOTES, 'UTF-8') ?></td>
-                                        <td><?= htmlspecialchars($row['tranche_name'], ENT_QUOTES, 'UTF-8') ?></td>
-                                        <td><?= number_format((float) $row['amount'], 2) ?> BIF</td>
-                                        <td><?= htmlspecialchars($row['payment_method'], ENT_QUOTES, 'UTF-8') ?></td>
-                                        <td><?= htmlspecialchars($row['reference_number'] ?? '', ENT_QUOTES, 'UTF-8') ?></td>
-                                        <td><?= date('Y-m-d H:i', strtotime($row['payment_date'])) ?></td>
-                                    
-                                    </tr>
-                                <?php endforeach; ?>
-                            <?php else: ?>
-                                <tr><td colspan="10">Aucun paiement trouve.</td></tr>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
-</div>
+                        <table class="table-modern" id="payment-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 40px;"><input type="checkbox" id="select-all-checkbox"></th>
+                                    <th data-sort-index="1" data-sort-type="text">Référence</th>
+                                    <th data-sort-index="2" data-sort-type="text">Étudiant</th>
+                                    <th data-sort-index="3" data-sort-type="text">Matricule</th>
+                                    <th data-sort-index="4" data-sort-type="text">Département</th>
+                                    <th data-sort-index="5" data-sort-type="text">Tranche</th>
+                                    <th data-sort-index="6" data-sort-type="number">Montant</th>
+                                    <th data-sort-index="7" data-sort-type="text">Méthode</th>
+                                    <th data-sort-index="8" data-sort-type="text">Réf. externe</th>
+                                    <th data-sort-index="9" data-sort-type="date">Date</th>
+                                    <th style="width: 50px;"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php if ($payments): ?>
+                                    <?php foreach ($payments as $row): ?>
+                                        <?php
+                                        $canChange = (int) $row['penalty_count'] === 0 && strtotime((string) $row['payment_date']) >= strtotime('-30 days');
+                                        ?>
+                                        <tr data-id="<?= $row['id'] ?>"
+                                            data-amount="<?= $row['amount'] ?>"
+                                            data-method="<?= htmlspecialchars($row['payment_method']) ?>"
+                                            data-reference="<?= htmlspecialchars($row['reference_number'] ?? '') ?>"
+                                            data-tranche="<?= $row['tranche_id'] ?>">
+                                            <td><input type="checkbox" class="row-checkbox" value="<?= $row['id'] ?>"></td>
+                                            <td><?= htmlspecialchars($row['payment_reference']) ?></td>
+                                            <td class="student-name-cell">
+                                                <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                                                    <span><?= htmlspecialchars($row['student_name']) ?></span>
+                                                    <?php if ($canChange): ?>
+                                                        <div class="row-quick-actions">
+                                                            <button type="button" class="quick-action-btn quick-edit-btn" title="Modifier">
+                                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                                            </button>
+                                                            <button type="button" class="quick-action-btn quick-delete-btn" title="Supprimer">
+                                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                                            </button>
+                                                        </div>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </td>
+                                            <td><?= htmlspecialchars($row['matricule']) ?></td>
+                                            <td><?= htmlspecialchars($row['department_name']) ?></td>
+                                            <td><?= htmlspecialchars($row['tranche_name']) ?></td>
+                                            <td><?= number_format((float) $row['amount'], 2) ?> BIF</td>
+                                            <td><?= htmlspecialchars($row['payment_method']) ?></td>
+                                            <td><?= htmlspecialchars($row['reference_number'] ?? '') ?></td>
+                                            <td><?= date('d/m/Y H:i', strtotime($row['payment_date'])) ?></td>
+                                            <td class="options-cell">
+                                                <?php if ($canChange): ?>
+                                                    <button type="button" class="three-dots-btn">
+                                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg>
+                                                    </button>
+                                                    <div class="options-menu dropdown-hidden">
+                                                        <button type="button" class="menu-item dropdown-edit-btn">Modifier</button>
+                                                        <button type="button" class="menu-item dropdown-delete-btn">Supprimer</button>
+                                                    </div>
+                                                <?php endif; ?>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <tr><td colspan="11" style="text-align: center; padding: 20px;">Aucun paiement trouvé.</td></tr>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
 
-                    <div class="pagination-container hidden" id="payment-pagination">
-                        <button type="button" id="payment-prev">Previous</button>
-                        <span class="pagination-info" id="payment-page-info">Page 1 of 1</span>
-                        <button type="button" id="payment-next">Next</button>
+                    <div class="pagination-container hidden" id="payment-pagination" style="margin-top:16px; display:flex; justify-content:center; gap:10px;">
+                        <button type="button" id="payment-prev" class="btn btn-secondary">Précédent</button>
+                        <span id="payment-page-info" style="padding:10px; color:var(--gray-600);">Page 1 sur 1</span>
+                        <button type="button" id="payment-next" class="btn btn-secondary">Suivant</button>
                     </div>
                 </div>
 
-                <div class="form-section">
-                    <h3>Ajouter un paiement</h3>
-                    <form method="POST" action="payment.php">
-                        <label for="matricule">Matricule etudiant</label>
-                        <input id="matricule" class="readonly-input" type="text" value="<?= htmlspecialchars($currentStudent['matricule'], ENT_QUOTES, 'UTF-8') ?>" readonly>
-
-                        <label for="amount">Montant</label>
-                        <input id="amount" type="number" step="0.01" name="amount" placeholder="0.00" required inputmode="numeric">
-
-                        <label for="department">Departement</label>
-                        <select id="department" disabled>
-                            <?php foreach ($departments as $dept): ?>
-                                <option value="<?= htmlspecialchars($dept['name'], ENT_QUOTES, 'UTF-8') ?>" selected><?= htmlspecialchars($dept['name'], ENT_QUOTES, 'UTF-8') ?></option>
-                            <?php endforeach; ?>
-                        </select>
-
-                        <label for="tranche_id">Tranche</label>
-                        <select id="tranche_id" name="tranche_id" required>
-                            <option value="">-- Selectionner --</option>
-                            <?php foreach ($tranches as $t): ?>
-                                <option value="<?= (int) $t['id'] ?>" data-dept="<?= (int) $t['department_id'] ?>">
-                                    <?= htmlspecialchars($t['name'], ENT_QUOTES, 'UTF-8') ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-
-                        <label for="payment_method">Mode de paiement</label>
-                        <select id="payment_method" name="payment_method" required>
-                            <option value="">-- Selectionner --</option>
-                            <?php foreach ($paymentMethods as $method): ?>
-                                <option value="<?= htmlspecialchars($method, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($method, ENT_QUOTES, 'UTF-8') ?></option>
-                            <?php endforeach; ?>
-                        </select>
-
-                        <label for="reference_number">Reference du paiement</label>
-                        <input id="reference_number" type="text" name="reference_number" placeholder="Ex: TRX-12345" required>
-
-                        <div class="buttons">
-                            <button type="submit" name="Create">Creer</button>
-                            <button type="reset">Effacer</button>
+                <!-- Formulaire d'ajout -->
+                <div class="page-card" style="align-self: start;">
+                    <h2>Ajouter un paiement</h2>
+                    <form method="POST" action="payment.php" class="form-modern">
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label>Matricule étudiant</label>
+                            <input type="text" value="<?= htmlspecialchars($currentStudent['matricule']) ?>" readonly class="readonly-input">
+                        </div>
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label for="amount">Montant (BIF)</label>
+                            <input id="amount" type="number" step="0.01" name="amount" placeholder="0.00" required inputmode="numeric">
+                        </div>
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label for="department">Département</label>
+                            <select id="department" disabled>
+                                <?php foreach ($departments as $dept): ?>
+                                    <option value="<?= htmlspecialchars($dept['name']) ?>" selected><?= htmlspecialchars($dept['name']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label for="tranche_id">Tranche</label>
+                            <select id="tranche_id" name="tranche_id" required>
+                                <option value="">-- Sélectionner --</option>
+                                <?php foreach ($tranches as $t): ?>
+                                    <option value="<?= (int) $t['id'] ?>" data-dept="<?= (int) $t['department_id'] ?>">
+                                        <?= htmlspecialchars($t['name']) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label for="payment_method">Mode de paiement</label>
+                            <select id="payment_method" name="payment_method" required>
+                                <option value="">-- Sélectionner --</option>
+                                <?php foreach ($paymentMethods as $method): ?>
+                                    <option value="<?= htmlspecialchars($method) ?>"><?= htmlspecialchars($method) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label for="reference_number">Référence du paiement</label>
+                            <input id="reference_number" type="text" name="reference_number" placeholder="Ex: TRX-12345" required>
+                        </div>
+                        <div style="grid-column: 1 / -1; display:flex; gap:10px;">
+                            <button type="submit" name="Create" class="btn btn-primary" style="flex:1;">Créer</button>
+                            <button type="reset" class="btn btn-secondary" style="flex:1;">Effacer</button>
                         </div>
                     </form>
                 </div>
@@ -505,56 +492,75 @@ foreach ($departments as $d) {
     </main>
 </div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const deptMap = <?= json_encode($deptMap) ?>;
+<!-- Barre d'actions bulk -->
+<div class="floating-bulk-bar" id="bulk-action-bar">
+    <span><span id="selected-count-badge">0</span> sélectionné(s)</span>
+    <div class="bulk-actions">
+        <button type="button" class="bulk-btn" id="bulk-edit-btn">Modifier</button>
+        <button type="button" class="bulk-btn bulk-btn-danger" id="bulk-delete-btn">Supprimer</button>
+    </div>
+</div>
 
-    function setupTrancheFilter(departmentSelectId, trancheSelectId, showAllWhenNoDepartment) {
-        const deptSelect = document.getElementById(departmentSelectId);
-        const trancheSelect = document.getElementById(trancheSelectId);
+<!-- Modal Modification -->
+<div class="modal-overlay" id="edit-payment-modal">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3>Modifier le paiement</h3>
+            <button type="button" class="modal-close-btn" id="close-edit-modal">&times;</button>
+        </div>
+        <form method="POST" action="payment.php">
+            <div class="modal-body">
+                <input type="hidden" name="payment_id" id="edit-payment-id">
+                <label for="edit-amount">Montant (BIF)</label>
+                <input id="edit-amount" type="number" step="0.01" name="amount" required>
+                <label for="edit-method">Mode de paiement</label>
+                <select id="edit-method" name="payment_method" required>
+                    <?php foreach ($paymentMethods as $method): ?>
+                        <option value="<?= htmlspecialchars($method) ?>"><?= htmlspecialchars($method) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <label for="edit-reference">Référence</label>
+                <input id="edit-reference" type="text" name="reference_number">
+                <input type="hidden" id="edit-tranche-id" name="tranche_id">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="modal-btn modal-cancel-btn" id="cancel-edit-modal">Annuler</button>
+                <button type="submit" name="Update" class="modal-btn modal-btn-primary">Enregistrer</button>
+            </div>
+        </form>
+    </div>
+</div>
 
-        if (!deptSelect || !trancheSelect) {
-            return;
-        }
+<!-- Modal Suppression -->
+<div class="modal-overlay" id="delete-payment-modal">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3>Confirmer la suppression</h3>
+            <button type="button" class="modal-close-btn" id="close-delete-modal">&times;</button>
+        </div>
+        <form method="POST" action="payment.php">
+            <div class="modal-body">
+                <p id="delete-confirm-text">Êtes-vous sûr de vouloir supprimer ce paiement ?</p>
+                <div id="delete-ids-hidden-container"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="modal-btn modal-cancel-btn" id="cancel-delete-modal">Annuler</button>
+                <button type="submit" name="DeleteBulk" class="modal-btn modal-btn-danger">Supprimer</button>
+            </div>
+        </form>
+    </div>
+</div>
 
-        const trancheOptions = Array.from(trancheSelect.querySelectorAll('option[data-dept]'));
-
-        function updateTranches() {
-            const selectedDept = deptSelect.value;
-            const deptId = deptMap[selectedDept] || null;
-
-            trancheOptions.forEach(opt => {
-                const optDept = parseInt(opt.dataset.dept, 10);
-                opt.style.display = ((showAllWhenNoDepartment && !deptId) || optDept === deptId) ? '' : 'none';
-            });
-
-            const selectedOption = trancheSelect.selectedOptions[0];
-            if (selectedOption && selectedOption.dataset.dept && selectedOption.style.display === 'none') {
-                trancheSelect.value = '';
-            }
-        }
-
-        deptSelect.addEventListener('change', updateTranches);
-        updateTranches();
-    }
-
-    setupTrancheFilter('filter_department', 'filter_tranche', true);
-});
-
-function toggleEdit(id) {
-    const row = document.getElementById('edit-' + id);
-    if (row) {
-        row.style.display = row.style.display === 'table-row' ? 'none' : 'table-row';
-    }
-}
-</script>
-
-<script src="../admin/table-sort.js?v=1.0"></script>
+<script src="./table-sort.js?v=1.0"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    // ... (tout le JavaScript précédent inchangé) ...
+    // Je le remets ici pour être complet
+    const deptMap = <?= json_encode($deptMap) ?>;
+
     const searchInput = document.getElementById('payment-search');
     const clearButton = document.getElementById('clear-payment-search');
-    const tableBody = document.getElementById('payment-table-body');
+    const tableBody = document.querySelector('#payment-table tbody');
     const paginationContainer = document.getElementById('payment-pagination');
     const prevButton = document.getElementById('payment-prev');
     const nextButton = document.getElementById('payment-next');
@@ -564,77 +570,43 @@ document.addEventListener('DOMContentLoaded', function () {
     let currentPage = 1;
 
     const allRows = Array.from(tableBody.querySelectorAll('tr'));
-    const dataRows = allRows.filter(row => row.querySelectorAll('td').length >= 4 && !row.classList.contains('edit-panel'));
+    const dataRows = allRows.filter(row => {
+        const cells = row.querySelectorAll('td');
+        return cells.length > 0 && cells[0].getAttribute('colspan') === null;
+    });
+
     const tableSorter = window.createTableSorter
-        ? window.createTableSorter(tableBody.closest('table'), dataRows, function () {
-            currentPage = 1;
-            renderPage();
-        })
-        : { apply: rows => rows };
+        ? window.createTableSorter(document.getElementById('payment-table'), dataRows, function () { currentPage = 1; renderPage(); })
+        : { apply: r => r };
 
     function getFilteredRows() {
         const query = searchInput.value.trim().toLowerCase();
-
-        const filteredRows = dataRows.filter(row => {
-            const cells = row.cells;
-            const studentName = cells[1]?.textContent.trim().toLowerCase() || '';
-            const matricule = cells[2]?.textContent.trim().toLowerCase() || '';
-            const department = cells[3]?.textContent.trim().toLowerCase() || '';
-            const tranche = cells[4]?.textContent.trim().toLowerCase() || '';
-            const matches = query === '' ||
-                studentName.includes(query) ||
-                matricule.includes(query) ||
-                department.includes(query) ||
-                tranche.includes(query);
-
-            row.dataset.matchesFilter = matches ? '1' : '0';
-            return matches;
+        const filtered = dataRows.filter(row => {
+            const text = Array.from(row.cells).map(c => c.textContent.trim().toLowerCase()).join(' ');
+            return query === '' || text.includes(query);
         });
-
-        return tableSorter.apply(filteredRows);
+        return tableSorter.apply(filtered);
     }
 
-    const totalCounter = document.getElementById('counter-total');
-    if (totalCounter) {
-        totalCounter.textContent = dataRows.length;
-    }
-
-    function hideAllEditPanels() {
-        document.querySelectorAll('.edit-panel').forEach(row => {
-            row.style.display = 'none';
-        });
-    }
+    document.getElementById('counter-total').textContent = dataRows.length;
 
     function renderPage() {
         const visibleRows = getFilteredRows();
         const totalRows = visibleRows.length;
         const totalPages = Math.max(1, Math.ceil(totalRows / rowsPerPage));
+        if (currentPage > totalPages) currentPage = totalPages;
 
-        if (currentPage > totalPages) {
-            currentPage = totalPages;
-        }
-
-        const showPagination = totalRows > rowsPerPage;
-        paginationContainer.classList.toggle('hidden', !showPagination);
-
-        pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+        paginationContainer.classList.toggle('hidden', totalRows <= rowsPerPage);
+        pageInfo.textContent = `Page ${currentPage} sur ${totalPages}`;
         prevButton.disabled = currentPage <= 1;
         nextButton.disabled = currentPage >= totalPages;
+        document.getElementById('counter-match').textContent = totalRows;
 
-        const matchCounter = document.getElementById('counter-match');
-        if (matchCounter) {
-            matchCounter.textContent = totalRows;
-        }
-
-        dataRows.forEach(row => {
-            row.style.display = 'none';
-        });
-        hideAllEditPanels();
-
-        visibleRows.forEach((row, index) => {
+        dataRows.forEach(r => r.style.display = 'none');
+        visibleRows.forEach((row, i) => {
             const start = (currentPage - 1) * rowsPerPage;
             const end = start + rowsPerPage;
-            row.style.display = index >= start && index < end ? '' : 'none';
+            row.style.display = (i >= start && i < end) ? '' : 'none';
         });
     }
 
@@ -654,28 +626,105 @@ document.addEventListener('DOMContentLoaded', function () {
         updateView();
     });
 
-    prevButton.addEventListener('click', function () {
-        if (currentPage > 1) {
-            currentPage -= 1;
-            renderPage();
-            document.querySelector('.table-section').scrollIntoView({ behavior: 'smooth' });
-        }
-    });
-
-    nextButton.addEventListener('click', function () {
-        const visibleRows = getFilteredRows();
-        const totalPages = Math.max(1, Math.ceil(visibleRows.length / rowsPerPage));
-        if (currentPage < totalPages) {
-            currentPage += 1;
-            renderPage();
-            document.querySelector('.table-section').scrollIntoView({ behavior: 'smooth' });
-        }
+    prevButton.addEventListener('click', () => { if (currentPage > 1) { currentPage--; renderPage(); } });
+    nextButton.addEventListener('click', () => {
+        const totalPages = Math.max(1, Math.ceil(getFilteredRows().length / rowsPerPage));
+        if (currentPage < totalPages) { currentPage++; renderPage(); }
     });
 
     renderPage();
+
+    const selectAllCheckbox = document.getElementById('select-all-checkbox');
+    const rowCheckboxes = document.querySelectorAll('.row-checkbox');
+    const bulkActionBar = document.getElementById('bulk-action-bar');
+    const selectedCountBadge = document.getElementById('selected-count-badge');
+    const bulkEditBtn = document.getElementById('bulk-edit-btn');
+    const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
+
+    const editModal = document.getElementById('edit-payment-modal');
+    const deleteModal = document.getElementById('delete-payment-modal');
+
+    function updateBulkBar() {
+        const count = document.querySelectorAll('.row-checkbox:checked').length;
+        selectedCountBadge.textContent = count;
+        bulkActionBar.classList.toggle('visible', count > 0);
+        bulkEditBtn.style.display = count === 1 ? 'inline-flex' : 'none';
+    }
+
+    selectAllCheckbox.addEventListener('change', function () {
+        const isChecked = selectAllCheckbox.checked;
+        const visibleRows = getFilteredRows();
+        rowCheckboxes.forEach(cb => {
+            const tr = cb.closest('tr');
+            if (visibleRows.includes(tr)) cb.checked = isChecked;
+            else cb.checked = false;
+        });
+        updateBulkBar();
+    });
+
+    rowCheckboxes.forEach(cb => cb.addEventListener('change', updateBulkBar));
+
+    document.querySelectorAll('.three-dots-btn').forEach(btn => {
+        btn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            const menu = btn.nextElementSibling;
+            document.querySelectorAll('.options-menu').forEach(m => { if (m !== menu) m.classList.add('dropdown-hidden'); });
+            menu.classList.toggle('dropdown-hidden');
+        });
+    });
+    document.addEventListener('click', () => {
+        document.querySelectorAll('.options-menu').forEach(m => m.classList.add('dropdown-hidden'));
+    });
+
+    function openEditModal(tr) {
+        document.getElementById('edit-payment-id').value = tr.dataset.id;
+        document.getElementById('edit-amount').value = tr.dataset.amount;
+        document.getElementById('edit-method').value = tr.dataset.method;
+        document.getElementById('edit-reference').value = tr.dataset.reference;
+        document.getElementById('edit-tranche-id').value = tr.dataset.tranche;
+        editModal.classList.add('open');
+    }
+
+    function openDeleteModal(payments) {
+        const container = document.getElementById('delete-ids-hidden-container');
+        container.innerHTML = '';
+        payments.forEach(p => {
+            const input = document.createElement('input');
+            input.type = 'hidden'; input.name = 'ids[]'; input.value = p.id;
+            container.appendChild(input);
+        });
+        const text = document.getElementById('delete-confirm-text');
+        text.textContent = payments.length === 1
+            ? `Êtes-vous sûr de vouloir supprimer ce paiement ?`
+            : `Êtes-vous sûr de vouloir supprimer les ${payments.length} paiements sélectionnés ?`;
+        deleteModal.classList.add('open');
+    }
+
+    tableBody.addEventListener('click', function (e) {
+        const tr = e.target.closest('tr');
+        if (!tr) return;
+        if (e.target.closest('.quick-edit-btn') || e.target.closest('.dropdown-edit-btn')) openEditModal(tr);
+        if (e.target.closest('.quick-delete-btn') || e.target.closest('.dropdown-delete-btn')) openDeleteModal([{ id: tr.dataset.id }]);
+    });
+
+    bulkEditBtn.addEventListener('click', () => {
+        const cb = document.querySelector('.row-checkbox:checked');
+        if (cb) openEditModal(cb.closest('tr'));
+    });
+
+    bulkDeleteBtn.addEventListener('click', () => {
+        const checked = document.querySelectorAll('.row-checkbox:checked');
+        const payments = [];
+        checked.forEach(cb => payments.push({ id: cb.value }));
+        if (payments.length > 0) openDeleteModal(payments);
+    });
+
+    document.getElementById('close-edit-modal').addEventListener('click', () => editModal.classList.remove('open'));
+    document.getElementById('cancel-edit-modal').addEventListener('click', () => editModal.classList.remove('open'));
+    document.getElementById('close-delete-modal').addEventListener('click', () => deleteModal.classList.remove('open'));
+    document.getElementById('cancel-delete-modal').addEventListener('click', () => deleteModal.classList.remove('open'));
 });
 </script>
-
-    <script src="/payment/assets/js/responsive.js?v=20261030"></script>
+<script src="/payment/assets/js/responsive.js?v=20261030"></script>
 </body>
 </html>
