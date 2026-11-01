@@ -9,7 +9,7 @@ define('REQUIRED_ROLE', 'student');
 require __DIR__ . '/../auth_check.php';
 require_once __DIR__ . '/../functions.php';
 
-$currentUserId = (int) ($_SESSION['userId'] ?? 0);
+$currentUserId = (int) ($_SESSION['userId'] ?? $_SESSION['user_id'] ?? $_SESSION['id'] ?? 0);
 
 // --- Contacts : UNIQUEMENT les administrateurs pour un étudiant ---
 try {
@@ -90,9 +90,13 @@ if ($selectedContact) {
         
         .message-bubble { padding: 10px 14px; border-radius: 14px; font-size: 0.9rem; line-height: 1.45; word-wrap: break-word; position: relative; padding-right: 30px; }
         .message-row:not(.mine) .message-bubble { background: #fff; color: var(--gray-900); border: 1px solid var(--gray-200); border-bottom-left-radius: 4px; }
-        .message-row.mine .message-bubble { background: var(--primary-light); color: #fff; border-bottom-right-radius: 4px; }
-        .message-meta { font-size: 0.7rem; margin-top: 6px; opacity: 0.7; }
+        
+        /* ✨ FIXED: Blue background and white text to match Admin */
+        .message-row.mine .message-bubble { background: var(--primary, #2563eb); color: #fff; border-bottom-right-radius: 4px; }
+        
+        .message-meta { font-size: 0.7rem; margin-top: 6px; opacity: 0.8; }
 
+        /* ✨ FIXED: Made dots white so they show up on the blue background */
         .msg-options-btn { position: absolute; right: 2px; top: 6px; background: none; border: none; color: rgba(255,255,255,0.7); cursor: pointer; padding: 4px; display: none; align-items: center; justify-content: center; }
         .message-row.mine:hover .msg-options-btn { display: flex; }
         .msg-options-btn:hover { color: #fff; }
@@ -216,6 +220,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (messagesContainer) messagesContainer.scrollTop = messagesContainer.scrollHeight;
 
+    // --- Envoi ---
     chatForm.addEventListener('submit', function (e) {
         e.preventDefault();
         const message = messageInput.value.trim();
@@ -234,7 +239,7 @@ document.addEventListener('DOMContentLoaded', function () {
         .then(r => r.json())
         .then(data => {
             if (data.success) {
-                location.reload();
+                location.reload(); // Refresh to show new message
             } else {
                 alert('Erreur : ' + (data.error || 'Inconnu'));
             }
@@ -246,6 +251,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
+    // --- Modification ---
     document.querySelectorAll('.edit-btn').forEach(btn => {
         btn.addEventListener('click', function (e) {
             e.stopPropagation();
@@ -330,6 +336,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
+    // --- Suppression ---
     document.querySelectorAll('.delete-btn').forEach(btn => {
         btn.addEventListener('click', function (e) {
             e.stopPropagation();
@@ -362,6 +369,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
+    // Envoi avec Entrée
     messageInput.addEventListener('keydown', function (e) {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
